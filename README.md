@@ -13,6 +13,8 @@ Automod Replacement
 
 ## Unsupported features
 
+The following are not supported due to Devvit limitations.
+
 * All CQS checks
 * All media checks
 * Author flair template ID
