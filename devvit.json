@@ -1,0 +1,38 @@
+{
+    "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+    "dev": {
+        "subreddit": "fsvsandbox"
+    },
+    "name": "fsvtestapp3",
+    "permissions": {
+        "http": {
+            "domains": [
+                "youtube.googleapis.com"
+            ]
+        },
+        "reddit": true
+    },
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite build --watch"
+    },
+    "server": {
+        "dir": "dist/server",
+        "entry": "index.cjs"
+    },
+    "triggers": {
+        "onCommentCreate": "/internal/triggers/on-comment-create",
+        "onCommentUpdate": "/internal/triggers/on-comment-update",
+        "onPostCreate": "/internal/triggers/on-post-create",
+        "onPostUpdate": "/internal/triggers/on-post-update",
+        "onModAction": "/internal/triggers/on-mod-action"
+    },
+    "settings": {
+        "subreddit": {
+            "rules": {
+                "type": "paragraph",
+                "label": "Automod Rules"
+            }
+        }
+    }
+}
