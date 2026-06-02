@@ -1,7 +1,6 @@
 import { context, reddit, User } from "@devvit/web/server";
 import { Author, Matches } from "../types";
-import { isValueWithinThreshold, searchConditionMatchesInput } from ".";
-import { differenceInDays } from "date-fns";
+import { meetsDateThreshold, meetsNumericThreshold, searchConditionMatchesInput } from ".";
 import { isApprovedUser, isModerator } from "../helpers";
 
 export async function authorMatchesCondition (user: User, isSubmitter: boolean, author: Author): Promise<Matches[] | undefined> {
@@ -49,7 +48,7 @@ export async function authorMatchesCondition (user: User, isSubmitter: boolean, 
     let anyThresholdMatched: boolean | undefined;
 
     if (author.comment_karma !== undefined) {
-        if (!isValueWithinThreshold(user.commentKarma, author.comment_karma)) {
+        if (!meetsNumericThreshold(user.commentKarma, author.comment_karma)) {
             if (!author.satisfy_any_threshold) {
                 return;
             }
@@ -59,7 +58,7 @@ export async function authorMatchesCondition (user: User, isSubmitter: boolean, 
     }
 
     if (author.post_karma !== undefined) {
-        if (!isValueWithinThreshold(user.linkKarma, author.post_karma)) {
+        if (!meetsNumericThreshold(user.linkKarma, author.post_karma)) {
             if (!author.satisfy_any_threshold) {
                 return;
             }
@@ -70,7 +69,7 @@ export async function authorMatchesCondition (user: User, isSubmitter: boolean, 
 
     if (author.combined_karma !== undefined) {
         const combinedKarma = user.commentKarma + user.linkKarma;
-        if (!isValueWithinThreshold(combinedKarma, author.combined_karma)) {
+        if (!meetsNumericThreshold(combinedKarma, author.combined_karma)) {
             if (!author.satisfy_any_threshold) {
                 return;
             }
@@ -80,8 +79,7 @@ export async function authorMatchesCondition (user: User, isSubmitter: boolean, 
     }
 
     if (author.account_age !== undefined) {
-        const accountAgeInDays = differenceInDays(new Date(), user.createdAt);
-        if (!isValueWithinThreshold(accountAgeInDays, author.account_age)) {
+        if (!meetsDateThreshold(user.createdAt, author.account_age)) {
             if (!author.satisfy_any_threshold) {
                 return;
             }
@@ -95,7 +93,7 @@ export async function authorMatchesCondition (user: User, isSubmitter: boolean, 
         const subredditKarma = await reddit.getUserKarmaFromCurrentSubreddit(user.username);
 
         if (author.comment_subreddit_karma !== undefined) {
-            if (!isValueWithinThreshold(subredditKarma.fromComments ?? 0, author.comment_subreddit_karma)) {
+            if (!meetsNumericThreshold(subredditKarma.fromComments ?? 0, author.comment_subreddit_karma)) {
                 if (!author.satisfy_any_threshold) {
                     return;
                 }
@@ -105,7 +103,7 @@ export async function authorMatchesCondition (user: User, isSubmitter: boolean, 
         }
 
         if (author.post_subreddit_karma !== undefined) {
-            if (!isValueWithinThreshold(subredditKarma.fromPosts ?? 0, author.post_subreddit_karma)) {
+            if (!meetsNumericThreshold(subredditKarma.fromPosts ?? 0, author.post_subreddit_karma)) {
                 if (!author.satisfy_any_threshold) {
                     return;
                 }
@@ -116,7 +114,7 @@ export async function authorMatchesCondition (user: User, isSubmitter: boolean, 
 
         if (author.combined_subreddit_karma !== undefined) {
             const combinedSubredditKarma = (subredditKarma.fromComments ?? 0) + (subredditKarma.fromPosts ?? 0);
-            if (!isValueWithinThreshold(combinedSubredditKarma, author.combined_subreddit_karma)) {
+            if (!meetsNumericThreshold(combinedSubredditKarma, author.combined_subreddit_karma)) {
                 if (!author.satisfy_any_threshold) {
                     return;
                 }
