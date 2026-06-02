@@ -2,20 +2,21 @@ Automod Replacement
 
 ## Todo
 
+* "Type" on post checks
 * Bio text checks
 * Display name checks
 * Social link checks
 * Crowd Control setting
-
-## Implemented unsupported:
-
+* Blockquoting multi-line matches e.g. body
 * comment_crowd_control_collapsed
+* Validating that rules are properly formed
 
 ## Unsupported features
 
 * All CQS checks
 * All media checks
 * Author flair template ID
+* is_original_content on post checks
 
 On submissions:
 

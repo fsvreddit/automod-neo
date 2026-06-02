@@ -70,6 +70,7 @@ export type StandardCondition = "image hosting sites" | "direct image links" | "
 export interface PostCondition {
     // Search checks
     id?: string[];
+    standard?: StandardCondition;
     title?: SearchableText[];
     body?: SearchableText[];
     title_or_body?: SearchableText[];

@@ -53,7 +53,7 @@ function getFlairOptions (flair: string | string[] | SetFlairActionDictionary) {
     }
 }
 
-export async function actionRules (targetId: string, matchedRule: AutomodMatch): Promise<void> {
+export async function actionRules (targetId: string, matchedRule: AutomodMatch, doMessages = true): Promise<void> {
     console.log(`Applying actions on target ${targetId} for rule ${JSON.stringify(matchedRule.rule.id)}`);
 
     const target = await getPostOrCommentById(targetId as T1 | T3);
@@ -116,7 +116,31 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch):
     }
 
     if (matchedRule.rule.parent_submission && "postId" in target) {
-        await actionRules(target.postId, matchedRule);
+        await actionRules(target.postId, matchedRule, false);
+    }
+
+    if (doMessages && matchedRule.rule.message) {
+        const messageBody = valueWithPlaceholdersReplaced(matchedRule.rule.message, target, matchedRule.matches);
+        const messageSubject = valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule.matches) ?? "Message from Automod2";
+        if (messageBody) {
+            await reddit.sendPrivateMessage({
+                to: target.authorName,
+                subject: messageSubject,
+                text: messageBody,
+            });
+        }
+    }
+
+    if (doMessages && matchedRule.rule.modmail) {
+        const modmailBody = valueWithPlaceholdersReplaced(matchedRule.rule.modmail, target, matchedRule.matches);
+        const modmailSubject = valueWithPlaceholdersReplaced(matchedRule.rule.modmail_subject, target, matchedRule.matches) ?? "Modmail from Automod2";
+        if (modmailBody) {
+            await reddit.modMail.createModInboxConversation({
+                subredditId: context.subredditId,
+                subject: modmailSubject,
+                bodyMarkdown: modmailBody,
+            });
+        }
     }
 
     if (!("title" in target)) {
