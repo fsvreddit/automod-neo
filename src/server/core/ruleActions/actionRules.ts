@@ -158,9 +158,11 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch):
         let suggestedSort: PostSuggestedCommentSort;
         switch (matchedRule.rule.set_suggested_sort) {
             case "blank":
+                suggestedSort = "BLANK";
+                break;
             case "hot":
             case "best":
-                suggestedSort = "BLANK";
+                suggestedSort = "CONFIDENCE";
                 break;
             case "new":
                 suggestedSort = "NEW";
