@@ -10,7 +10,6 @@ import { addMinutes } from "date-fns";
 import { AppSetting, getSettings } from "../appSettings";
 import { parseRules } from "../ruleParser";
 
-// eslint-disable-next-line @typescript-eslint/require-await
 async function getRulesForSubreddit (): Promise<AutomodRule[]> {
     const appSettings = await getSettings();
     return parseRules(appSettings[AppSetting.Rules]);
