@@ -26,7 +26,7 @@ export async function postMatchesPostCondition (post: Post, condition: PostCondi
     if (condition.title !== undefined) {
         let foundAMatch = false;
         for (const titleCondition of condition.title) {
-            const matchedParts = searchConditionMatchesInput(post.title, titleCondition, condition.ignore_blockquotes);
+            const matchedParts = searchConditionMatchesInput(post.title, titleCondition);
             if (matchedParts) {
                 matches.push({ category: "title", matches: matchedParts });
                 foundAMatch = true;
@@ -41,7 +41,7 @@ export async function postMatchesPostCondition (post: Post, condition: PostCondi
     if (condition.body !== undefined) {
         let foundAMatch = false;
         for (const bodyCondition of condition.body) {
-            const matchedParts = searchConditionMatchesInput(postBody, bodyCondition, condition.ignore_blockquotes);
+            const matchedParts = searchConditionMatchesInput(postBody, bodyCondition);
             if (matchedParts) {
                 matches.push({ category: "body", matches: matchedParts });
                 foundAMatch = true;
@@ -56,14 +56,14 @@ export async function postMatchesPostCondition (post: Post, condition: PostCondi
     if (condition.title_or_body !== undefined) {
         let foundAMatch = false;
         for (const titleOrBodyCondition of condition.title_or_body) {
-            const titleMatches = searchConditionMatchesInput(post.title, titleOrBodyCondition, condition.ignore_blockquotes);
+            const titleMatches = searchConditionMatchesInput(post.title, titleOrBodyCondition);
             if (titleMatches) {
                 matches.push({ category: "title", matches: titleMatches });
                 foundAMatch = true;
                 break;
             }
 
-            const bodyMatches = searchConditionMatchesInput(postBody, titleOrBodyCondition, condition.ignore_blockquotes);
+            const bodyMatches = searchConditionMatchesInput(postBody, titleOrBodyCondition);
             if (bodyMatches) {
                 matches.push({ category: "body", matches: bodyMatches });
                 foundAMatch = true;

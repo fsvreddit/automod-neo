@@ -106,14 +106,9 @@ export function searchTextMatches (input: string, textToMatch: string, options?:
     throw new Error(`Unknown search method: ${options.search_method}`);
 }
 
-export function searchConditionMatchesInput (input: string, condition: SearchableText, ignoreBlockquotes?: boolean): string[] | undefined {
-    let inputToCheck = input;
-    if (ignoreBlockquotes) {
-        inputToCheck = inputToCheck.split("\n").filter(line => !line.trim().startsWith(">")).join("\n");
-    }
-
+export function searchConditionMatchesInput (input: string, condition: SearchableText): string[] | undefined {
     for (const text of condition.text) {
-        const result = searchTextMatches(inputToCheck, text, condition.options);
+        const result = searchTextMatches(input, text, condition.options);
         if (result) {
             return result;
         }

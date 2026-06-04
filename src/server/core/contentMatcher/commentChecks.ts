@@ -24,7 +24,7 @@ export async function commentMatchesRule (comment: CommentV2, isEdit: boolean, r
     if (rule.body !== undefined) {
         let foundAMatch = false;
         for (const bodyCondition of rule.body) {
-            const matchedParts = searchConditionMatchesInput(commentBody, bodyCondition, rule.ignore_blockquotes);
+            const matchedParts = searchConditionMatchesInput(commentBody, bodyCondition);
             if (matchedParts) {
                 matches.push({ category: "body", matches: matchedParts });
                 foundAMatch = true;
@@ -39,7 +39,7 @@ export async function commentMatchesRule (comment: CommentV2, isEdit: boolean, r
     if (rule.title_or_body !== undefined) {
         let foundAMatch = false;
         for (const condition of rule.title_or_body) {
-            const bodyMatchedParts = searchConditionMatchesInput(commentBody, condition, rule.ignore_blockquotes);
+            const bodyMatchedParts = searchConditionMatchesInput(commentBody, condition);
             if (bodyMatchedParts) {
                 matches.push({ category: "body", matches: bodyMatchedParts });
                 foundAMatch = true;
