@@ -240,7 +240,7 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
 
             try {
                 // Validate regex syntax early so malformed rules fail with a clear path.
-                new RegExp(pattern);
+                new RegExp(pattern, "u");
             } catch (error) {
                 const details = error instanceof Error ? error.message : String(error);
                 throw new Error(`Invalid regex pattern at ${nodePath}.${fieldName}[${searchableIndex}].text[${textIndex}]: ${pattern} (${details})`);
