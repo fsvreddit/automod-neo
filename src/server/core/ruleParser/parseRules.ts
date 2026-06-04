@@ -66,8 +66,10 @@ function defaultSearchMethodForField (fieldName: string): SearchMethod {
         case "flair_text":
         case "flair_css_class":
         case "flair_template_id":
+        case "media_author":
             return "full-exact";
         case "url":
+        case "media_author_url":
             return "includes";
         default:
             return "includes-word";
