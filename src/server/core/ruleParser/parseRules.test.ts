@@ -73,9 +73,11 @@ body (regex): "foo\\d+bar"
         const rules = `
 ---
 id: abcde
+id#primary: fghij
 title+body (includes, case_sensitive): "abcde"
 ~body#1: dog
 ~body#2: attack
+body#redact: wolf
 author:
   name (regex): ['^foo.*']
     display_name (includes): DisplayName
@@ -92,7 +94,7 @@ parent_submission:
 
         assert.deepEqual(parsed, [
             {
-                id: ["abcde"],
+                id: ["abcde", "fghij"],
                 title_or_body: [
                     {
                         text: ["abcde"],
@@ -119,6 +121,9 @@ parent_submission:
                             case_sensitive: false,
                             negate: true,
                         },
+                    },
+                    {
+                        text: ["wolf"],
                     },
                 ],
                 author: {
@@ -178,6 +183,43 @@ parent_submission:
                         },
                         {
                             text: ["two"],
+                        },
+                    ],
+                },
+            },
+        ]);
+    });
+
+    it("normalizes searchable fields with named key suffixes", () => {
+        const rules = `
+---
+body#redact: alpha
+body#review: beta
+author:
+  social_links#twitter (includes): x.com/example
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                body: [
+                    {
+                        text: ["alpha"],
+                    },
+                    {
+                        text: ["beta"],
+                    },
+                ],
+                author: {
+                    social_links: [
+                        {
+                            text: ["x.com/example"],
+                            options: {
+                                search_method: "includes",
+                                case_sensitive: false,
+                                negate: false,
+                            },
                         },
                     ],
                 },
