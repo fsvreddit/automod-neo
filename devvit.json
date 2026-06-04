@@ -31,7 +31,8 @@
         "subreddit": {
             "rules": {
                 "type": "paragraph",
-                "label": "Automod Rules"
+                "label": "Automod Rules",
+                "validationEndpoint": "/internal/validators/validate-automod-setting"
             }
         }
     }
