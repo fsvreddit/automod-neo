@@ -10,6 +10,10 @@ All Regular Expressions are evaluated with Unicode mode on, allowing for placeho
 
 The only joined checks supported are `title+body` (and `body+title`) and not other checks.
 
+## Todo
+
+Author checks on parent submissions (full parity with base author conditions)
+
 ## New features
 
 ### Author checks (base item only)
