@@ -13,6 +13,7 @@ The only joined checks supported are `title+body` (and `body+title`) and not oth
 ## Todo
 
 Author checks on parent submissions (full parity with base author conditions)
+Discord alerts using configurable webhooks
 
 ## New features
 
