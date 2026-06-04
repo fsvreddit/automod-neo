@@ -1,21 +1,40 @@
-import { Comment, context, Post, PostSuggestedCommentSort, reddit } from "@devvit/web/server";
+import { context, PostSuggestedCommentSort, reddit } from "@devvit/web/server";
 import { isT1, T1, T3 } from "@devvit/web/shared";
 import { AutomodMatch, Matches, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl } from "../helpers";
 
-function valueWithPlaceholdersReplaced (input: string | undefined, target: Post | Comment, matches: Matches[]): string | undefined {
+interface PlaceholderTarget {
+    authorName: string;
+    body?: string;
+    permalink: string;
+    subredditName: string;
+    url: string;
+    title?: string;
+}
+
+export function valueWithPlaceholdersReplaced (input: string | undefined, target: PlaceholderTarget, matches: Matches[]): string | undefined {
     if (!input) {
         return;
     }
 
+    const body = target.body ?? "";
+    const blockquotedBody = body
+        ? body
+                .split("\n")
+                .map(line => `> ${line}`)
+                .join("\n")
+        : "";
+
+    // If body is used in blockquote placeholder form, blockquote every body line.
     let result = input
+        .replace(/(^|\n)>\s*{{body}}(?=\n|$)/g, `$1${blockquotedBody}`)
         .replaceAll("{{author}}", target.authorName)
-        .replaceAll("{{body}}", target.body ?? "")
+        .replaceAll("{{body}}", body)
         .replaceAll("{{permalink}}", `https://www.reddit.com${target.permalink}`)
-        .replaceAll("{{title}}", "title" in target ? target.title : "")
+        .replaceAll("{{title}}", target.title ?? "")
         .replaceAll("{{subreddit}}", target.subredditName)
-        .replaceAll("{{kind}}", "title" in target ? "post" : "comment")
+        .replaceAll("{{kind}}", target.title === undefined ? "comment" : "post")
         .replaceAll("{{domain}}", getDomainFromUrl(target.url) ?? "")
         .replaceAll("{{url}}", target.url)
         // {{match}} is replaced with the first match of the first category, or an empty string if there are no matches

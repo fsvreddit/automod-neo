@@ -15,7 +15,6 @@ These can be searched just like the title or body e.g. `bio_text (includes): 'sn
 ## Todo
 
 * Crowd Control setting
-* Blockquoting multi-line matches e.g. body
 
 ## Unsupported features
 
