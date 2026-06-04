@@ -54,7 +54,7 @@ describe("sortRulesForExecution", () => {
         );
     });
 
-    it("orders same-priority rules by action precedence: remove/spam, then filter, then others", () => {
+    it("orders same-priority rules by action precedence: remove/spam, then filter, then report, then others", () => {
         const rules: AutomodRule[] = [
             { id: ["other-a"], priority: 2, action: "approve" },
             { id: ["filter"], priority: 2, action: "filter" },
@@ -68,14 +68,14 @@ describe("sortRulesForExecution", () => {
 
         assert.deepEqual(
             sorted.map(rule => rule.id?.[0]),
-            ["spam", "remove", "filter", "other-a", "other-b", "report"],
+            ["spam", "remove", "filter", "report", "other-a", "other-b"],
         );
     });
 
     it("keeps original order when priority and action precedence are equal", () => {
         const rules: AutomodRule[] = [
             { id: ["first"], priority: 0, action: "approve" },
-            { id: ["second"], priority: 0, action: "report" },
+            { id: ["second"], priority: 0 },
             { id: ["third"], priority: 0 },
         ];
 
