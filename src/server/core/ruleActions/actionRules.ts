@@ -162,6 +162,10 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
         }
     }
 
+    if (matchedRule.rule.set_locked) {
+        await target.lock();
+    }
+
     if (!("title" in target)) {
         return;
     }
@@ -191,10 +195,6 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
 
     if (matchedRule.rule.set_spoiler) {
         await target.markAsSpoiler();
-    }
-
-    if (matchedRule.rule.set_locked) {
-        await target.lock();
     }
 
     if (matchedRule.rule.set_suggested_sort) {
@@ -230,5 +230,9 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
                 return;
         }
         await target.setSuggestedCommentSort(suggestedSort);
+    }
+
+    if (matchedRule.rule.set_post_crowd_control_level) {
+        await target.updateCrowdControlLevel(matchedRule.rule.set_post_crowd_control_level);
     }
 }
