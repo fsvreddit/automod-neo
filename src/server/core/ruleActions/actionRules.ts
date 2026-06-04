@@ -2,7 +2,7 @@ import { Comment, context, Post, PostSuggestedCommentSort, reddit } from "@devvi
 import { isT1, T1, T3 } from "@devvit/web/shared";
 import { AutomodMatch, Matches, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
-import { getDomainFromUrl } from "../helpers";
+import { getBotCommentFooter, getDomainFromUrl } from "../helpers";
 
 function valueWithPlaceholdersReplaced (input: string | undefined, target: Post | Comment, matches: Matches[]): string | undefined {
     if (!input) {
@@ -91,7 +91,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
         if (commentBody) {
             const newComment = await reddit.submitComment({
                 id: target.id,
-                text: commentBody,
+                text: commentBody + "\n\n" + getBotCommentFooter(),
             });
             if (matchedRule.rule.comment_locked) {
                 await newComment.lock();
@@ -126,7 +126,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
             await reddit.sendPrivateMessage({
                 to: target.authorName,
                 subject: messageSubject,
-                text: messageBody,
+                text: messageBody + "\n\n" + getBotCommentFooter(),
             });
         }
     }
@@ -138,7 +138,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
             await reddit.modMail.createModInboxConversation({
                 subredditId: context.subredditId,
                 subject: modmailSubject,
-                bodyMarkdown: modmailBody,
+                bodyMarkdown: modmailBody + "\n\n" + getBotCommentFooter(),
             });
         }
     }
