@@ -1,12 +1,10 @@
-Automod Replacement
-
-This app replicates Automoderator and adds some new features.
+This app replicates AutoModerator and adds some new features.
 
 ## Behaviour differences
 
-All regular expressions use Javascript Regex. This can be different to Python regex (that used by AutoModerator) but most regular expressions that worked in OG Automod will work here too. Unlike OG AutoMod, full lookahead/lookbehind support is available.
+All regular expressions use Javascript regex syntax. This can be different to Python regex (that used by AutoModerator) but most regular expressions that worked in OG Automod will work here too. Unlike OG AutoMod, full lookahead/lookbehind support is available.
 
-All Regular Expressions are evaluated with Unicode mode on, allowing for placeholders such as `\p{Emoji}`.
+All regular expressions are evaluated with Unicode mode on, allowing for placeholders such as `\p{Emoji}`.
 
 The only joined checks supported are `title+body` (and `body+title`) and not other checks.
 
