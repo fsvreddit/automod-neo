@@ -1,94 +1,285 @@
 /* eslint-disable camelcase */
 import _ from "lodash";
-import { AutomodRule, SearchMethod, SearchOption } from "../types";
+import { AutomodRule, SearchMethod, SearchOption, SearchableText } from "../types";
 import { parseAllDocuments } from "yaml";
 import Ajv from "ajv";
 import { automodSchema } from "./automodSchema";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function processNode (node: any, nodeName: string) {
-    const nodeNameRegex = /^(~?title|~?body|~?title\+body|~?body\+title|~?name|~?id|~?flair_text|~?flair_css_class|~?flair_template_id|~?domain|~?url)(?:#\w+)?(?: \(([\w\s,-]+)\))?$/;
-    const matches = nodeNameRegex.exec(nodeName);
-    if (matches?.length !== 3) {
-        return;
+const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "full-exact", "regex"];
+
+const topLevelSearchableFields = new Set(["title", "body", "title_or_body", "domain", "url", "flair_text", "flair_css_class", "flair_template_id", "crosspost_title"]);
+const authorSearchableFields = new Set(["name", "flair_text", "flair_css_class"]);
+const subredditSearchableFields = new Set(["name"]);
+
+type MutableNode = Record<string, unknown>;
+
+function isObjectRecord (value: unknown): value is MutableNode {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function toStringArray (value: unknown): string[] | undefined {
+    if (typeof value === "string") {
+        return [value];
     }
 
-    let properName = matches[1];
-    if (!properName) {
-        return;
+    if (Array.isArray(value) && value.every(item => typeof item === "string")) {
+        return value;
     }
 
-    let searchOptions = matches[2] ?? "";
-    const negate = properName.startsWith("~");
+    return undefined;
+}
 
-    let searchOptionList = searchOptions.split(",").map(x => x.trim());
-    const caseSensitive = searchOptionList.includes("case-sensitive") || searchOptionList.includes("case_sensitive");
-    if (caseSensitive) {
-        searchOptionList = searchOptionList.filter(x => x !== "case-sensitive" && x !== "case_sensitive");
+function toSearchableText (value: unknown, options?: SearchOption): SearchableText | undefined {
+    const text = toStringArray(value);
+    if (!text) {
+        return undefined;
     }
 
-    if (properName.endsWith("title+body") || properName.endsWith("body+title")) {
-        properName = (negate ? "~" : "") + "title_or_body";
-    }
-
-    searchOptions = searchOptionList.join(", ");
-
-    let options: SearchOption | undefined;
-    if (searchOptions || caseSensitive || negate) {
-        let searchMethod = (searchOptions.length > 0 ? searchOptions : undefined) as SearchMethod | undefined;
-        if (!searchMethod) {
-            switch (properName.replace("~", "")) {
-                case "domain":
-                    searchMethod = "ends-with";
-                    break;
-                case "id":
-                case "flair_text":
-                case "flair_css_class":
-                case "flair_template_id":
-                    searchMethod = "full-exact";
-                    break;
-                case "url":
-                    searchMethod = "includes";
-                    break;
-                default:
-                    searchMethod = "includes-word";
-            }
-        }
-
-        options = {
-            search_method: searchMethod,
-            negate,
-            case_sensitive: caseSensitive,
+    if (options) {
+        return {
+            text,
+            options,
         };
     }
 
-    if (properName.startsWith("~")) {
-        properName = properName.substring(1);
+    return { text };
+}
+
+function defaultSearchMethodForField (fieldName: string): SearchMethod {
+    switch (fieldName) {
+        case "domain":
+            return "ends-with";
+        case "flair_text":
+        case "flair_css_class":
+        case "flair_template_id":
+            return "full-exact";
+        case "url":
+            return "includes";
+        default:
+            return "includes-word";
+    }
+}
+
+function buildSearchOptions (fieldName: string, qualifierText: string | undefined, negate: boolean): SearchOption | undefined {
+    const rawParts = (qualifierText ?? "").split(",").map(part => part.trim()).filter(Boolean);
+    const caseSensitive = rawParts.includes("case-sensitive") || rawParts.includes("case_sensitive");
+    const parts = rawParts.filter(part => part !== "case-sensitive" && part !== "case_sensitive");
+
+    const searchMethodCandidate = parts.length > 0 ? parts.join(", ") : undefined;
+    const searchMethod = searchMethodCandidate && searchMethodValues.includes(searchMethodCandidate as SearchMethod)
+        ? searchMethodCandidate as SearchMethod
+        : defaultSearchMethodForField(fieldName);
+
+    if (!qualifierText && !negate) {
+        return undefined;
     }
 
-    if (properName === nodeName && !options) {
-        // Nothing to do, node is already properly formatted.
+    return {
+        search_method: searchMethod,
+        negate,
+        case_sensitive: caseSensitive,
+    };
+}
+
+function appendSearchableValue (node: MutableNode, fieldName: string, searchableValue: SearchableText): void {
+    const existing = node[fieldName];
+    if (!Array.isArray(existing)) {
+        node[fieldName] = [searchableValue];
         return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const newValue = node[nodeName];
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete, @typescript-eslint/no-unsafe-member-access
-    delete node[nodeName];
+    existing.push(searchableValue);
+}
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (node[properName] !== undefined && Array.isArray(node[properName])) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-        node[properName].push({
-            text: Array.isArray(newValue) ? newValue : [newValue],
-            options,
-        });
-    } else {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        node[properName] = [{
-            text: Array.isArray(newValue) ? newValue : [newValue],
-            options,
-        }];
+function preprocessSearchableFields (node: MutableNode, searchableFields: Set<string>): void {
+    for (const rawKey of Object.keys(node)) {
+        const keyMatch = /^(~?[a-z_+]+)(?:#\w+)?(?: \(([\w\s,-]+)\))?$/.exec(rawKey);
+        if (!keyMatch) {
+            continue;
+        }
+
+        const maybeNegatedName = keyMatch[1];
+        if (!maybeNegatedName) {
+            continue;
+        }
+        const qualifierText = keyMatch[2];
+        const negate = maybeNegatedName.startsWith("~");
+        let fieldName = negate ? maybeNegatedName.slice(1) : maybeNegatedName;
+
+        if (fieldName === "title+body" || fieldName === "body+title") {
+            fieldName = "title_or_body";
+        }
+
+        if (!searchableFields.has(fieldName)) {
+            continue;
+        }
+
+        const searchableValue = toSearchableText(node[rawKey], buildSearchOptions(fieldName, qualifierText, negate));
+        if (!searchableValue) {
+            continue;
+        }
+
+        // Delete decorated key versions (negation/suffix/qualifiers) and append normalized entry.
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete node[rawKey];
+        appendSearchableValue(node, fieldName, searchableValue);
+    }
+}
+
+function preprocessIdField (node: MutableNode, fieldName: "id" | "crosspost_id"): void {
+    for (const rawKey of Object.keys(node)) {
+        const keyMatch = /^(~?[a-z_+]+)(?:#\w+)?(?: \(([\w\s,-]+)\))?$/.exec(rawKey);
+        if (!keyMatch) {
+            continue;
+        }
+
+        const maybeNegatedName = keyMatch[1];
+        if (!maybeNegatedName) {
+            continue;
+        }
+        const isNegated = maybeNegatedName.startsWith("~");
+        const normalizedField = isNegated ? maybeNegatedName.slice(1) : maybeNegatedName;
+
+        if (normalizedField !== fieldName || isNegated) {
+            continue;
+        }
+
+        const stringArray = toStringArray(node[rawKey]);
+        if (!stringArray) {
+            continue;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete node[rawKey];
+        const existing = node[fieldName];
+        if (!Array.isArray(existing)) {
+            node[fieldName] = [...stringArray];
+            continue;
+        }
+
+        existing.push(...stringArray);
+    }
+}
+
+function preprocessAuthorNode (node: MutableNode): void {
+    preprocessIdField(node, "id");
+    preprocessSearchableFields(node, authorSearchableFields);
+}
+
+function preprocessSubredditNode (node: MutableNode): void {
+    preprocessSearchableFields(node, subredditSearchableFields);
+}
+
+function preprocessPostConditionLikeNode (node: MutableNode): void {
+    preprocessIdField(node, "id");
+    preprocessIdField(node, "crosspost_id");
+    preprocessSearchableFields(node, topLevelSearchableFields);
+
+    if (isObjectRecord(node.author)) {
+        preprocessAuthorNode(node.author);
+    }
+
+    if (isObjectRecord(node.subreddit)) {
+        preprocessSubredditNode(node.subreddit);
+    }
+
+    if (isObjectRecord(node.crosspost_author)) {
+        preprocessAuthorNode(node.crosspost_author);
+    }
+
+    if (isObjectRecord(node.crosspost_subreddit)) {
+        preprocessSubredditNode(node.crosspost_subreddit);
+    }
+}
+
+function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: string, nodePath: string): void {
+    const fieldValue = node[fieldName];
+    if (!Array.isArray(fieldValue)) {
+        return;
+    }
+
+    const searchableItems = fieldValue as unknown[];
+    for (let searchableIndex = 0; searchableIndex < searchableItems.length; searchableIndex += 1) {
+        const searchableItem = searchableItems[searchableIndex];
+        if (!isObjectRecord(searchableItem)) {
+            continue;
+        }
+
+        const optionsValue = searchableItem.options;
+        if (!isObjectRecord(optionsValue) || optionsValue.search_method !== "regex") {
+            continue;
+        }
+
+        const textValue = searchableItem.text;
+        if (!Array.isArray(textValue)) {
+            continue;
+        }
+
+        const textPatterns = textValue as unknown[];
+        for (let textIndex = 0; textIndex < textPatterns.length; textIndex += 1) {
+            const pattern = textPatterns[textIndex];
+            if (typeof pattern !== "string") {
+                continue;
+            }
+
+            try {
+                // Validate regex syntax early so malformed rules fail with a clear path.
+                new RegExp(pattern);
+            } catch (error) {
+                const details = error instanceof Error ? error.message : String(error);
+                throw new Error(`Invalid regex pattern at ${nodePath}.${fieldName}[${searchableIndex}].text[${textIndex}]: ${pattern} (${details})`);
+            }
+        }
+    }
+}
+
+function validateRegexPatternsInAuthorNode (node: MutableNode, nodePath: string): void {
+    for (const fieldName of authorSearchableFields) {
+        validateRegexPatternsInSearchableField(node, fieldName, nodePath);
+    }
+}
+
+function validateRegexPatternsInSubredditNode (node: MutableNode, nodePath: string): void {
+    for (const fieldName of subredditSearchableFields) {
+        validateRegexPatternsInSearchableField(node, fieldName, nodePath);
+    }
+}
+
+function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, nodePath: string): void {
+    for (const fieldName of topLevelSearchableFields) {
+        validateRegexPatternsInSearchableField(node, fieldName, nodePath);
+    }
+
+    if (isObjectRecord(node.author)) {
+        validateRegexPatternsInAuthorNode(node.author, `${nodePath}.author`);
+    }
+
+    if (isObjectRecord(node.subreddit)) {
+        validateRegexPatternsInSubredditNode(node.subreddit, `${nodePath}.subreddit`);
+    }
+
+    if (isObjectRecord(node.crosspost_author)) {
+        validateRegexPatternsInAuthorNode(node.crosspost_author, `${nodePath}.crosspost_author`);
+    }
+
+    if (isObjectRecord(node.crosspost_subreddit)) {
+        validateRegexPatternsInSubredditNode(node.crosspost_subreddit, `${nodePath}.crosspost_subreddit`);
+    }
+}
+
+export function validateRuleRegexPatterns (rule: MutableNode, rulePath: string): void {
+    validateRegexPatternsInPostConditionLikeNode(rule, rulePath);
+
+    if (isObjectRecord(rule.parent_submission)) {
+        validateRegexPatternsInPostConditionLikeNode(rule.parent_submission, `${rulePath}.parent_submission`);
+    }
+}
+
+export function preprocessRule (rule: MutableNode): void {
+    preprocessPostConditionLikeNode(rule);
+
+    if (isObjectRecord(rule.parent_submission)) {
+        preprocessPostConditionLikeNode(rule.parent_submission);
     }
 }
 
@@ -98,43 +289,20 @@ export function parseRules (rules: string): AutomodRule[] {
     }
 
     const documents = parseAllDocuments(rules, { strict: true });
-    const parsedRules = _.compact(documents.map(doc => doc.toJSON() as AutomodRule | null));
+    const parsedRules = _.compact(documents.map(doc => doc.toJSON() as MutableNode | null));
 
-    for (const rule of parsedRules) {
-        const nodeNames = Object.keys(rule);
-        for (const node of nodeNames) {
-            processNode(rule, node);
-        }
-
-        if (rule.author) {
-            const authorNodeNames = Object.keys(rule.author);
-            for (const node of authorNodeNames) {
-                processNode(rule.author, node);
-            }
-        }
-
-        if (rule.subreddit) {
-            const subredditNodeNames = Object.keys(rule.subreddit);
-            for (const node of subredditNodeNames) {
-                processNode(rule.subreddit, node);
-            }
-        }
-
-        if (rule.parent_submission) {
-            const parentSubmissionNodeNames = Object.keys(rule.parent_submission);
-            for (const node of parentSubmissionNodeNames) {
-                processNode(rule.parent_submission, node);
-            }
-        }
+    for (const [index, rule] of parsedRules.entries()) {
+        preprocessRule(rule);
+        validateRuleRegexPatterns(rule, `rule[${index}]`);
     }
+
+    const ajv = new Ajv({
+        coerceTypes: "array",
+    });
+    const validate = ajv.compile(automodSchema);
 
     // Validate rules against schema one by one
     for (const rule of parsedRules) {
-        const ajv = new Ajv({
-            coerceTypes: "array",
-        });
-
-        const validate = ajv.compile(automodSchema);
         if (!validate(rule)) {
             console.error("Invalid rule:", rule);
             console.error("Validation errors:", validate.errors);
