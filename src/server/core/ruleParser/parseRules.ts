@@ -2,6 +2,8 @@
 import _ from "lodash";
 import { AutomodRule, SearchMethod, SearchOption } from "../types";
 import { parseAllDocuments } from "yaml";
+import Ajv from "ajv";
+import { automodSchema } from "./automodSchema";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function processNode (node: any, nodeName: string) {
@@ -123,6 +125,20 @@ export function parseRules (rules: string): AutomodRule[] {
             for (const node of parentSubmissionNodeNames) {
                 processNode(rule.parent_submission, node);
             }
+        }
+    }
+
+    // Validate rules against schema one by one
+    for (const rule of parsedRules) {
+        const ajv = new Ajv({
+            coerceTypes: "array",
+        });
+
+        const validate = ajv.compile(automodSchema);
+        if (!validate(rule)) {
+            console.error("Invalid rule:", rule);
+            console.error("Validation errors:", validate.errors);
+            throw new Error(`Rule failed validation: ${ajv.errorsText(validate.errors)}`);
         }
     }
 

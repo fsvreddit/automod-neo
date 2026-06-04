@@ -23,4 +23,3 @@ On submissions:
 
 * discussion_type
 * is_meta_discussion
-
