@@ -10,7 +10,7 @@ All Regular Expressions are evaluated with Unicode mode on, allowing for placeho
 
 The only joined checks supported are `title+body` (and `body+title`) and not other checks.
 
-## New features:
+## New features
 
 ### Author checks (base item only)
 
