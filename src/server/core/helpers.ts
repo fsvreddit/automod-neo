@@ -122,3 +122,7 @@ export async function isSubredditNSFW (subredditName: string): Promise<boolean> 
 
     return subreddit.isNsfw ?? false;
 }
+
+export function getTextWithoutBlockquotes (input: string): string {
+    return input.split("\n").filter(line => !line.trim().startsWith(">")).join("\n").trim();
+}

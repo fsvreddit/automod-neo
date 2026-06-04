@@ -2,7 +2,7 @@ import { reddit } from "@devvit/web/server";
 import { CommentV2, isT1, T3 } from "@devvit/web/shared";
 import { AutomodRule, Matches } from "../types";
 import { searchConditionMatchesInput } from "./searchConditionMatcher";
-import { normaliseTimestamp } from "../helpers";
+import { getTextWithoutBlockquotes, normaliseTimestamp } from "../helpers";
 import { differenceInMonths } from "date-fns";
 import { postMatchesPostCondition } from "./postChecks";
 
@@ -19,10 +19,12 @@ export async function commentMatchesRule (comment: CommentV2, isEdit: boolean, r
 
     const matches: Matches[] = [];
 
+    const commentBody = rule.ignore_blockquotes ? getTextWithoutBlockquotes(comment.body) : comment.body;
+
     if (rule.body !== undefined) {
         let foundAMatch = false;
         for (const bodyCondition of rule.body) {
-            const matchedParts = searchConditionMatchesInput(comment.body, bodyCondition, rule.ignore_blockquotes);
+            const matchedParts = searchConditionMatchesInput(commentBody, bodyCondition, rule.ignore_blockquotes);
             if (matchedParts) {
                 matches.push({ category: "body", matches: matchedParts });
                 foundAMatch = true;
@@ -37,7 +39,7 @@ export async function commentMatchesRule (comment: CommentV2, isEdit: boolean, r
     if (rule.title_or_body !== undefined) {
         let foundAMatch = false;
         for (const condition of rule.title_or_body) {
-            const bodyMatchedParts = searchConditionMatchesInput(comment.body, condition, rule.ignore_blockquotes);
+            const bodyMatchedParts = searchConditionMatchesInput(commentBody, condition, rule.ignore_blockquotes);
             if (bodyMatchedParts) {
                 matches.push({ category: "body", matches: bodyMatchedParts });
                 foundAMatch = true;
@@ -56,13 +58,13 @@ export async function commentMatchesRule (comment: CommentV2, isEdit: boolean, r
     }
 
     if (rule.body_longer_than !== undefined) {
-        if (comment.body.length <= rule.body_longer_than) {
+        if (commentBody.length <= rule.body_longer_than) {
             return;
         }
     }
 
     if (rule.body_shorter_than !== undefined) {
-        if (comment.body.length >= rule.body_shorter_than) {
+        if (commentBody.length >= rule.body_shorter_than) {
             return;
         }
     }

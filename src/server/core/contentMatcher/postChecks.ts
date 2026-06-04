@@ -2,7 +2,7 @@
 import { Post, reddit } from "@devvit/web/server";
 import { AutomodRule, Matches, PostCondition, StandardCondition } from "../types";
 import { searchConditionMatchesInput } from "./searchConditionMatcher";
-import { getDomainFromUrl, isSubredditNSFW } from "../helpers";
+import { getDomainFromUrl, getTextWithoutBlockquotes, isSubredditNSFW } from "../helpers";
 import { differenceInMonths } from "date-fns";
 import { authorMatchesCondition } from "./authorChecks";
 
@@ -20,6 +20,8 @@ export async function postMatchesPostCondition (post: Post, condition: PostCondi
     }
 
     const matches: Matches[] = [];
+
+    const postBody = condition.ignore_blockquotes ? getTextWithoutBlockquotes(post.body ?? "") : post.body ?? "";
 
     if (condition.title !== undefined) {
         let foundAMatch = false;
@@ -39,7 +41,7 @@ export async function postMatchesPostCondition (post: Post, condition: PostCondi
     if (condition.body !== undefined) {
         let foundAMatch = false;
         for (const bodyCondition of condition.body) {
-            const matchedParts = searchConditionMatchesInput(post.body ?? "", bodyCondition, condition.ignore_blockquotes);
+            const matchedParts = searchConditionMatchesInput(postBody, bodyCondition, condition.ignore_blockquotes);
             if (matchedParts) {
                 matches.push({ category: "body", matches: matchedParts });
                 foundAMatch = true;
@@ -61,7 +63,7 @@ export async function postMatchesPostCondition (post: Post, condition: PostCondi
                 break;
             }
 
-            const bodyMatches = searchConditionMatchesInput(post.body ?? "", titleOrBodyCondition, condition.ignore_blockquotes);
+            const bodyMatches = searchConditionMatchesInput(postBody, titleOrBodyCondition, condition.ignore_blockquotes);
             if (bodyMatches) {
                 matches.push({ category: "body", matches: bodyMatches });
                 foundAMatch = true;
@@ -198,13 +200,13 @@ export async function postMatchesPostCondition (post: Post, condition: PostCondi
     }
 
     if (condition.body_longer_than !== undefined) {
-        if ((post.body?.length ?? 0) <= condition.body_longer_than) {
+        if (postBody.length <= condition.body_longer_than) {
             return;
         }
     }
 
     if (condition.body_shorter_than !== undefined) {
-        if ((post.body?.length ?? 0) >= condition.body_shorter_than) {
+        if (postBody.length >= condition.body_shorter_than) {
             return;
         }
     }
