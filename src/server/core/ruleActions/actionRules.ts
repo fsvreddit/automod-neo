@@ -53,20 +53,20 @@ export function valueWithPlaceholdersReplaced (input: string | undefined, target
     return result;
 }
 
-function getFlairOptions (flair: string | string[] | SetFlairActionDictionary) {
+function getFlairOptions (flair: string | string[] | SetFlairActionDictionary, target: PlaceholderTarget, matches: Matches[]) {
     if (typeof flair === "string") {
         return {
-            text: flair,
+            text: valueWithPlaceholdersReplaced(flair, target, matches),
         };
     } else if (Array.isArray(flair)) {
         return {
-            text: flair[0],
-            cssClass: flair[1],
+            text: valueWithPlaceholdersReplaced(flair[0], target, matches),
+            cssClass: valueWithPlaceholdersReplaced(flair[1], target, matches),
         };
     } else {
         return {
-            text: flair.text,
-            cssClass: flair.css_class,
+            text: valueWithPlaceholdersReplaced(flair.text, target, matches),
+            cssClass: valueWithPlaceholdersReplaced(flair.css_class, target, matches),
             templateId: flair.template_id,
         };
     }
@@ -123,7 +123,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
         const user = await reddit.getUserByUsername(target.authorName);
         const existingUserFlair = user?.getUserFlairBySubreddit(context.subredditName);
         if (matchedRule.rule.author.overwrite_flair || !existingUserFlair) {
-            const flairOptions = getFlairOptions(matchedRule.rule.author.set_flair);
+            const flairOptions = getFlairOptions(matchedRule.rule.author.set_flair, target, matchedRule.matches);
             await reddit.setUserFlair({
                 subredditName: context.subredditName,
                 username: target.authorName,
@@ -174,7 +174,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
 
     if (matchedRule.rule.set_flair) {
         if (!target.flair || matchedRule.rule.overwrite_flair) {
-            const flairOptions = getFlairOptions(matchedRule.rule.set_flair);
+            const flairOptions = getFlairOptions(matchedRule.rule.set_flair, target, matchedRule.matches);
             await reddit.setPostFlair({
                 subredditName: context.subredditName,
                 postId: target.id,
