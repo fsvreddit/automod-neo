@@ -215,4 +215,49 @@ parent_submission:
             },
         ]);
     });
+
+    it("accepts set_flair arrays with at most two elements", () => {
+        const rules = `
+---
+set_flair: ['one', 'two']
+author:
+  set_flair: ['left', 'right']
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                set_flair: ["one", "two"],
+                author: {
+                    set_flair: ["left", "right"],
+                },
+            },
+        ]);
+    });
+
+    it("throws when set_flair has more than two elements", () => {
+        const rules = `
+---
+set_flair: ['one', 'two', 'three']
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /set_flair.*must NOT have more than 2 items|must NOT have more than 2 items.*set_flair/,
+        );
+    });
+
+    it("throws when nested set_flair has more than two elements", () => {
+        const rules = `
+---
+author:
+  set_flair: ['one', 'two', 'three']
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /set_flair.*must NOT have more than 2 items|must NOT have more than 2 items.*set_flair/,
+        );
+    });
 });

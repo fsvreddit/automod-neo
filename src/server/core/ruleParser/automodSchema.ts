@@ -53,6 +53,7 @@ const setFlairSchema = {
         {
             type: "array",
             items: { type: "string" },
+            maxItems: 2,
         },
         setFlairActionDictionarySchema,
         { type: "null" },
