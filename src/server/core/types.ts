@@ -35,6 +35,9 @@ export interface Author {
     is_submitter?: boolean;
     is_contributor?: boolean;
     is_moderator?: boolean;
+    display_name?: SearchableText[];
+    bio_text?: SearchableText[];
+    social_links?: SearchableText[];
 
     set_flair?: string | string[] | SetFlairActionDictionary;
     overwrite_flair?: boolean;

@@ -83,6 +83,21 @@ const authorSchema = {
             items: searchableTextSchema,
             nullable: true,
         },
+        display_name: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
+        bio_text: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
+        social_links: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
         comment_karma: { type: "string", nullable: true },
         post_karma: { type: "string", nullable: true },
         combined_karma: { type: "string", nullable: true },

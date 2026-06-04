@@ -8,7 +8,7 @@ import { automodSchema } from "./automodSchema";
 const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "full-exact", "regex"];
 
 const topLevelSearchableFields = new Set(["title", "body", "title_or_body", "domain", "url", "flair_text", "flair_css_class", "flair_template_id", "crosspost_title"]);
-const authorSearchableFields = new Set(["name", "flair_text", "flair_css_class"]);
+const authorSearchableFields = new Set(["name", "flair_text", "flair_css_class", "display_name", "bio_text", "social_links"]);
 const subredditSearchableFields = new Set(["name"]);
 
 type MutableNode = Record<string, unknown>;

@@ -1,14 +1,21 @@
 Automod Replacement
 
+This app replicates Automoderator and adds some new features.
+
+New features:
+
+### Author checks (base item only)
+
+These can be searched just like the title or body e.g. `bio_text (includes): 'snapchat'`.
+
+* bio_text
+* display_name
+* social_links
+
 ## Todo
 
-* Bio text checks
-* Display name checks
-* Social link checks
 * Crowd Control setting
 * Blockquoting multi-line matches e.g. body
-* comment_crowd_control_collapsed
-* Validating that rules are properly formed
 
 ## Unsupported features
 

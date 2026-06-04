@@ -78,6 +78,10 @@ title+body (includes, case_sensitive): "abcde"
 ~body#2: attack
 author:
   name (regex): ['^foo.*']
+    display_name (includes): DisplayName
+    bio_text (regex): '^bio_.*$'
+    social_links#1: 'example.com/a'
+    social_links#2: 'example.com/b'
 parent_submission:
   body+title (regex): ['regex1', 'regex2']
   crosspost_title#1: one
@@ -126,6 +130,34 @@ parent_submission:
                                 case_sensitive: false,
                                 negate: false,
                             },
+                        },
+                    ],
+                    display_name: [
+                        {
+                            text: ["DisplayName"],
+                            options: {
+                                search_method: "includes",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                    bio_text: [
+                        {
+                            text: ["^bio_.*$"],
+                            options: {
+                                search_method: "regex",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                    social_links: [
+                        {
+                            text: ["example.com/a"],
+                        },
+                        {
+                            text: ["example.com/b"],
                         },
                     ],
                 },
@@ -191,7 +223,8 @@ body (regex): '['
 ---
 parent_submission:
   author:
-    name (regex): '^user_[0-9]+$'
+        name (regex): '^user_[0-9]+$'
+        bio_text (regex): '^bio_[a-z]+$'
         `;
 
         const parsed = parseRules(rules);
@@ -210,10 +243,33 @@ parent_submission:
                                 },
                             },
                         ],
+                        bio_text: [
+                            {
+                                text: ["^bio_[a-z]+$"],
+                                options: {
+                                    search_method: "regex",
+                                    case_sensitive: false,
+                                    negate: false,
+                                },
+                            },
+                        ],
                     },
                 },
             },
         ]);
+    });
+
+    it("throws when a new author searchable field contains an invalid regex", () => {
+        const rules = `
+---
+author:
+  bio_text (regex): '('
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Invalid regex pattern at rule\[0\]\.author\.bio_text\[0\]\.text\[0\]/,
+        );
     });
 
     it("accepts set_flair arrays with at most two elements", () => {

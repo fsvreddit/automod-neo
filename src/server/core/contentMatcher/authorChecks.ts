@@ -1,9 +1,9 @@
-import { context, reddit, User } from "@devvit/web/server";
+import { context, reddit, User, UserSocialLink } from "@devvit/web/server";
 import { Author, Matches } from "../types";
 import { meetsDateThreshold, meetsNumericThreshold, searchConditionMatchesInput } from ".";
 import { isApprovedUser, isModerator } from "../helpers";
 
-export async function authorMatchesCondition (user: User, isSubmitter: boolean, author: Author): Promise<Matches[] | undefined> {
+export async function authorMatchesCondition (user: User, isSubmitter: boolean, socialLinks: UserSocialLink[] | undefined, author: Author): Promise<Matches[] | undefined> {
     const matchesFound: Matches[] = [];
 
     if (author.id !== undefined) {
@@ -157,6 +157,51 @@ export async function authorMatchesCondition (user: User, isSubmitter: boolean, 
     if (author.is_moderator !== undefined) {
         const isMod = await isModerator(user);
         if (isMod !== author.is_moderator) {
+            return;
+        }
+    }
+
+    if (author.display_name !== undefined) {
+        let foundAMatch = false;
+        for (const displayNameCondition of author.display_name) {
+            const matchedParts = searchConditionMatchesInput(user.displayName, displayNameCondition);
+            if (matchedParts) {
+                matchesFound.push({ category: "displayname", matches: matchedParts });
+                foundAMatch = true;
+                break;
+            }
+        }
+        if (!foundAMatch) {
+            return;
+        }
+    }
+
+    if (author.bio_text !== undefined) {
+        let foundAMatch = false;
+        for (const bioTextCondition of author.bio_text) {
+            const matchedParts = searchConditionMatchesInput(user.about, bioTextCondition);
+            if (matchedParts) {
+                matchesFound.push({ category: "bio", matches: matchedParts });
+                foundAMatch = true;
+                break;
+            }
+        }
+        if (!foundAMatch) {
+            return;
+        }
+    }
+
+    if (author.social_links !== undefined) {
+        let foundAMatch = false;
+        for (const socialLinksCondition of author.social_links) {
+            const matchedParts = socialLinks?.some(link => searchConditionMatchesInput(link.outboundUrl, socialLinksCondition));
+            if (matchedParts) {
+                matchesFound.push({ category: "sociallink", matches: [socialLinksCondition.text].flat() });
+                foundAMatch = true;
+                break;
+            }
+        }
+        if (!foundAMatch) {
             return;
         }
     }

@@ -1,4 +1,4 @@
-import { reddit, User } from "@devvit/web/server";
+import { reddit, User, UserSocialLink } from "@devvit/web/server";
 import { OnCommentCreateRequest, OnCommentUpdateRequest, OnPostCreateRequest, OnPostUpdateRequest, T2, T3 } from "@devvit/web/shared";
 import { AutomodMatch, AutomodRule, Matches } from "../types";
 import { commentMatchesRule } from "./commentChecks";
@@ -30,6 +30,7 @@ export async function checkComment (request: OnCommentCreateRequest | OnCommentU
     }
 
     let user: User | undefined;
+    let userSocialLinks: UserSocialLink[] | undefined;
 
     for (const rule of rules) {
         const matches: Matches[] = [];
@@ -47,7 +48,11 @@ export async function checkComment (request: OnCommentCreateRequest | OnCommentU
                 continue;
             }
 
-            const authorMatches = await authorMatchesCondition(user, false, rule.author);
+            if (rule.author.social_links !== undefined && !userSocialLinks) {
+                userSocialLinks = await user.getSocialLinks();
+            }
+
+            const authorMatches = await authorMatchesCondition(user, false, userSocialLinks, rule.author);
             if (!authorMatches) {
                 continue;
             }
@@ -82,6 +87,7 @@ export async function checkPost (request: OnPostCreateRequest | OnPostUpdateRequ
     }
 
     let user: User | undefined;
+    let userSocialLinks: UserSocialLink[] | undefined;
 
     const post = await reddit.getPostById(request.post.id as T3);
 
@@ -105,7 +111,11 @@ export async function checkPost (request: OnPostCreateRequest | OnPostUpdateRequ
                 continue;
             }
 
-            const authorMatches = await authorMatchesCondition(user, true, rule.author);
+            if (rule.author.social_links !== undefined && !userSocialLinks) {
+                userSocialLinks = await user.getSocialLinks();
+            }
+
+            const authorMatches = await authorMatchesCondition(user, true, userSocialLinks, rule.author);
             if (!authorMatches) {
                 continue;
             }

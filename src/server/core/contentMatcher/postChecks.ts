@@ -208,7 +208,7 @@ export async function postMatchesPostCondition (post: Post, condition: PostCondi
                     return;
                 }
 
-                if (!await authorMatchesCondition(crosspostAuthor, false, condition.crosspost_author)) {
+                if (!await authorMatchesCondition(crosspostAuthor, false, undefined, condition.crosspost_author)) {
                     return;
                 }
             } catch {
