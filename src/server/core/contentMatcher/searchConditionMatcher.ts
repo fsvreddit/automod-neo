@@ -95,7 +95,7 @@ export function searchTextMatches (input: string, textToMatch: string, options?:
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (options.search_method === "regex") {
-        const regex = new RegExp(textToMatch, options.case_sensitive ?? false ? "" : "i");
+        const regex = new RegExp(textToMatch, options.case_sensitive ?? false ? "u" : "iu");
         const matches = input.match(regex);
         if (matches) {
             return matches.map(match => match.trim());

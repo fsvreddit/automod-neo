@@ -2,7 +2,11 @@ Automod Replacement
 
 This app replicates Automoderator and adds some new features.
 
-New features:
+## Behaviour differences
+
+All regular expressions use Javascript Regex. This can be different to Python regex (that used by AutoModerator) but most regular expressions that worked in OG Automod will work here too. Unlike OG AutoMod, full lookahead/lookbehind support is available.
+
+## New features:
 
 ### Author checks (base item only)
 
