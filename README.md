@@ -21,7 +21,6 @@ These can be searched just like the title or body e.g. `bio_text (includes): 'sn
 The following are not supported due to Devvit limitations.
 
 * All CQS checks
-* All media checks
 * Author flair template ID
 * is_original_content on post checks
 

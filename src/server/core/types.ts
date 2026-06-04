@@ -99,6 +99,11 @@ export interface PostCondition {
     crosspost_title?: SearchableText[];
     crosspost_author?: Author;
     crosspost_subreddit?: Subreddit;
+
+    media_author?: SearchableText[];
+    media_author_url?: SearchableText[];
+    media_title?: SearchableText[];
+    media_description?: SearchableText[];
 }
 
 export type AutomodRule = PostCondition & SubmissionAction & CommentAction & {

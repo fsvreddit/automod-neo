@@ -213,6 +213,26 @@ const postConditionSchema = {
             items: searchableTextSchema,
             nullable: true,
         },
+        media_author: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
+        media_author_url: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
+        media_title: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
+        media_description: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
         crosspost_author: {
             ...authorSchema,
             nullable: true,
@@ -346,6 +366,26 @@ export const automodSchema: Record<string, unknown> = {
             nullable: true,
         },
         crosspost_title: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
+        media_author: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
+        media_author_url: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
+        media_title: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
+        media_description: {
             type: "array",
             items: searchableTextSchema,
             nullable: true,

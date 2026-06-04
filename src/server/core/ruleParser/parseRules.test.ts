@@ -248,6 +248,53 @@ body: ['first', 'second']
         ]);
     });
 
+    it("normalizes media searchable fields", () => {
+        const rules = `
+---
+media_author (regex): '^author_[0-9]+$'
+media_author_url (includes): 'example.com/channel'
+media_title: ['first title', 'second title']
+media_description#summary: 'long description'
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                media_author: [
+                    {
+                        text: ["^author_[0-9]+$"],
+                        options: {
+                            search_method: "regex",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                media_author_url: [
+                    {
+                        text: ["example.com/channel"],
+                        options: {
+                            search_method: "includes",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                media_title: [
+                    {
+                        text: ["first title", "second title"],
+                    },
+                ],
+                media_description: [
+                    {
+                        text: ["long description"],
+                    },
+                ],
+            },
+        ]);
+    });
+
     it("throws when a regex searchable text contains an invalid regular expression", () => {
         const rules = `
 ---

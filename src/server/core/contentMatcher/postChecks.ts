@@ -119,6 +119,66 @@ export async function postMatchesPostCondition (post: Post, condition: PostCondi
         }
     }
 
+    if (condition.media_author !== undefined) {
+        let foundAMatch = false;
+        for (const mediaAuthorCondition of condition.media_author) {
+            const matchedParts = searchConditionMatchesInput(post.secureMedia?.oembed?.authorName ?? "", mediaAuthorCondition);
+            if (matchedParts) {
+                matches.push({ category: "media_author", matches: matchedParts });
+                foundAMatch = true;
+                break;
+            }
+        }
+        if (!foundAMatch) {
+            return;
+        }
+    }
+
+    if (condition.media_author_url !== undefined) {
+        let foundAMatch = false;
+        for (const mediaAuthorUrlCondition of condition.media_author_url) {
+            const matchedParts = searchConditionMatchesInput(post.secureMedia?.oembed?.authorUrl ?? "", mediaAuthorUrlCondition);
+            if (matchedParts) {
+                matches.push({ category: "media_author_url", matches: matchedParts });
+                foundAMatch = true;
+                break;
+            }
+        }
+        if (!foundAMatch) {
+            return;
+        }
+    }
+
+    if (condition.media_title !== undefined) {
+        let foundAMatch = false;
+        for (const mediaTitleCondition of condition.media_title) {
+            const matchedParts = searchConditionMatchesInput(post.secureMedia?.oembed?.title ?? "", mediaTitleCondition);
+            if (matchedParts) {
+                matches.push({ category: "media_title", matches: matchedParts });
+                foundAMatch = true;
+                break;
+            }
+        }
+        if (!foundAMatch) {
+            return;
+        }
+    }
+
+    if (condition.media_description !== undefined) {
+        let foundAMatch = false;
+        for (const mediaDescriptionCondition of condition.media_description) {
+            const matchedParts = searchConditionMatchesInput(post.secureMedia?.oembed?.html ?? "", mediaDescriptionCondition);
+            if (matchedParts) {
+                matches.push({ category: "media_description", matches: matchedParts });
+                foundAMatch = true;
+                break;
+            }
+        }
+        if (!foundAMatch) {
+            return;
+        }
+    }
+
     if (condition.flair_css_class !== undefined) {
         if (!condition.flair_css_class.some(flairCssCondition => searchConditionMatchesInput(post.flair?.cssClass ?? "", flairCssCondition))) {
             return;
