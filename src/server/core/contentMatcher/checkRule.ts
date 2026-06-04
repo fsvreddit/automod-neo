@@ -95,14 +95,14 @@ export async function checkComment (request: OnCommentCreateRequest | OnCommentU
             matches.push(...authorMatches);
         }
 
-        if (rule.moderators_exempt !== undefined) {
+        if (rule.moderators_exempt ?? true) {
             user ??= await reddit.getUserById(request.author.name as T2);
             if (!user) {
                 continue;
             }
 
             const isMod = await isModerator(user);
-            if (isMod && rule.moderators_exempt) {
+            if (isMod) {
                 continue;
             }
         }
@@ -158,14 +158,14 @@ export async function checkPost (request: OnPostCreateRequest | OnPostUpdateRequ
             matches.push(...authorMatches);
         }
 
-        if (rule.moderators_exempt !== undefined) {
+        if (rule.moderators_exempt ?? true) {
             user ??= await reddit.getUserById(post.authorName as T2);
             if (!user) {
                 continue;
             }
 
             const isMod = await isModerator(user);
-            if (isMod && rule.moderators_exempt) {
+            if (isMod) {
                 continue;
             }
         }
