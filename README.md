@@ -2,7 +2,6 @@ Automod Replacement
 
 ## Todo
 
-* "Type" on post checks
 * Bio text checks
 * Display name checks
 * Social link checks

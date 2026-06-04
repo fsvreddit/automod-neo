@@ -243,6 +243,26 @@ export async function postMatchesRule (post: Post, rule: AutomodRule) {
         return false;
     }
 
+    if (rule.type === "text submission" && !post.body) {
+        return false;
+    }
+
+    if (rule.type === "link submission" && post.url.includes(post.permalink)) {
+        return false;
+    }
+
+    if (rule.type === "crosspost submission" && !post.crosspostParentId) {
+        return false;
+    }
+
+    if (rule.type === "poll submission" && !post.pollData) {
+        return false;
+    }
+
+    if (rule.type === "gallery submission" && post.gallery.length === 0) {
+        return false;
+    }
+
     const postChecks: PostCondition = {
         id: rule.id,
         standard: rule.standard,
