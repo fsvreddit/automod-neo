@@ -1,11 +1,11 @@
 import { OnPostCreateRequest, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { fixContentCreationRequest } from "../core";
 import { checkPost } from "../core/contentMatcher";
 import { actionRules } from "../core/ruleActions/actionRules";
+import { fixPostTriggerEvent } from "@fsvreddit/fsv-devvit-web-helpers";
 
 export const handlePostCreate = async (c: Context) => {
-    const request = await fixContentCreationRequest(await c.req.json<OnPostCreateRequest>());
+    const request = await fixPostTriggerEvent(await c.req.json<OnPostCreateRequest>());
     if (!request.post) {
         return c.json<TriggerResponse>({ message: "post create handled, no post in request" }, 200);
     }
