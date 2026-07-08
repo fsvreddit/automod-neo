@@ -17,6 +17,7 @@ body (regex): "foo\\d+bar"
             {
                 title: [
                     {
+                        searchField: ["title"],
                         text: [
                             "Hello World",
                         ],
@@ -29,6 +30,7 @@ body (regex): "foo\\d+bar"
                 ],
                 body: [
                     {
+                        searchField: ["body"],
                         text: [
                             "foo\\d+bar",
                         ],
@@ -55,6 +57,7 @@ body (regex): "foo\\d+bar"
             {
                 title: [
                     {
+                        searchField: ["title"],
                         text: [
                             "text",
                         ],
@@ -69,12 +72,12 @@ body (regex): "foo\\d+bar"
         ]);
     });
 
-    it("normalizes searchable fields with aliases, qualifiers, and numbered keys", () => {
+    it("normalizes searchable fields with joins, qualifiers, and numbered keys", () => {
         const rules = `
 ---
 id: abcde
 id#primary: fghij
-title+body (includes, case_sensitive): "abcde"
+title+body+url (includes, case_sensitive): "abcde"
 ~body#1: dog
 ~body#2: attack
 body#redact: wolf
@@ -85,9 +88,9 @@ author:
     social_links#1: 'example.com/a'
     social_links#2: 'example.com/b'
 parent_submission:
-  body+title (regex): ['regex1', 'regex2']
-  crosspost_title#1: one
-  crosspost_title#2: two
+    body+title+url (regex): ['regex1', 'regex2']
+    crosspost_title#1: one
+    crosspost_title#2: two
         `;
 
         const parsed = parseRules(rules);
@@ -95,8 +98,9 @@ parent_submission:
         assert.deepEqual(parsed, [
             {
                 id: ["abcde", "fghij"],
-                title_or_body: [
+                search_conditions: [
                     {
+                        searchField: ["title", "body", "url"],
                         text: ["abcde"],
                         options: {
                             search_method: "includes",
@@ -107,6 +111,7 @@ parent_submission:
                 ],
                 body: [
                     {
+                        searchField: ["body"],
                         text: ["dog"],
                         options: {
                             search_method: "includes-word",
@@ -115,6 +120,7 @@ parent_submission:
                         },
                     },
                     {
+                        searchField: ["body"],
                         text: ["attack"],
                         options: {
                             search_method: "includes-word",
@@ -123,12 +129,14 @@ parent_submission:
                         },
                     },
                     {
+                        searchField: ["body"],
                         text: ["wolf"],
                     },
                 ],
                 author: {
                     name: [
                         {
+                            searchField: ["name"],
                             text: ["^foo.*"],
                             options: {
                                 search_method: "regex",
@@ -139,6 +147,7 @@ parent_submission:
                     ],
                     display_name: [
                         {
+                            searchField: ["display_name"],
                             text: ["DisplayName"],
                             options: {
                                 search_method: "includes",
@@ -149,6 +158,7 @@ parent_submission:
                     ],
                     bio_text: [
                         {
+                            searchField: ["bio_text"],
                             text: ["^bio_.*$"],
                             options: {
                                 search_method: "regex",
@@ -159,16 +169,19 @@ parent_submission:
                     ],
                     social_links: [
                         {
+                            searchField: ["social_links"],
                             text: ["example.com/a"],
                         },
                         {
+                            searchField: ["social_links"],
                             text: ["example.com/b"],
                         },
                     ],
                 },
                 parent_submission: {
-                    title_or_body: [
+                    search_conditions: [
                         {
+                            searchField: ["body", "title", "url"],
                             text: ["regex1", "regex2"],
                             options: {
                                 search_method: "regex",
@@ -179,9 +192,11 @@ parent_submission:
                     ],
                     crosspost_title: [
                         {
+                            searchField: ["crosspost_title"],
                             text: ["one"],
                         },
                         {
+                            searchField: ["crosspost_title"],
                             text: ["two"],
                         },
                     ],
@@ -205,15 +220,18 @@ author:
             {
                 body: [
                     {
+                        searchField: ["body"],
                         text: ["alpha"],
                     },
                     {
+                        searchField: ["body"],
                         text: ["beta"],
                     },
                 ],
                 author: {
                     social_links: [
                         {
+                            searchField: ["social_links"],
                             text: ["x.com/example"],
                             options: {
                                 search_method: "includes",
@@ -241,6 +259,7 @@ body: ['first', 'second']
                 id: ["abcde", "defgh"],
                 body: [
                     {
+                        searchField: ["body"],
                         text: ["first", "second"],
                     },
                 ],
@@ -263,6 +282,7 @@ media_description#summary: 'long description'
             {
                 media_author: [
                     {
+                        searchField: ["media_author"],
                         text: ["^author_[0-9]+$"],
                         options: {
                             search_method: "regex",
@@ -273,6 +293,7 @@ media_description#summary: 'long description'
                 ],
                 media_author_url: [
                     {
+                        searchField: ["media_author_url"],
                         text: ["example.com/channel"],
                         options: {
                             search_method: "includes",
@@ -283,11 +304,13 @@ media_description#summary: 'long description'
                 ],
                 media_title: [
                     {
+                        searchField: ["media_title"],
                         text: ["first title", "second title"],
                     },
                 ],
                 media_description: [
                     {
+                        searchField: ["media_description"],
                         text: ["long description"],
                     },
                 ],
@@ -324,6 +347,7 @@ parent_submission:
                     author: {
                         name: [
                             {
+                                searchField: ["name"],
                                 text: ["^user_[0-9]+$"],
                                 options: {
                                     search_method: "regex",
@@ -334,6 +358,7 @@ parent_submission:
                         ],
                         bio_text: [
                             {
+                                searchField: ["bio_text"],
                                 text: ["^bio_[a-z]+$"],
                                 options: {
                                     search_method: "regex",

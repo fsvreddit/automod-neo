@@ -1,6 +1,6 @@
-import { context, PostSuggestedCommentSort, reddit } from "@devvit/web/server";
+import { Comment, context, Post, PostSuggestedCommentSort, reddit } from "@devvit/web/server";
 import { isT1, T1, T3 } from "@devvit/web/shared";
-import { AutomodMatch, Matches, SetFlairActionDictionary } from "../types";
+import { AutomodMatch, CommentAction, Matches, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl } from "../helpers";
 
@@ -72,12 +72,12 @@ function getFlairOptions (flair: string | string[] | SetFlairActionDictionary, t
     }
 }
 
-export async function actionRules (targetId: string, matchedRule: AutomodMatch, doMessages = true): Promise<void> {
-    console.log(`Applying actions on target ${targetId} for rule ${JSON.stringify(matchedRule.rule.id)}`);
+async function doTopLevelAction (target: Post | Comment, action: PostOrCommentCondition | CommentAction, matches: Matches[]) {
+    if (!action.action) {
+        return;
+    }
 
-    const target = await getPostOrCommentById(targetId as T1 | T3);
-
-    switch (matchedRule.rule.action) {
+    switch (action.action) {
         case "remove": {
             await target.remove();
             break;
@@ -87,7 +87,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
             break;
         }
         case "report": {
-            const reportReason = valueWithPlaceholdersReplaced(matchedRule.rule.report_reason ?? matchedRule.rule.action_reason, target, matchedRule.matches);
+            const reportReason = valueWithPlaceholdersReplaced(action.report_reason ?? action.action_reason, target, matches);
             await reddit.report(target, { reason: reportReason ?? "Reported by Automod2" });
             break;
         }
@@ -96,14 +96,24 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
             break;
         }
         case "filter": {
-            const reportReason = valueWithPlaceholdersReplaced(matchedRule.rule.report_reason ?? matchedRule.rule.action_reason, target, matchedRule.matches);
-            await target.filter(reportReason ?? "Filtered by Automod2", false);
+            const reportReason = valueWithPlaceholdersReplaced(action.report_reason ?? action.action_reason, target, matches);
+            await target.filter({
+                reason: reportReason ?? "Filtered by Automod Neo",
+                keep: false,
+            });
             break;
         }
         default: {
-            console.warn(`Unknown action: ${matchedRule.rule.action}`);
+            console.warn(`Unknown action: ${action.action}`);
         }
     }
+}
+export async function actionRules (targetId: string, matchedRule: AutomodMatch, doMessages = true): Promise<void> {
+    console.log(`Applying actions on target ${targetId}`);
+
+    const target = await getPostOrCommentById(targetId as T1 | T3);
+
+    await doTopLevelAction(target, matchedRule.rule, matchedRule.matches);
 
     if (matchedRule.rule.comment) {
         const commentBody = valueWithPlaceholdersReplaced(matchedRule.rule.comment, target, matchedRule.matches);
@@ -135,7 +145,11 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
     }
 
     if (matchedRule.rule.parent_submission && "postId" in target) {
-        await actionRules(target.postId, matchedRule, false);
+        const parentSubmissionRules = matchedRule.rule.parent_submission;
+        if (parentSubmissionRules.action || parentSubmissionRules.set_flair || parentSubmissionRules.set_sticky || parentSubmissionRules.set_nsfw || parentSubmissionRules.set_spoiler || parentSubmissionRules.set_suggested_sort || parentSubmissionRules.set_post_crowd_control_level) {
+            const parentPost = await reddit.getPostById(target.postId);
+            await actionRulesForPost(parentPost, matchedRule.rule.parent_submission, matchedRule.matches);
+        }
     }
 
     if (doMessages && matchedRule.rule.message) {
@@ -171,13 +185,18 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
     }
 
     // Post only actions from this point.
+    await actionRulesForPost(target, matchedRule.rule, matchedRule.matches);
+}
 
-    if (matchedRule.rule.set_flair) {
-        if (!target.flair || matchedRule.rule.overwrite_flair) {
-            const flairOptions = getFlairOptions(matchedRule.rule.set_flair, target, matchedRule.matches);
+async function actionRulesForPost (post: Post, actions: PostOrCommentCondition, matches: Matches[]) {
+    await doTopLevelAction(post, actions, matches);
+
+    if (actions.set_flair) {
+        if (!post.flair || actions.overwrite_flair) {
+            const flairOptions = getFlairOptions(actions.set_flair, post, matches);
             await reddit.setPostFlair({
                 subredditName: context.subredditName,
-                postId: target.id,
+                postId: post.id,
                 text: flairOptions.text,
                 cssClass: flairOptions.cssClass,
                 flairTemplateId: flairOptions.templateId,
@@ -185,21 +204,21 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
         }
     }
 
-    if (matchedRule.rule.set_sticky) {
-        await target.sticky(typeof matchedRule.rule.set_sticky === "number" ? matchedRule.rule.set_sticky : undefined);
+    if (actions.set_sticky) {
+        await post.sticky(typeof actions.set_sticky === "number" ? actions.set_sticky : undefined);
     }
 
-    if (matchedRule.rule.set_nsfw) {
-        await target.markAsNsfw();
+    if (actions.set_nsfw) {
+        await post.markAsNsfw();
     }
 
-    if (matchedRule.rule.set_spoiler) {
-        await target.markAsSpoiler();
+    if (actions.set_spoiler) {
+        await post.markAsSpoiler();
     }
 
-    if (matchedRule.rule.set_suggested_sort) {
+    if (actions.set_suggested_sort) {
         let suggestedSort: PostSuggestedCommentSort;
-        switch (matchedRule.rule.set_suggested_sort) {
+        switch (actions.set_suggested_sort) {
             case "blank":
                 suggestedSort = "BLANK";
                 break;
@@ -226,13 +245,13 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
                 suggestedSort = "RANDOM";
                 break;
             default:
-                console.warn(`Unknown suggested sort: ${matchedRule.rule.set_suggested_sort}`);
+                console.warn(`Unknown suggested sort: ${actions.set_suggested_sort}`);
                 return;
         }
-        await target.setSuggestedCommentSort(suggestedSort);
+        await post.setSuggestedCommentSort(suggestedSort);
     }
 
-    if (matchedRule.rule.set_post_crowd_control_level) {
-        await target.updateCrowdControlLevel(matchedRule.rule.set_post_crowd_control_level);
+    if (actions.set_post_crowd_control_level) {
+        await post.updateCrowdControlLevel(actions.set_post_crowd_control_level);
     }
 }

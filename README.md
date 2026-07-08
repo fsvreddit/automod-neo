@@ -6,11 +6,9 @@ All regular expressions use Javascript regex syntax. This can be different to Py
 
 All regular expressions are evaluated with Unicode mode on, allowing for placeholders such as `\p{Emoji}`.
 
-The only joined checks supported are `title+body` (and `body+title`) and not other checks.
-
 ## Todo
 
-Author checks on parent submissions (full parity with base author conditions)
+Fix actions on parent submissions
 Discord alerts using configurable webhooks
 
 ## New features

@@ -23,6 +23,10 @@ const searchOptionSchema: JSONSchemaType<SearchOption> = {
 const searchableTextSchema = {
     type: "object",
     properties: {
+        searchField: {
+            type: "array",
+            items: { type: "string" },
+        },
         text: {
             type: "array",
             items: { type: "string" },
@@ -32,7 +36,7 @@ const searchableTextSchema = {
             nullable: true,
         },
     },
-    required: ["text"],
+    required: ["searchField", "text"],
     additionalProperties: false,
 } as const;
 
@@ -128,6 +132,11 @@ const subredditSchema = {
             items: searchableTextSchema,
             nullable: true,
         },
+        search_conditions: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
         is_nsfw: { type: "boolean", nullable: true },
     },
     required: [],
@@ -158,6 +167,11 @@ const postConditionSchema = {
             nullable: true,
         },
         title_or_body: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
+        search_conditions: {
             type: "array",
             items: searchableTextSchema,
             nullable: true,
@@ -284,6 +298,11 @@ export const automodSchema: Record<string, unknown> = {
             nullable: true,
         },
         title_or_body: {
+            type: "array",
+            items: searchableTextSchema,
+            nullable: true,
+        },
+        search_conditions: {
             type: "array",
             items: searchableTextSchema,
             nullable: true,

@@ -43,20 +43,22 @@ function toStringArray (value: unknown): string[] | undefined {
     return undefined;
 }
 
-function toSearchableText (value: unknown, options?: SearchOption): SearchableText | undefined {
+function toSearchableText (value: unknown, searchField: SearchableText["searchField"], options?: SearchOption): SearchableText | undefined {
     const text = toStringArray(value);
     if (!text) {
         return undefined;
     }
 
+    const searchableText: SearchableText = {
+        searchField,
+        text,
+    };
+
     if (options) {
-        return {
-            text,
-            options,
-        };
+        searchableText.options = options;
     }
 
-    return { text };
+    return searchableText;
 }
 
 function defaultSearchMethodForField (fieldName: string): SearchMethod {
@@ -97,6 +99,35 @@ function buildSearchOptions (fieldName: string, qualifierText: string | undefine
     };
 }
 
+function parseSearchableKey (rawKey: string): { fieldNames: string[]; primaryField: string; qualifierText: string | undefined; negate: boolean } | undefined {
+    const keyMatch = /^(~?[a-z_+]+)(?:#\w+)?(?: \(([\w\s,-]+)\))?$/.exec(rawKey);
+    if (!keyMatch) {
+        return undefined;
+    }
+
+    const maybeNegatedName = keyMatch[1];
+    if (!maybeNegatedName) {
+        return undefined;
+    }
+
+    const qualifierText = keyMatch[2];
+    const negate = maybeNegatedName.startsWith("~");
+    const normalizedName = negate ? maybeNegatedName.slice(1) : maybeNegatedName;
+    const [primaryField, ...additionalFieldNames] = normalizedName.split("+").filter(Boolean);
+    if (!primaryField) {
+        return undefined;
+    }
+
+    const fieldNames = [primaryField, ...additionalFieldNames];
+
+    return {
+        fieldNames,
+        primaryField,
+        qualifierText,
+        negate,
+    };
+}
+
 function appendSearchableValue (node: MutableNode, fieldName: string, searchableValue: SearchableText): void {
     const existing = node[fieldName];
     if (!Array.isArray(existing)) {
@@ -107,30 +138,18 @@ function appendSearchableValue (node: MutableNode, fieldName: string, searchable
     existing.push(searchableValue);
 }
 
-function preprocessSearchableFields (node: MutableNode, searchableFields: Set<string>): void {
+function preprocessSearchableFields (node: MutableNode, searchableFields: Set<string>, searchConditionsFieldName?: string): void {
     for (const rawKey of Object.keys(node)) {
-        const keyMatch = /^(~?[a-z_+]+)(?:#\w+)?(?: \(([\w\s,-]+)\))?$/.exec(rawKey);
-        if (!keyMatch) {
+        const parsedKey = parseSearchableKey(rawKey);
+        if (!parsedKey) {
             continue;
         }
 
-        const maybeNegatedName = keyMatch[1];
-        if (!maybeNegatedName) {
-            continue;
-        }
-        const qualifierText = keyMatch[2];
-        const negate = maybeNegatedName.startsWith("~");
-        let fieldName = negate ? maybeNegatedName.slice(1) : maybeNegatedName;
-
-        if (fieldName === "title+body" || fieldName === "body+title") {
-            fieldName = "title_or_body";
-        }
-
-        if (!searchableFields.has(fieldName)) {
+        if (!parsedKey.fieldNames.every(fieldName => searchableFields.has(fieldName))) {
             continue;
         }
 
-        const searchableValue = toSearchableText(node[rawKey], buildSearchOptions(fieldName, qualifierText, negate));
+        const searchableValue = toSearchableText(node[rawKey], parsedKey.fieldNames as SearchableText["searchField"], buildSearchOptions(parsedKey.primaryField, parsedKey.qualifierText, parsedKey.negate));
         if (!searchableValue) {
             continue;
         }
@@ -138,7 +157,13 @@ function preprocessSearchableFields (node: MutableNode, searchableFields: Set<st
         // Delete decorated key versions (negation/suffix/qualifiers) and append normalized entry.
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete node[rawKey];
-        appendSearchableValue(node, fieldName, searchableValue);
+
+        if (parsedKey.fieldNames.length > 1 && searchConditionsFieldName) {
+            appendSearchableValue(node, searchConditionsFieldName, searchableValue);
+            continue;
+        }
+
+        appendSearchableValue(node, parsedKey.primaryField, searchableValue);
     }
 }
 
@@ -179,7 +204,7 @@ function preprocessIdField (node: MutableNode, fieldName: "id" | "crosspost_id")
 
 function preprocessAuthorNode (node: MutableNode): void {
     preprocessIdField(node, "id");
-    preprocessSearchableFields(node, authorSearchableFields);
+    preprocessSearchableFields(node, authorSearchableFields, "search_conditions");
 }
 
 function preprocessSubredditNode (node: MutableNode): void {
@@ -189,7 +214,7 @@ function preprocessSubredditNode (node: MutableNode): void {
 function preprocessPostConditionLikeNode (node: MutableNode): void {
     preprocessIdField(node, "id");
     preprocessIdField(node, "crosspost_id");
-    preprocessSearchableFields(node, topLevelSearchableFields);
+    preprocessSearchableFields(node, topLevelSearchableFields, "search_conditions");
 
     if (isObjectRecord(node.author)) {
         preprocessAuthorNode(node.author);

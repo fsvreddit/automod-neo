@@ -34,70 +34,70 @@ vi.mock("../ruleParser", () => ({
     parseRules: vi.fn(),
 }));
 
-import { sortRulesForExecution } from "./checkRule.js";
-import { AutomodRule } from "../types";
+import { AutomodRule } from "../types.js";
+import { sortRulesForExecution } from "./ruleRetrieval.js";
 
 describe("sortRulesForExecution", () => {
     it("orders by priority descending with missing priority treated as zero", () => {
         const rules: AutomodRule[] = [
-            { id: ["no-priority"] },
-            { id: ["low"], priority: 1 },
-            { id: ["high"], priority: 5 },
-            { id: ["negative"], priority: -1 },
+            { comment: "no-priority" },
+            { comment: "low", priority: 1 },
+            { comment: "high", priority: 5 },
+            { comment: "negative", priority: -1 },
         ];
 
         const sorted = sortRulesForExecution(rules);
 
         assert.deepEqual(
-            sorted.map(rule => rule.id?.[0]),
+            sorted.map(rule => rule.comment),
             ["high", "low", "no-priority", "negative"],
         );
     });
 
     it("orders same-priority rules by action precedence: remove/spam, then filter, then report, then others", () => {
         const rules: AutomodRule[] = [
-            { id: ["other-a"], priority: 2, action: "approve" },
-            { id: ["filter"], priority: 2, action: "filter" },
-            { id: ["spam"], priority: 2, action: "spam" },
-            { id: ["other-b"], priority: 2 },
-            { id: ["remove"], priority: 2, action: "remove" },
-            { id: ["report"], priority: 2, action: "report" },
+            { comment: "other-a", priority: 2, action: "approve" },
+            { comment: "filter", priority: 2, action: "filter" },
+            { comment: "spam", priority: 2, action: "spam" },
+            { comment: "other-b", priority: 2 },
+            { comment: "remove", priority: 2, action: "remove" },
+            { comment: "report", priority: 2, action: "report" },
         ];
 
         const sorted = sortRulesForExecution(rules);
 
         assert.deepEqual(
-            sorted.map(rule => rule.id?.[0]),
+            sorted.map(rule => rule.comment),
             ["spam", "remove", "filter", "report", "other-a", "other-b"],
         );
     });
 
     it("keeps original order when priority and action precedence are equal", () => {
         const rules: AutomodRule[] = [
-            { id: ["first"], priority: 0, action: "approve" },
-            { id: ["second"], priority: 0 },
-            { id: ["third"], priority: 0 },
+            { comment: "first", priority: 0, action: "approve" },
+            { comment: "second", priority: 0 },
+            { comment: "third", priority: 0 },
         ];
 
         const sorted = sortRulesForExecution(rules);
 
         assert.deepEqual(
-            sorted.map(rule => rule.id?.[0]),
+            sorted.map(rule => rule.comment),
             ["first", "second", "third"],
         );
     });
 
     it("applies action precedence only within the same priority bucket", () => {
         const rules: AutomodRule[] = [
-            { id: ["priority-3-other"], priority: 3, action: "approve" },
-            { id: ["priority-2-remove"], priority: 2, action: "remove" },
-            { id: ["priority-3-filter"], priority: 3, action: "filter" },
+            { comment: "priority-3-other", priority: 3, action: "approve" },
+            { comment: "priority-2-remove", priority: 2, action: "remove" },
+            { comment: "priority-3-filter", priority: 3, action: "filter" },
         ];
 
         const sorted = sortRulesForExecution(rules);
 
         assert.deepEqual(
-            sorted.map(rule => rule.id?.[0]),
+            sorted.map(rule => rule.comment),
             ["priority-3-filter", "priority-3-other", "priority-2-remove"],
         );
     });

@@ -1,5 +1,5 @@
 import escapeStringRegexp from "escape-string-regexp";
-import { SearchableText, SearchOption } from "../types";
+import { Matches, SearchableText, SearchOption } from "../types";
 
 export function searchTextMatches (input: string, textToMatch: string, options?: SearchOption): string[] | undefined {
     if (!options) {
@@ -115,4 +115,45 @@ export function searchConditionMatchesInput (input: string, condition: Searchabl
     }
 
     return;
+}
+
+export function anySearchConditionMatchesInput (input: string, conditions: SearchableText[]): boolean {
+    for (const condition of conditions) {
+        const result = searchConditionMatchesInput(input, condition);
+        if (result) {
+            return true;
+        }
+    }
+    return false;
+}
+
+export function searchConditionsMatchInput (input: Record<string, string | string[]>, conditions: SearchableText[]): Matches[] | undefined {
+    const matchesFound: Matches[] = [];
+
+    for (const condition of conditions) {
+        let anyMatch = false;
+        for (const fieldName of condition.searchField) {
+            const fieldValues = input[fieldName];
+            if (Array.isArray(fieldValues)) {
+                for (const fieldValue of fieldValues) {
+                    const result = searchConditionMatchesInput(fieldValue, condition);
+                    if (result) {
+                        matchesFound.push({ category: fieldName, matches: result });
+                        anyMatch = true;
+                    }
+                }
+            } else if (typeof fieldValues === "string") {
+                const result = searchConditionMatchesInput(fieldValues, condition);
+                if (result) {
+                    matchesFound.push({ category: fieldName, matches: result });
+                    anyMatch = true;
+                }
+            }
+        }
+        if (!anyMatch) {
+            return;
+        }
+    }
+
+    return matchesFound;
 }

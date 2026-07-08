@@ -1,7 +1,8 @@
 /* eslint-disable camelcase */
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { searchTextMatches } from "./searchConditionMatcher.js";
+import { SearchableText } from "../types.js";
+import { searchConditionsMatchInput, searchTextMatches } from "./searchConditionMatcher.js";
 
 describe("searchTextMatches", () => {
     describe("default behavior (no options)", () => {
@@ -251,5 +252,56 @@ describe("searchTextMatches", () => {
             }),
             /Unknown search method/,
         );
+    });
+});
+
+describe("searchConditionsMatchInput", () => {
+    it("requires all conditions to match when there is more than one condition entry", () => {
+        const conditions: SearchableText[] = [
+            {
+                searchField: ["title"],
+                text: ["hello"],
+                options: { search_method: "includes" },
+            },
+            {
+                searchField: ["body"],
+                text: ["world"],
+                options: { search_method: "includes" },
+            },
+        ];
+
+        const matchingInput = {
+            title: "Hello there",
+            body: "Planet world news",
+        };
+        assert.deepEqual(searchConditionsMatchInput(matchingInput, conditions), [
+            { category: "title", matches: ["hello"] },
+            { category: "body", matches: ["world"] },
+        ]);
+
+        const missingOneConditionInput = {
+            title: "Hello there",
+            body: "No related content",
+        };
+        assert.equal(searchConditionsMatchInput(missingOneConditionInput, conditions), undefined);
+    });
+
+    it("allows any field in a condition to satisfy that condition", () => {
+        const conditions: SearchableText[] = [
+            {
+                searchField: ["title", "body"],
+                text: ["urgent"],
+                options: { search_method: "includes" },
+            },
+        ];
+
+        const inputMatchedBySecondField = {
+            title: "Routine update",
+            body: "This is urgent and needs attention",
+        };
+
+        assert.deepEqual(searchConditionsMatchInput(inputMatchedBySecondField, conditions), [
+            { category: "body", matches: ["urgent"] },
+        ]);
     });
 });

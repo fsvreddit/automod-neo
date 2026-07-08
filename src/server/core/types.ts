@@ -6,7 +6,14 @@ export interface SearchOption {
     negate?: boolean;
 }
 
+type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "crosspost_author" | "crosspost_subreddit" | "media_author" | "media_author_url" | "media_title" | "media_description";
+type CommentSearchField = "id" | "body";
+type AuthorSearchField = "id" | "name" | "display_name" | "bio_text" | "social_links";
+
+type SearchField = PostSearchField | CommentSearchField | AuthorSearchField;
+
 export interface SearchableText {
+    searchField: SearchField[];
     text: string[];
     options?: SearchOption;
 }
@@ -19,9 +26,7 @@ export interface SetFlairActionDictionary {
 
 export interface Author {
     id?: string[];
-    name?: SearchableText[];
-    flair_text?: SearchableText[];
-    flair_css_class?: SearchableText[];
+    search_conditions?: SearchableText[];
     comment_karma?: string;
     post_karma?: string;
     combined_karma?: string;
@@ -35,9 +40,6 @@ export interface Author {
     is_submitter?: boolean;
     is_contributor?: boolean;
     is_moderator?: boolean;
-    display_name?: SearchableText[];
-    bio_text?: SearchableText[];
-    social_links?: SearchableText[];
 
     set_flair?: string | string[] | SetFlairActionDictionary;
     overwrite_flair?: boolean;
@@ -48,89 +50,19 @@ export interface Subreddit {
     is_nsfw?: boolean;
 }
 
-interface SubmissionAction {
+export interface CommentAction {
     action?: "approve" | "remove" | "report" | "spam" | "filter";
     action_reason?: string;
-    set_flair?: string | string[] | SetFlairActionDictionary;
-    overwrite_flair?: boolean;
-    set_sticky?: boolean | 1 | 2 | 3 | 4;
-    set_nsfw?: boolean;
-    set_spoiler?: boolean;
-    set_contest_mode?: boolean;
-    set_original_content?: boolean;
-    set_suggested_sort?: "best" | "new" | "qa" | "top" | "controversial" | "hot" | "old" | "random" | "blank";
-    set_locked?: boolean;
-    set_post_crowd_control_level?: "OFF" | "LENIENT" | "MEDIUM" | "STRICT";
-}
-
-interface CommentAction {
-    action?: "approve" | "remove" | "report" | "spam" | "filter";
     report_reason?: string;
 }
 
 export type StandardCondition = "image hosting sites" | "direct image links" | "video hosting sites" | "streaming sites" | "crowdfunding sites" | "meme generator sites" | "facebook links" | "amazon affiliate links";
 
-export interface PostCondition {
+export interface PostOrCommentCondition {
     // Search checks
-    id?: string[];
     standard?: StandardCondition;
-    title?: SearchableText[];
-    body?: SearchableText[];
-    title_or_body?: SearchableText[];
+    search_conditions?: SearchableText[];
     ignore_blockquotes?: boolean;
-    domain?: SearchableText[];
-    url?: SearchableText[];
-    flair_text?: SearchableText[];
-    flair_css_class?: SearchableText[];
-    flair_template_id?: SearchableText[];
-
-    reports?: number;
-    body_longer_than?: number;
-    body_shorter_than?: number;
-    is_edited?: boolean;
-    is_poll?: boolean; // Posts only
-    is_gallery?: boolean; // Posts only
-    past_archive_date?: boolean;
-
-    author?: Author;
-    subreddit?: Subreddit;
-
-    crosspost_id?: string[];
-    crosspost_title?: SearchableText[];
-    crosspost_author?: Author;
-    crosspost_subreddit?: Subreddit;
-
-    media_author?: SearchableText[];
-    media_author_url?: SearchableText[];
-    media_title?: SearchableText[];
-    media_description?: SearchableText[];
-}
-
-export type AutomodRule = PostCondition & SubmissionAction & CommentAction & {
-    // Top-level checks/actions
-    type?: "comment" | "submission" | "text submission" | "link submission" | "crosspost submission" | "poll submission" | "gallery submission" | "any";
-    priority?: number;
-    moderators_exempt?: boolean;
-    comment?: string;
-    comment_locked?: boolean;
-    comment_stickied?: boolean;
-    modmail?: string;
-    modmail_subject?: string;
-    message?: string;
-    message_subject?: string;
-    standard?: StandardCondition;
-
-    // Search checks
-    id?: string[];
-    title?: SearchableText[];
-    body?: SearchableText[];
-    title_or_body?: SearchableText[];
-    ignore_blockquotes?: boolean;
-    domain?: SearchableText[];
-    url?: SearchableText[];
-    flair_text?: SearchableText[];
-    flair_css_class?: SearchableText[];
-    flair_template_id?: SearchableText[];
 
     // Non-searching checks
     reports?: number;
@@ -145,12 +77,52 @@ export type AutomodRule = PostCondition & SubmissionAction & CommentAction & {
 
     // Author checks
     author?: Author;
-    crosspost_author?: Author;
 
     // Subreddit checks
     subreddit?: Subreddit;
 
-    parent_submission?: PostCondition; // Comments only
+    // Post-specific cross-post checks
+    crosspost_id?: string[];
+    crosspost_title?: SearchableText[];
+    crosspost_author?: Author;
+    crosspost_subreddit?: Subreddit;
+
+    // Post-specific media checks
+    media_author?: SearchableText[];
+    media_author_url?: SearchableText[];
+    media_title?: SearchableText[];
+    media_description?: SearchableText[];
+
+    parent_submission?: PostOrCommentCondition; // Comments only
+
+    // Actions
+    action?: "approve" | "remove" | "report" | "spam" | "filter";
+    action_reason?: string;
+    report_reason?: string;
+    set_flair?: string | string[] | SetFlairActionDictionary;
+    overwrite_flair?: boolean;
+    set_sticky?: boolean | 1 | 2 | 3 | 4;
+    set_nsfw?: boolean;
+    set_spoiler?: boolean;
+    set_contest_mode?: boolean;
+    set_original_content?: boolean;
+    set_suggested_sort?: "best" | "new" | "qa" | "top" | "controversial" | "hot" | "old" | "random" | "blank";
+    set_locked?: boolean;
+    set_post_crowd_control_level?: "OFF" | "LENIENT" | "MEDIUM" | "STRICT";
+}
+
+export type AutomodRule = PostOrCommentCondition & CommentAction & {
+    // Top-level checks/actions
+    type?: "comment" | "submission" | "text submission" | "link submission" | "crosspost submission" | "poll submission" | "gallery submission" | "any";
+    priority?: number;
+    moderators_exempt?: boolean;
+    comment?: string;
+    comment_locked?: boolean;
+    comment_stickied?: boolean;
+    modmail?: string;
+    modmail_subject?: string;
+    message?: string;
+    message_subject?: string;
 };
 
 export interface Matches {
