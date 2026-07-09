@@ -297,9 +297,7 @@ export class AutomodRuleChecker {
         return searchConditionsMatchInput(searchFields, authorCondition.search_conditions ?? []);
     }
 
-    public async checkPostAgainstCondition (postId: T3, rule: PostOrCommentCondition): Promise<Matches[] | undefined> {
-        const post = await this.getPostById(postId);
-
+    public async checkPostAgainstCondition (post: Post, rule: PostOrCommentCondition): Promise<Matches[] | undefined> {
         if (rule.standard !== undefined) {
             if (!postMatchesStandardCondition(post, rule.standard)) {
                 return;
@@ -534,7 +532,8 @@ export class AutomodRuleChecker {
 
             // Parent submissions
             if (rule.parent_submission !== undefined) {
-                if (!await this.checkPostAgainstCondition(comment.postId, rule.parent_submission)) {
+                const parentSubmission = await this.getPostById(comment.postId);
+                if (!await this.checkPostAgainstCondition(parentSubmission, rule.parent_submission)) {
                     continue;
                 }
             }
@@ -553,6 +552,13 @@ export class AutomodRuleChecker {
                 }
             }
 
+            if (!rule.moderators_exempt) {
+                const user = await this.getUserByUsername(comment.authorName);
+                if (user && await this.getIsUserModerator(user)) {
+                    continue;
+                }
+            }
+
             return { rule, matches };
         }
     }
@@ -562,14 +568,23 @@ export class AutomodRuleChecker {
             return;
         }
 
+        const post = await this.getPostById(postId);
+
         for (const rule of this.rules) {
             if (rule.type === "comment") {
                 continue;
             }
 
-            const matches = await this.checkPostAgainstCondition(postId, rule);
+            const matches = await this.checkPostAgainstCondition(post, rule);
             if (!matches) {
                 continue;
+            }
+
+            if (!rule.moderators_exempt) {
+                const user = await this.getUserByUsername(post.authorName);
+                if (user && await this.getIsUserModerator(user)) {
+                    continue;
+                }
             }
 
             return { rule, matches };
