@@ -2,7 +2,7 @@ import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings } fr
 import { isT1, T1, T3 } from "@devvit/web/shared";
 import { AutomodMatch, CommentAction, Matches, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
-import { getBotCommentFooter, getDomainFromUrl } from "../helpers";
+import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../helpers";
 import { AppSetting } from "../appSettings";
 
 interface PlaceholderTarget {

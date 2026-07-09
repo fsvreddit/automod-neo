@@ -17,7 +17,7 @@ export const validateAutomodSetting = async (c: Context) => {
         return c.json<SettingsValidationResponse>({
             success: false,
             error: (e as Error).message,
-        }, 400);
+        });
     }
 
     return c.json<SettingsValidationResponse>({ success: true }, 200);

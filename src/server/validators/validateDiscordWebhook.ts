@@ -15,7 +15,7 @@ export const validateDiscordWebhook = async (c: Context) => {
         return c.json<SettingsValidationResponse>({
             success: false,
             error: "Invalid Discord webhook URL format.",
-        }, 400);
+        });
     }
 
     return c.json<SettingsValidationResponse>({ success: true }, 200);
