@@ -32,7 +32,8 @@
         "subreddit": {
             "rules": {
                 "type": "paragraph",
-                "label": "Automod Rules",
+                "label": "Automod Neo Rules",
+                "helpText": "Paste or enter YAML rules here. Most existing AutoModerator rules will work without modification.",
                 "validationEndpoint": "/internal/validators/validate-automod-setting"
             },
             "discordWebhookUrl": {
