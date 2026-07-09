@@ -22,9 +22,9 @@
         "entry": "index.cjs"
     },
     "triggers": {
-        "onCommentCreate": "/internal/triggers/on-comment-create",
+        "onCommentSubmit": "/internal/triggers/on-comment-submit",
         "onCommentUpdate": "/internal/triggers/on-comment-update",
-        "onPostCreate": "/internal/triggers/on-post-create",
+        "onPostSubmit": "/internal/triggers/on-post-submit",
         "onPostUpdate": "/internal/triggers/on-post-update",
         "onModAction": "/internal/triggers/on-mod-action"
     },
