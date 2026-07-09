@@ -30,6 +30,17 @@ You can use the `discord_alert` action type to send a message to a Discord webho
 
 Rules can have an `friendly_name` attribute, useful for debugging. This can save using comments to accomplish the same thing. {{friendly-name}} is also a supported placeholder on all output (comments, modmail, Discord alerts).
 
+## Documentation Clarification
+
+AutoModerator supports an undocumented feature to do multiple matches across the same field or fields using the # syntax. Automod Neo explicitly supports this as a documented feature, and it works at all levels (base criteria, author checks, parent submissions). Example:
+
+```yaml
+body#1 (includes-word): "anonymized"
+body#1 (includes-word): "Redact"
+```
+
+This would match content that hasa both the term "anonymized" and "Redact" in the name, unlike `body (includes-word): ["anonymized", "Redact"]` that would match any content that includes either of those terms.
+
 ## Unsupported features
 
 The following are not supported due to Devvit limitations.
