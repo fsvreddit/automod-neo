@@ -1,4 +1,5 @@
 import { context, reddit, redis, User } from "@devvit/web/server";
+import { UserV2 } from "@devvit/web/shared";
 import { addWeeks } from "date-fns";
 
 export function getBotCommentFooter (): string {
@@ -109,4 +110,18 @@ export async function sendMessageToWebhook (webhookUrl: string, message: string)
     } catch (error) {
         console.error("Error sending message to webhook:", error);
     }
+}
+
+export function isUserIgnoredForTriggers (user?: UserV2): boolean {
+    if (!user) {
+        return false;
+    }
+
+    const ignoredUsernames = new Set([
+        context.appSlug,
+        "AutoModerator",
+        `${context.subredditName}-ModTeam`,
+    ]);
+
+    return ignoredUsernames.has(user.name);
 }
