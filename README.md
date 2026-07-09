@@ -1,6 +1,6 @@
 This app replicates nearly all features of AutoModerator and adds some new features. Most existing AutoModerator rules are **fully compatible** with Automod Neo and can be copied from your existing AutoModerator config into this app's config.
 
-For documentation, please see the official AutoModerator documentation but note the differences below. Rules are configured in the app's con
+For documentation, please see the official AutoModerator documentation but note the differences below. Rules are configured in the app's settings for your subreddit.
 
 ## Behaviour differences
 
@@ -21,6 +21,10 @@ These can be searched just like the title or body e.g. `bio_text (includes): 'sn
 ### Parent submission and parent author actions
 
 All actions (such as remove, set flair and so on) are now supported at the parent submission and parent submission author levels
+
+### Crowd control checks on comments
+
+Automod Neo supports a `comment_crowd_control_collapsed` attribute when checking comments, taking either `true` or `false` as a parameter. This used to be a supported but undocumented feature in AutoModerator but was removed some time ago.
 
 ### Discord alerts
 
