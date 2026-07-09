@@ -15,7 +15,7 @@ body (regex): "foo\\d+bar"
 
         assert.deepEqual(parsed, [
             {
-                title: [
+                search_conditions: [
                     {
                         searchField: ["title"],
                         text: [
@@ -27,8 +27,6 @@ body (regex): "foo\\d+bar"
                             negate: false,
                         },
                     },
-                ],
-                body: [
                     {
                         searchField: ["body"],
                         text: [
@@ -55,7 +53,7 @@ body (regex): "foo\\d+bar"
 
         assert.deepEqual(parsed, [
             {
-                title: [
+                search_conditions: [
                     {
                         searchField: ["title"],
                         text: [
@@ -97,8 +95,25 @@ parent_submission:
 
         assert.deepEqual(parsed, [
             {
-                id: ["abcde", "fghij"],
                 search_conditions: [
+                    {
+                        searchField: ["id"],
+                        text: ["abcde"],
+                        options: {
+                            search_method: "full-exact",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                    {
+                        searchField: ["id"],
+                        text: ["fghij"],
+                        options: {
+                            search_method: "full-exact",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
                     {
                         searchField: ["title", "body", "url"],
                         text: ["abcde"],
@@ -108,8 +123,6 @@ parent_submission:
                             negate: false,
                         },
                     },
-                ],
-                body: [
                     {
                         searchField: ["body"],
                         text: ["dog"],
@@ -134,7 +147,7 @@ parent_submission:
                     },
                 ],
                 author: {
-                    name: [
+                    search_conditions: [
                         {
                             searchField: ["name"],
                             text: ["^foo.*"],
@@ -144,8 +157,6 @@ parent_submission:
                                 negate: false,
                             },
                         },
-                    ],
-                    display_name: [
                         {
                             searchField: ["display_name"],
                             text: ["DisplayName"],
@@ -155,8 +166,6 @@ parent_submission:
                                 negate: false,
                             },
                         },
-                    ],
-                    bio_text: [
                         {
                             searchField: ["bio_text"],
                             text: ["^bio_.*$"],
@@ -166,8 +175,6 @@ parent_submission:
                                 negate: false,
                             },
                         },
-                    ],
-                    social_links: [
                         {
                             searchField: ["social_links"],
                             text: ["example.com/a"],
@@ -189,8 +196,6 @@ parent_submission:
                                 negate: false,
                             },
                         },
-                    ],
-                    crosspost_title: [
                         {
                             searchField: ["crosspost_title"],
                             text: ["one"],
@@ -218,7 +223,7 @@ author:
 
         assert.deepEqual(parsed, [
             {
-                body: [
+                search_conditions: [
                     {
                         searchField: ["body"],
                         text: ["alpha"],
@@ -229,7 +234,7 @@ author:
                     },
                 ],
                 author: {
-                    social_links: [
+                    search_conditions: [
                         {
                             searchField: ["social_links"],
                             text: ["x.com/example"],
@@ -256,8 +261,16 @@ body: ['first', 'second']
 
         assert.deepEqual(parsed, [
             {
-                id: ["abcde", "defgh"],
-                body: [
+                search_conditions: [
+                    {
+                        searchField: ["id"],
+                        text: ["abcde", "defgh"],
+                        options: {
+                            search_method: "full-exact",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
                     {
                         searchField: ["body"],
                         text: ["first", "second"],
@@ -280,7 +293,7 @@ media_description#summary: 'long description'
 
         assert.deepEqual(parsed, [
             {
-                media_author: [
+                search_conditions: [
                     {
                         searchField: ["media_author"],
                         text: ["^author_[0-9]+$"],
@@ -290,8 +303,6 @@ media_description#summary: 'long description'
                             negate: false,
                         },
                     },
-                ],
-                media_author_url: [
                     {
                         searchField: ["media_author_url"],
                         text: ["example.com/channel"],
@@ -301,14 +312,10 @@ media_description#summary: 'long description'
                             negate: false,
                         },
                     },
-                ],
-                media_title: [
                     {
                         searchField: ["media_title"],
                         text: ["first title", "second title"],
                     },
-                ],
-                media_description: [
                     {
                         searchField: ["media_description"],
                         text: ["long description"],
@@ -326,7 +333,7 @@ body (regex): '['
 
         assert.throws(
             () => parseRules(rules),
-            /Invalid regex pattern at rule\[0\]\.body\[0\]\.text\[0\]/,
+            /Invalid regex pattern at rule\[0\]\.search_conditions\[0\]\.text\[0\]/,
         );
     });
 
@@ -345,7 +352,7 @@ parent_submission:
             {
                 parent_submission: {
                     author: {
-                        name: [
+                        search_conditions: [
                             {
                                 searchField: ["name"],
                                 text: ["^user_[0-9]+$"],
@@ -355,8 +362,6 @@ parent_submission:
                                     negate: false,
                                 },
                             },
-                        ],
-                        bio_text: [
                             {
                                 searchField: ["bio_text"],
                                 text: ["^bio_[a-z]+$"],
@@ -382,7 +387,7 @@ author:
 
         assert.throws(
             () => parseRules(rules),
-            /Invalid regex pattern at rule\[0\]\.author\.bio_text\[0\]\.text\[0\]/,
+            /Invalid regex pattern at rule\[0\]\.author\.search_conditions\[0\]\.text\[0\]/,
         );
     });
 
@@ -429,5 +434,58 @@ author:
             () => parseRules(rules),
             /set_flair.*must NOT have more than 2 items|must NOT have more than 2 items.*set_flair/,
         );
+    });
+
+    it("normalizes id as searchable field for author and parent_submission", () => {
+        const rules = `
+---
+author:
+  id: user_123
+parent_submission:
+  id#1: abcde
+  id#2: fghij
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                author: {
+                    search_conditions: [
+                        {
+                            searchField: ["id"],
+                            text: ["user_123"],
+                            options: {
+                                search_method: "full-exact",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+                parent_submission: {
+                    search_conditions: [
+                        {
+                            searchField: ["id"],
+                            text: ["abcde"],
+                            options: {
+                                search_method: "full-exact",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                        {
+                            searchField: ["id"],
+                            text: ["fghij"],
+                            options: {
+                                search_method: "full-exact",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
     });
 });

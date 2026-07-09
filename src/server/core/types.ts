@@ -6,11 +6,12 @@ export interface SearchOption {
     negate?: boolean;
 }
 
-type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "crosspost_author" | "crosspost_subreddit" | "media_author" | "media_author_url" | "media_title" | "media_description";
+type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "media_author" | "media_author_url" | "media_title" | "media_description";
 type CommentSearchField = "id" | "body";
-type AuthorSearchField = "id" | "name" | "display_name" | "bio_text" | "social_links";
+type AuthorSearchField = "id" | "name" | "flair_text" | "flair_css_class" | "display_name" | "bio_text" | "social_links";
+type SubredditSearchField = "name";
 
-type SearchField = PostSearchField | CommentSearchField | AuthorSearchField;
+type SearchField = PostSearchField | CommentSearchField | AuthorSearchField | SubredditSearchField;
 
 export interface SearchableText {
     searchField: SearchField[];
@@ -25,7 +26,6 @@ export interface SetFlairActionDictionary {
 }
 
 export interface Author {
-    id?: string[];
     search_conditions?: SearchableText[];
     comment_karma?: string;
     post_karma?: string;
@@ -46,7 +46,7 @@ export interface Author {
 }
 
 export interface Subreddit {
-    name?: SearchableText[];
+    search_conditions?: SearchableText[];
     is_nsfw?: boolean;
 }
 
@@ -83,16 +83,10 @@ export interface PostOrCommentCondition {
 
     // Post-specific cross-post checks
     crosspost_id?: string[];
-    crosspost_title?: SearchableText[];
     crosspost_author?: Author;
     crosspost_subreddit?: Subreddit;
 
     // Post-specific media checks
-    media_author?: SearchableText[];
-    media_author_url?: SearchableText[];
-    media_title?: SearchableText[];
-    media_description?: SearchableText[];
-
     parent_submission?: PostOrCommentCondition; // Comments only
 
     // Actions

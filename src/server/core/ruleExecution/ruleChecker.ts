@@ -325,8 +325,8 @@ export class AutomodRuleChecker {
             }
         }
 
-        if (rule.subreddit?.name) {
-            const subredditMatches = anySearchConditionMatchesInput(post.subredditName, rule.subreddit.name);
+        if (rule.subreddit?.search_conditions && rule.subreddit.search_conditions.length > 0) {
+            const subredditMatches = anySearchConditionMatchesInput(post.subredditName, rule.subreddit.search_conditions);
             if (!subredditMatches) {
                 return;
             }
@@ -359,6 +359,7 @@ export class AutomodRuleChecker {
             title: post.title,
             url: post.url,
         };
+        const distinctSearchFields = this.getDistinctSearchFields(rule.search_conditions ?? []);
 
         if (postBody) {
             searchFields.body = postBody;
@@ -381,24 +382,24 @@ export class AutomodRuleChecker {
             searchFields.flair_template_id = post.flair.templateId;
         }
 
-        if (post.crosspostParentId && rule.crosspost_title) {
+        if (post.crosspostParentId && distinctSearchFields.has("crosspost_title")) {
             const crossPost = await this.getPostById(post.crosspostParentId);
             searchFields.crosspost_title = crossPost.title;
         }
 
-        if (rule.media_author && post.secureMedia?.oembed?.authorName) {
+        if (distinctSearchFields.has("media_author") && post.secureMedia?.oembed?.authorName) {
             searchFields.media_author = post.secureMedia.oembed.authorName;
         }
 
-        if (rule.media_author_url && post.secureMedia?.oembed?.authorUrl) {
+        if (distinctSearchFields.has("media_author_url") && post.secureMedia?.oembed?.authorUrl) {
             searchFields.media_author_url = post.secureMedia.oembed.authorUrl;
         }
 
-        if (rule.media_title && post.secureMedia?.oembed?.title) {
+        if (distinctSearchFields.has("media_title") && post.secureMedia?.oembed?.title) {
             searchFields.media_title = post.secureMedia.oembed.title;
         }
 
-        if (rule.media_title && post.secureMedia?.oembed?.html) {
+        if (distinctSearchFields.has("media_description") && post.secureMedia?.oembed?.html) {
             searchFields.media_description = post.secureMedia.oembed.html;
         }
 
@@ -427,14 +428,14 @@ export class AutomodRuleChecker {
             }
         }
 
-        if (rule.crosspost_subreddit?.name || rule.crosspost_subreddit?.is_nsfw !== undefined) {
+        if ((rule.crosspost_subreddit?.search_conditions && rule.crosspost_subreddit.search_conditions.length > 0) || rule.crosspost_subreddit?.is_nsfw !== undefined) {
             if (!post.crosspostParentId) {
                 return;
             }
             const crossPost = await this.getPostById(post.crosspostParentId);
 
-            if (rule.crosspost_subreddit.name !== undefined) {
-                const crosspostSubredditMatches = anySearchConditionMatchesInput(crossPost.subredditName, rule.crosspost_subreddit.name);
+            if (rule.crosspost_subreddit.search_conditions !== undefined) {
+                const crosspostSubredditMatches = anySearchConditionMatchesInput(crossPost.subredditName, rule.crosspost_subreddit.search_conditions);
                 if (!crosspostSubredditMatches) {
                     return;
                 }

@@ -8,6 +8,7 @@ import { automodSchema } from "./automodSchema";
 const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "full-exact", "regex"];
 
 const topLevelSearchableFields = new Set([
+    "id",
     "title",
     "body",
     "title_or_body",
@@ -22,7 +23,7 @@ const topLevelSearchableFields = new Set([
     "media_title",
     "media_description",
 ]);
-const authorSearchableFields = new Set(["name", "flair_text", "flair_css_class", "display_name", "bio_text", "social_links"]);
+const authorSearchableFields = new Set(["id", "name", "flair_text", "flair_css_class", "display_name", "bio_text", "social_links"]);
 const subredditSearchableFields = new Set(["name"]);
 
 type MutableNode = Record<string, unknown>;
@@ -63,6 +64,8 @@ function toSearchableText (value: unknown, searchField: SearchableText["searchFi
 
 function defaultSearchMethodForField (fieldName: string): SearchMethod {
     switch (fieldName) {
+        case "id":
+            return "full-exact";
         case "domain":
             return "ends-with";
         case "flair_text":
@@ -88,7 +91,7 @@ function buildSearchOptions (fieldName: string, qualifierText: string | undefine
         ? searchMethodCandidate as SearchMethod
         : defaultSearchMethodForField(fieldName);
 
-    if (!qualifierText && !negate) {
+    if (!qualifierText && !negate && fieldName !== "id") {
         return undefined;
     }
 
@@ -138,7 +141,7 @@ function appendSearchableValue (node: MutableNode, fieldName: string, searchable
     existing.push(searchableValue);
 }
 
-function preprocessSearchableFields (node: MutableNode, searchableFields: Set<string>, searchConditionsFieldName?: string): void {
+function preprocessSearchableFields (node: MutableNode, searchableFields: Set<string>, searchConditionsFieldName: string): void {
     for (const rawKey of Object.keys(node)) {
         const parsedKey = parseSearchableKey(rawKey);
         if (!parsedKey) {
@@ -158,16 +161,11 @@ function preprocessSearchableFields (node: MutableNode, searchableFields: Set<st
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete node[rawKey];
 
-        if (parsedKey.fieldNames.length > 1 && searchConditionsFieldName) {
-            appendSearchableValue(node, searchConditionsFieldName, searchableValue);
-            continue;
-        }
-
-        appendSearchableValue(node, parsedKey.primaryField, searchableValue);
+        appendSearchableValue(node, searchConditionsFieldName, searchableValue);
     }
 }
 
-function preprocessIdField (node: MutableNode, fieldName: "id" | "crosspost_id"): void {
+function preprocessStringArrayField (node: MutableNode, fieldName: "crosspost_id"): void {
     for (const rawKey of Object.keys(node)) {
         const keyMatch = /^(~?[a-z_+]+)(?:#\w+)?(?: \(([\w\s,-]+)\))?$/.exec(rawKey);
         if (!keyMatch) {
@@ -203,17 +201,15 @@ function preprocessIdField (node: MutableNode, fieldName: "id" | "crosspost_id")
 }
 
 function preprocessAuthorNode (node: MutableNode): void {
-    preprocessIdField(node, "id");
     preprocessSearchableFields(node, authorSearchableFields, "search_conditions");
 }
 
 function preprocessSubredditNode (node: MutableNode): void {
-    preprocessSearchableFields(node, subredditSearchableFields);
+    preprocessSearchableFields(node, subredditSearchableFields, "search_conditions");
 }
 
 function preprocessPostConditionLikeNode (node: MutableNode): void {
-    preprocessIdField(node, "id");
-    preprocessIdField(node, "crosspost_id");
+    preprocessStringArrayField(node, "crosspost_id");
     preprocessSearchableFields(node, topLevelSearchableFields, "search_conditions");
 
     if (isObjectRecord(node.author)) {
@@ -275,21 +271,15 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
 }
 
 function validateRegexPatternsInAuthorNode (node: MutableNode, nodePath: string): void {
-    for (const fieldName of authorSearchableFields) {
-        validateRegexPatternsInSearchableField(node, fieldName, nodePath);
-    }
+    validateRegexPatternsInSearchableField(node, "search_conditions", nodePath);
 }
 
 function validateRegexPatternsInSubredditNode (node: MutableNode, nodePath: string): void {
-    for (const fieldName of subredditSearchableFields) {
-        validateRegexPatternsInSearchableField(node, fieldName, nodePath);
-    }
+    validateRegexPatternsInSearchableField(node, "search_conditions", nodePath);
 }
 
 function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, nodePath: string): void {
-    for (const fieldName of topLevelSearchableFields) {
-        validateRegexPatternsInSearchableField(node, fieldName, nodePath);
-    }
+    validateRegexPatternsInSearchableField(node, "search_conditions", nodePath);
 
     if (isObjectRecord(node.author)) {
         validateRegexPatternsInAuthorNode(node.author, `${nodePath}.author`);
