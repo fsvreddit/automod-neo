@@ -7,7 +7,8 @@
     "permissions": {
         "http": {
             "domains": [
-                "youtube.googleapis.com"
+                "discord.com",
+                "discordapp.com"
             ]
         },
         "reddit": true
@@ -33,6 +34,12 @@
                 "type": "paragraph",
                 "label": "Automod Rules",
                 "validationEndpoint": "/internal/validators/validate-automod-setting"
+            },
+            "discordWebhookUrl": {
+                "type": "string",
+                "label": "Discord Webhook URL",
+                "helpText": "Optional. Used when rules have a 'discord_alert' action",
+                "validationEndpoint": "/internal/validators/validate-discord-webhook"
             }
         }
     }

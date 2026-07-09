@@ -117,6 +117,7 @@ export type AutomodRule = PostOrCommentCondition & CommentAction & {
     modmail_subject?: string;
     message?: string;
     message_subject?: string;
+    discord_alert?: string;
 };
 
 export interface Matches {

@@ -1,8 +1,9 @@
-import { Comment, context, Post, PostSuggestedCommentSort, reddit } from "@devvit/web/server";
+import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings } from "@devvit/web/server";
 import { isT1, T1, T3 } from "@devvit/web/shared";
 import { AutomodMatch, CommentAction, Matches, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl } from "../helpers";
+import { AppSetting } from "../appSettings";
 
 interface PlaceholderTarget {
     authorName: string;
@@ -173,6 +174,14 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
                 subject: modmailSubject,
                 bodyMarkdown: modmailBody + "\n\n" + getBotCommentFooter(),
             });
+        }
+    }
+
+    if (doMessages && matchedRule.rule.discord_alert) {
+        const discordAlertBody = valueWithPlaceholdersReplaced(matchedRule.rule.discord_alert, target, matchedRule.matches);
+        const webhookUrl = await settings.get<string>(AppSetting.DiscordWebhookUrl);
+        if (discordAlertBody && webhookUrl) {
+            await sendMessageToWebhook(webhookUrl, discordAlertBody);
         }
     }
 

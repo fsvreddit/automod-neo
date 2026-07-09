@@ -538,4 +538,31 @@ parent_submission:
             },
         ]);
     });
+
+    it("preserves discord_alert when provided", () => {
+        const rules = `
+---
+discord_alert: "Ping moderators in Discord"
+body: "urgent"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                discord_alert: "Ping moderators in Discord",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["urgent"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
 });

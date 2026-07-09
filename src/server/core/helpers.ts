@@ -89,3 +89,44 @@ export async function isSubredditNSFW (subredditName: string): Promise<boolean> 
 export function getTextWithoutBlockquotes (input: string): string {
     return input.split("\n").filter(line => !line.trim().startsWith(">")).join("\n").trim();
 }
+
+export async function sendMessageToWebhook (webhookUrl: string, message: string): Promise<string | undefined> {
+    const params = {
+        content: message,
+    };
+
+    const pathParams = new URLSearchParams();
+    pathParams.append("wait", "true");
+
+    try {
+        const result = await fetch(
+            `${webhookUrl}?${pathParams}`,
+            {
+                method: "post",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(params),
+            },
+        );
+        if (!result.ok) {
+            const responseBody = await result.text();
+            console.error(`Webhook send failed with status ${result.status}:`, responseBody);
+            return;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const json = await result.json();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        const messageId = json.id;
+        if (typeof messageId !== "string" || messageId.length === 0) {
+            console.error("Webhook send succeeded but response did not include a valid message id.");
+            return;
+        }
+
+        console.log("Webhook message sent, status:", result.status);
+        return messageId;
+    } catch (error) {
+        console.error("Error sending message to webhook:", error);
+    }
+}

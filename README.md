@@ -13,13 +13,17 @@ Discord alerts using configurable webhooks
 
 ## New features
 
-### Author checks (base item only)
+### Author checks
 
 These can be searched just like the title or body e.g. `bio_text (includes): 'snapchat'`.
 
 * bio_text
 * display_name
 * social_links
+
+### Discord alerts
+
+You can use the `discord_alert` action type to send a message to a Discord webhook configured in app settings.
 
 ## Unsupported features
 
