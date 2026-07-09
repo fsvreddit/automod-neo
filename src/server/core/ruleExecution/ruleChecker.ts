@@ -37,7 +37,14 @@ export class AutomodRuleChecker {
 
     private async getUserByUsername (username: string): Promise<User | undefined> {
         if (!this.users[username]) {
-            const user = await reddit.getUserByUsername(username);
+            let user: User | undefined;
+            try {
+                user = await reddit.getUserByUsername(username);
+            } catch (e) {
+                const message = e instanceof Error ? e.message : String(e);
+                console.error(`Error fetching user by username ${username}: ${message}`);
+            }
+
             if (user) {
                 this.users[username] = user;
             }
@@ -463,14 +470,14 @@ export class AutomodRuleChecker {
             return;
         }
 
-        const comment = await this.getCommentById(commentId);
-
         for (const rule of this.rules) {
             const matches: Matches[] = [];
 
             if (rule.type !== "any" && rule.type !== "comment") {
                 continue;
             }
+
+            const comment = await this.getCommentById(commentId);
 
             const commentBody = rule.ignore_blockquotes ? this.getTextWithoutBlockquotes(comment.body) : comment.body;
 
@@ -571,12 +578,12 @@ export class AutomodRuleChecker {
             return;
         }
 
-        const post = await this.getPostById(postId);
-
         for (const rule of this.rules) {
             if (rule.type === "comment") {
                 continue;
             }
+
+            const post = await this.getPostById(postId);
 
             const isSelfPost = post.url.includes(post.permalink);
 
