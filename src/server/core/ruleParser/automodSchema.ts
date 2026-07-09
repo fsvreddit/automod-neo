@@ -167,6 +167,7 @@ const postConditionSchema = {
 export const automodSchema: Record<string, unknown> = {
     type: "object",
     properties: {
+        friendly_name: { type: "string", nullable: true },
         type: {
             type: "string",
             enum: submissionTypeValues,

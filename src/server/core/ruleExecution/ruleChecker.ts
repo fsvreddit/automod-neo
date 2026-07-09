@@ -552,12 +552,15 @@ export class AutomodRuleChecker {
                 }
             }
 
-            if (!rule.moderators_exempt) {
+            if (rule.moderators_exempt !== false) {
                 const user = await this.getUserByUsername(comment.authorName);
                 if (user && await this.getIsUserModerator(user)) {
+                    console.log(`Skipping comment ${comment.id} because author is a moderator and rule does not exempt moderators.`);
                     continue;
                 }
             }
+
+            console.log(`Rule matched for comment ${comment.id}: ${rule.friendly_name ?? "Unnamed rule"}`);
 
             return { rule, matches };
         }
@@ -602,12 +605,15 @@ export class AutomodRuleChecker {
                 continue;
             }
 
-            if (!rule.moderators_exempt) {
+            if (rule.moderators_exempt !== false) {
                 const user = await this.getUserByUsername(post.authorName);
                 if (user && await this.getIsUserModerator(user)) {
+                    console.log(`Skipping post ${post.id} because author is a moderator and rule does not exempt moderators.`);
                     continue;
                 }
             }
+
+            console.log(`Rule matched for post ${post.id}: ${rule.friendly_name ?? "Unnamed rule"}`);
 
             return { rule, matches };
         }

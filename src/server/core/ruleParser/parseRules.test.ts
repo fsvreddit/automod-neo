@@ -565,4 +565,31 @@ body: "urgent"
             },
         ]);
     });
+
+    it("preserves friendly_name when provided", () => {
+        const rules = `
+---
+friendly_name: "Urgent Body Rule"
+body: "urgent"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                friendly_name: "Urgent Body Rule",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["urgent"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
 });
