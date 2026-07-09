@@ -2,21 +2,21 @@ import escapeStringRegexp from "escape-string-regexp";
 import { Matches, SearchableText, SearchOption } from "../types";
 
 export function searchTextMatches (input: string, textToMatch: string, options?: SearchOption): string[] | undefined {
-    if (!options) {
-        if (input.toLowerCase().includes(textToMatch.toLowerCase())) {
-            return [textToMatch];
-        } else {
-            return;
-        }
-    }
-
-    if (options.negate) {
+    if (options?.negate) {
         const negatedOptions = { ...options, negate: false };
         const result = searchTextMatches(input, textToMatch, negatedOptions);
         if (result) {
             return;
         } else {
             return [];
+        }
+    }
+
+    if (!options) {
+        if (input.toLowerCase().includes(textToMatch.toLowerCase())) {
+            return [textToMatch];
+        } else {
+            return;
         }
     }
 
