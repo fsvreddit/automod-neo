@@ -36,10 +36,10 @@ AutoModerator supports an undocumented feature to do multiple matches across the
 
 ```yaml
 body#1 (includes-word): "anonymized"
-body#1 (includes-word): "Redact"
+body#2 (includes-word): "Redact"
 ```
 
-This would match content that hasa both the term "anonymized" and "Redact" in the name, unlike `body (includes-word): ["anonymized", "Redact"]` that would match any content that includes either of those terms.
+This would match content that hasa both the term "anonymized" and "Redact" in the name, unlike `body (includes-word): ["anonymized", "Redact"]` that would match any content that includes either of those terms. Note that the part after the # does not need to be a number, it can be any string of letters, numbers, hyphens or underscores.
 
 ## Unsupported features
 
