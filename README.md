@@ -43,7 +43,7 @@ This would match content that hasa both the term "anonymized" and "Redact" in th
 
 ## Unsupported features
 
-The following are not supported due to Devvit limitations.
+The following existing AutoModerator features are not supported due to Devvit limitations, however if it becomes possible to include them in the future, they will be implemented:
 
 * All CQS checks
 * Author flair template ID
@@ -57,9 +57,7 @@ On submissions:
 * discussion_type
 * is_meta_discussion
 
-## Things I will never do
-
-This app will never support a "ban user" or "mute user" feature, sorry. I can see too much scope for abuse.
+This app will never support a "ban user" or "mute user" feature due to the scope for abuse.
 
 ## About this app
 
