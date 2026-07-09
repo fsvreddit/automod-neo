@@ -11,7 +11,7 @@ type CommentSearchField = "id" | "body";
 type AuthorSearchField = "id" | "name" | "flair_text" | "flair_css_class" | "display_name" | "bio_text" | "social_links";
 type SubredditSearchField = "name";
 
-type SearchField = PostSearchField | CommentSearchField | AuthorSearchField | SubredditSearchField;
+export type SearchField = PostSearchField | CommentSearchField | AuthorSearchField | SubredditSearchField;
 
 export interface SearchableText {
     searchField: SearchField[];

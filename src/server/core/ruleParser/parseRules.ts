@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 import _ from "lodash";
-import { AutomodRule, SearchMethod, SearchOption, SearchableText } from "../types";
+import { AutomodRule, SearchField, SearchMethod, SearchOption, SearchableText } from "../types";
 import { parseAllDocuments } from "yaml";
 import Ajv from "ajv";
 import { automodSchema } from "./automodSchema";
@@ -62,26 +62,24 @@ function toSearchableText (value: unknown, searchField: SearchableText["searchFi
     return searchableText;
 }
 
-function defaultSearchMethodForField (fieldName: string): SearchMethod {
+function defaultSearchMethodForField (fieldName: SearchField): SearchMethod {
     switch (fieldName) {
         case "id":
             return "full-exact";
         case "domain":
             return "ends-with";
-        case "flair_text":
-        case "flair_css_class":
         case "flair_template_id":
-        case "media_author":
             return "full-exact";
         case "url":
         case "media_author_url":
+        case "social_links":
             return "includes";
         default:
             return "includes-word";
     }
 }
 
-function buildSearchOptions (fieldName: string, qualifierText: string | undefined, negate: boolean): SearchOption | undefined {
+function buildSearchOptions (fieldName: SearchField, qualifierText: string | undefined, negate: boolean): SearchOption | undefined {
     const rawParts = (qualifierText ?? "").split(",").map(part => part.trim()).filter(Boolean);
     const caseSensitive = rawParts.includes("case-sensitive") || rawParts.includes("case_sensitive");
     const parts = rawParts.filter(part => part !== "case-sensitive" && part !== "case_sensitive");
@@ -152,7 +150,7 @@ function preprocessSearchableFields (node: MutableNode, searchableFields: Set<st
             continue;
         }
 
-        const searchableValue = toSearchableText(node[rawKey], parsedKey.fieldNames as SearchableText["searchField"], buildSearchOptions(parsedKey.primaryField, parsedKey.qualifierText, parsedKey.negate));
+        const searchableValue = toSearchableText(node[rawKey], parsedKey.fieldNames as SearchableText["searchField"], buildSearchOptions(parsedKey.primaryField as SearchField, parsedKey.qualifierText, parsedKey.negate));
         if (!searchableValue) {
             continue;
         }
