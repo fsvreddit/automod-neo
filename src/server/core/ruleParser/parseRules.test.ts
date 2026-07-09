@@ -383,7 +383,7 @@ body (regex): '['
 
         assert.throws(
             () => parseRules(rules),
-            /Invalid regex pattern at rule\[0\]\.search_conditions\[0\]\.text\[0\]/,
+            /Rule 1: Invalid regex pattern for attribute 'body \(regex\)'/,
         );
     });
 
@@ -437,7 +437,7 @@ author:
 
         assert.throws(
             () => parseRules(rules),
-            /Invalid regex pattern at rule\[0\]\.author\.search_conditions\[0\]\.text\[0\]/,
+            /Rule 1: Invalid regex pattern for attribute 'bio_text \(regex\)' in author/,
         );
     });
 
@@ -469,7 +469,7 @@ set_flair: ['one', 'two', 'three']
 
         assert.throws(
             () => parseRules(rules),
-            /set_flair.*must NOT have more than 2 items|must NOT have more than 2 items.*set_flair/,
+            /Rule 1: Attribute 'set_flair' must have at most 2 items\./,
         );
     });
 
@@ -482,7 +482,46 @@ author:
 
         assert.throws(
             () => parseRules(rules),
-            /set_flair.*must NOT have more than 2 items|must NOT have more than 2 items.*set_flair/,
+            /Rule 1: Attribute 'author\.set_flair' must have at most 2 items\./,
+        );
+    });
+
+    it("reports unsupported searchable attributes using the raw input key", () => {
+        const rules = `
+---
+suject+body: "typo"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 1: Unsupported attribute 'suject\+body'\./,
+        );
+    });
+
+    it("uses friendly_name in unsupported attribute errors", () => {
+        const rules = `
+---
+friendly_name: "Typo Rule"
+author:
+  nmae: "typo"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 'Typo Rule': Unsupported attribute 'nmae' in author\./,
+        );
+    });
+
+    it("uses friendly_name in regex validation errors", () => {
+        const rules = `
+---
+friendly_name: "Regex Rule"
+body (regex): '['
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 'Regex Rule': Invalid regex pattern for attribute 'body \(regex\)'/,
         );
     });
 

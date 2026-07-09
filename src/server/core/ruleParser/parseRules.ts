@@ -2,7 +2,7 @@
 import _ from "lodash";
 import { AutomodRule, SearchField, SearchMethod, SearchOption, SearchableText } from "../types";
 import { parseAllDocuments } from "yaml";
-import Ajv from "ajv";
+import Ajv, { type ErrorObject, type ValidateFunction } from "ajv";
 import { automodSchema } from "./automodSchema";
 
 const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "full-exact", "regex"];
@@ -27,6 +27,12 @@ const authorSearchableFields = new Set(["id", "name", "flair_text", "flair_css_c
 const subredditSearchableFields = new Set(["name"]);
 
 type MutableNode = Record<string, unknown>;
+interface SearchableSource {
+    rawKey: string;
+    containerPath: string;
+}
+
+const searchableSourceMetadata = new WeakMap<object, SearchableSource>();
 
 function isObjectRecord (value: unknown): value is MutableNode {
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -57,6 +63,91 @@ function toSearchableText (value: unknown, searchField: SearchableText["searchFi
     };
 
     return searchableText;
+}
+
+function parseJsonPointer (pointer: string): string[] {
+    if (!pointer) {
+        return [];
+    }
+
+    return pointer
+        .split("/")
+        .slice(1)
+        .map(segment => segment.replace(/~1/g, "/").replace(/~0/g, "~"));
+}
+
+function formatRuleReference (rule: MutableNode, ruleIndex: number): string {
+    const friendlyName = typeof rule.friendly_name === "string" ? rule.friendly_name.trim() : "";
+    return friendlyName ? `Rule '${friendlyName}'` : `Rule ${ruleIndex + 1}`;
+}
+
+function formatContainerPath (path: string): string | undefined {
+    const segments = parseJsonPointer(path);
+    return segments.length > 0 ? segments.join(".") : undefined;
+}
+
+function formatAttributePath (instancePath: string, suffix?: string): string | undefined {
+    const segments = parseJsonPointer(instancePath);
+    if (suffix) {
+        segments.push(suffix);
+    }
+
+    return segments.length > 0 ? segments.join(".") : undefined;
+}
+
+function formatSchemaValidationError (error: ErrorObject, ruleReference: string): string {
+    switch (error.keyword) {
+        case "additionalProperties": {
+            const additionalProperty = typeof error.params.additionalProperty === "string"
+                ? error.params.additionalProperty
+                : "unknown";
+            const containerPath = formatContainerPath(error.instancePath);
+            return `${ruleReference}: Unsupported attribute '${additionalProperty}'${containerPath ? ` in ${containerPath}` : ""}.`;
+        }
+
+        case "maxItems": {
+            const attributePath = formatAttributePath(error.instancePath) ?? "value";
+            const limit = typeof error.params.limit === "number" ? error.params.limit : undefined;
+            return `${ruleReference}: Attribute '${attributePath}' must have at most ${limit ?? "the allowed number of"} item${limit === 1 ? "" : "s"}.`;
+        }
+
+        case "required": {
+            const missingProperty = typeof error.params.missingProperty === "string"
+                ? error.params.missingProperty
+                : undefined;
+            const attributePath = formatAttributePath(error.instancePath, missingProperty) ?? missingProperty ?? "value";
+            return `${ruleReference}: Missing required attribute '${attributePath}'.`;
+        }
+
+        case "type": {
+            const attributePath = formatAttributePath(error.instancePath) ?? "value";
+            const expectedType = typeof error.params.type === "string" ? error.params.type : "the expected type";
+            return `${ruleReference}: Attribute '${attributePath}' must be ${expectedType}.`;
+        }
+
+        case "enum": {
+            const attributePath = formatAttributePath(error.instancePath) ?? "value";
+            const allowedValues = Array.isArray(error.params.allowedValues)
+                ? error.params.allowedValues.map(value => `'${String(value)}'`).join(", ")
+                : undefined;
+            return `${ruleReference}: Attribute '${attributePath}' must be one of ${allowedValues ?? "the allowed values"}.`;
+        }
+
+        default: {
+            const attributePath = formatAttributePath(error.instancePath);
+            return `${ruleReference}: ${attributePath ? `Attribute '${attributePath}' ` : ""}${error.message ?? "failed validation"}.`;
+        }
+    }
+}
+
+function assertValidRuleSchema (rule: MutableNode, ruleReference: string, validate: ValidateFunction): void {
+    if (validate(rule)) {
+        return;
+    }
+
+    const formattedErrors = (validate.errors ?? []).map(error => formatSchemaValidationError(error, ruleReference));
+    const uniqueErrors = [...new Set(formattedErrors)];
+    throw new Error(uniqueErrors.join(" "));
 }
 
 function defaultSearchMethodForField (fieldName: SearchField): SearchMethod {
@@ -122,17 +213,19 @@ function parseSearchableKey (rawKey: string): { fieldNames: string[]; primaryFie
     };
 }
 
-function appendSearchableValue (node: MutableNode, fieldName: string, searchableValue: SearchableText): void {
+function appendSearchableValue (node: MutableNode, fieldName: string, searchableValue: SearchableText, source: SearchableSource): void {
     const existing = node[fieldName];
     if (!Array.isArray(existing)) {
         node[fieldName] = [searchableValue];
+        searchableSourceMetadata.set(searchableValue, source);
         return;
     }
 
     existing.push(searchableValue);
+    searchableSourceMetadata.set(searchableValue, source);
 }
 
-function preprocessSearchableFields (node: MutableNode, searchableFields: Set<string>, searchConditionsFieldName: string): void {
+function preprocessSearchableFields (node: MutableNode, searchableFields: Set<string>, searchConditionsFieldName: string, containerPath: string): void {
     for (const rawKey of Object.keys(node)) {
         const parsedKey = parseSearchableKey(rawKey);
         if (!parsedKey) {
@@ -152,7 +245,10 @@ function preprocessSearchableFields (node: MutableNode, searchableFields: Set<st
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
         delete node[rawKey];
 
-        appendSearchableValue(node, searchConditionsFieldName, searchableValue);
+        appendSearchableValue(node, searchConditionsFieldName, searchableValue, {
+            rawKey,
+            containerPath,
+        });
     }
 }
 
@@ -191,36 +287,36 @@ function preprocessStringArrayField (node: MutableNode, fieldName: "crosspost_id
     }
 }
 
-function preprocessAuthorNode (node: MutableNode): void {
-    preprocessSearchableFields(node, authorSearchableFields, "search_conditions");
+function preprocessAuthorNode (node: MutableNode, containerPath: string): void {
+    preprocessSearchableFields(node, authorSearchableFields, "search_conditions", containerPath);
 }
 
-function preprocessSubredditNode (node: MutableNode): void {
-    preprocessSearchableFields(node, subredditSearchableFields, "search_conditions");
+function preprocessSubredditNode (node: MutableNode, containerPath: string): void {
+    preprocessSearchableFields(node, subredditSearchableFields, "search_conditions", containerPath);
 }
 
-function preprocessPostConditionLikeNode (node: MutableNode): void {
+function preprocessPostConditionLikeNode (node: MutableNode, containerPath: string): void {
     preprocessStringArrayField(node, "crosspost_id");
-    preprocessSearchableFields(node, topLevelSearchableFields, "search_conditions");
+    preprocessSearchableFields(node, topLevelSearchableFields, "search_conditions", containerPath);
 
     if (isObjectRecord(node.author)) {
-        preprocessAuthorNode(node.author);
+        preprocessAuthorNode(node.author, containerPath ? `${containerPath}.author` : "author");
     }
 
     if (isObjectRecord(node.subreddit)) {
-        preprocessSubredditNode(node.subreddit);
+        preprocessSubredditNode(node.subreddit, containerPath ? `${containerPath}.subreddit` : "subreddit");
     }
 
     if (isObjectRecord(node.crosspost_author)) {
-        preprocessAuthorNode(node.crosspost_author);
+        preprocessAuthorNode(node.crosspost_author, containerPath ? `${containerPath}.crosspost_author` : "crosspost_author");
     }
 
     if (isObjectRecord(node.crosspost_subreddit)) {
-        preprocessSubredditNode(node.crosspost_subreddit);
+        preprocessSubredditNode(node.crosspost_subreddit, containerPath ? `${containerPath}.crosspost_subreddit` : "crosspost_subreddit");
     }
 }
 
-function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: string, nodePath: string): void {
+function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: string, ruleReference: string): void {
     const fieldValue = node[fieldName];
     if (!Array.isArray(fieldValue)) {
         return;
@@ -244,64 +340,65 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
         }
 
         const textPatterns = textValue as unknown[];
-        for (let textIndex = 0; textIndex < textPatterns.length; textIndex += 1) {
-            const pattern = textPatterns[textIndex];
+        for (const pattern of textPatterns) {
             if (typeof pattern !== "string") {
                 continue;
             }
 
             try {
-                // Validate regex syntax early so malformed rules fail with a clear path.
                 new RegExp(pattern, "u");
             } catch (error) {
+                const source = searchableSourceMetadata.get(searchableItem);
+                const attributeName = source?.rawKey ?? `${fieldName}[${searchableIndex}]`;
+                const containerPath = source?.containerPath;
                 const details = error instanceof Error ? error.message : String(error);
-                throw new Error(`Invalid regex pattern at ${nodePath}.${fieldName}[${searchableIndex}].text[${textIndex}]: ${pattern} (${details})`);
+                throw new Error(`${ruleReference}: Invalid regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern} (${details})`);
             }
         }
     }
 }
 
-function validateRegexPatternsInAuthorNode (node: MutableNode, nodePath: string): void {
-    validateRegexPatternsInSearchableField(node, "search_conditions", nodePath);
+function validateRegexPatternsInAuthorNode (node: MutableNode, ruleReference: string): void {
+    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference);
 }
 
-function validateRegexPatternsInSubredditNode (node: MutableNode, nodePath: string): void {
-    validateRegexPatternsInSearchableField(node, "search_conditions", nodePath);
+function validateRegexPatternsInSubredditNode (node: MutableNode, ruleReference: string): void {
+    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference);
 }
 
-function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, nodePath: string): void {
-    validateRegexPatternsInSearchableField(node, "search_conditions", nodePath);
+function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleReference: string): void {
+    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference);
 
     if (isObjectRecord(node.author)) {
-        validateRegexPatternsInAuthorNode(node.author, `${nodePath}.author`);
+        validateRegexPatternsInAuthorNode(node.author, ruleReference);
     }
 
     if (isObjectRecord(node.subreddit)) {
-        validateRegexPatternsInSubredditNode(node.subreddit, `${nodePath}.subreddit`);
+        validateRegexPatternsInSubredditNode(node.subreddit, ruleReference);
     }
 
     if (isObjectRecord(node.crosspost_author)) {
-        validateRegexPatternsInAuthorNode(node.crosspost_author, `${nodePath}.crosspost_author`);
+        validateRegexPatternsInAuthorNode(node.crosspost_author, ruleReference);
     }
 
     if (isObjectRecord(node.crosspost_subreddit)) {
-        validateRegexPatternsInSubredditNode(node.crosspost_subreddit, `${nodePath}.crosspost_subreddit`);
+        validateRegexPatternsInSubredditNode(node.crosspost_subreddit, ruleReference);
     }
 }
 
-export function validateRuleRegexPatterns (rule: MutableNode, rulePath: string): void {
-    validateRegexPatternsInPostConditionLikeNode(rule, rulePath);
+export function validateRuleRegexPatterns (rule: MutableNode, ruleReference: string): void {
+    validateRegexPatternsInPostConditionLikeNode(rule, ruleReference);
 
     if (isObjectRecord(rule.parent_submission)) {
-        validateRegexPatternsInPostConditionLikeNode(rule.parent_submission, `${rulePath}.parent_submission`);
+        validateRegexPatternsInPostConditionLikeNode(rule.parent_submission, ruleReference);
     }
 }
 
 export function preprocessRule (rule: MutableNode): void {
-    preprocessPostConditionLikeNode(rule);
+    preprocessPostConditionLikeNode(rule, "");
 
     if (isObjectRecord(rule.parent_submission)) {
-        preprocessPostConditionLikeNode(rule.parent_submission);
+        preprocessPostConditionLikeNode(rule.parent_submission, "parent_submission");
     }
 }
 
@@ -314,8 +411,9 @@ export function parseRules (rules: string): AutomodRule[] {
     const parsedRules = _.compact(documents.map(doc => doc.toJSON() as MutableNode | null));
 
     for (const [index, rule] of parsedRules.entries()) {
+        const ruleReference = formatRuleReference(rule, index);
         preprocessRule(rule);
-        validateRuleRegexPatterns(rule, `rule[${index}]`);
+        validateRuleRegexPatterns(rule, ruleReference);
     }
 
     const ajv = new Ajv({
@@ -324,12 +422,8 @@ export function parseRules (rules: string): AutomodRule[] {
     const validate = ajv.compile(automodSchema);
 
     // Validate rules against schema one by one
-    for (const rule of parsedRules) {
-        if (!validate(rule)) {
-            console.error("Invalid rule:", rule);
-            console.error("Validation errors:", validate.errors);
-            throw new Error(`Rule failed validation: ${ajv.errorsText(validate.errors)}`);
-        }
+    for (const [index, rule] of parsedRules.entries()) {
+        assertValidRuleSchema(rule, formatRuleReference(rule, index), validate);
     }
 
     return parsedRules;
