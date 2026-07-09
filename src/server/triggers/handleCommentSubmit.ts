@@ -11,6 +11,10 @@ export const handleCommentSubmit = async (c: Context) => {
     }
 
     const rules = await getRulesForSubreddit();
+    if (rules.length === 0) {
+        return c.json<TriggerResponse>({ message: "comment submit handled, no rules found" }, 200);
+    }
+
     const ruleChecker = new AutomodRuleChecker({ rules });
 
     const result = await ruleChecker.checkComment(request.comment.id as T1);

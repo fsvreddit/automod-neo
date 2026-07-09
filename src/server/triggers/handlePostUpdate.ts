@@ -11,6 +11,10 @@ export const handlePostUpdate = async (c: Context) => {
     }
 
     const rules = await getRulesForSubreddit();
+    if (rules.length === 0) {
+        return c.json<TriggerResponse>({ message: "post update handled, no rules found" }, 200);
+    }
+
     const ruleChecker = new AutomodRuleChecker({ rules });
 
     const result = await ruleChecker.checkPost(request.post.id as T3);

@@ -1,6 +1,7 @@
 import { AutomodRule } from "../types";
-import { AppSetting, getSettings } from "../appSettings";
+import { AppSetting } from "../appSettings";
 import { parseRules } from "../ruleParser";
+import { settings } from "@devvit/web/server";
 
 function getActionPrecedence (rule: AutomodRule): number {
     switch (rule.action) {
@@ -38,6 +39,11 @@ export function sortRulesForExecution (rules: AutomodRule[]): AutomodRule[] {
 }
 
 export async function getRulesForSubreddit (): Promise<AutomodRule[]> {
-    const appSettings = await getSettings();
-    return sortRulesForExecution(parseRules(appSettings[AppSetting.Rules]));
+    const rulesYaml = await settings.get<string>(AppSetting.Rules);
+    if (!rulesYaml || rulesYaml.trim() === "") {
+        return [];
+    }
+
+    const rules = parseRules(rulesYaml);
+    return sortRulesForExecution(rules);
 }
