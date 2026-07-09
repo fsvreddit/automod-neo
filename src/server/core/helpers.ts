@@ -55,14 +55,6 @@ export async function clearUserRoleCache (userId: string): Promise<void> {
     await redis.del(getApprovedUserCacheKey(userId), getModeratorCacheKey(userId));
 }
 
-export function normaliseTimestamp (timestamp: number): Date {
-    if (new Date(timestamp) > new Date(1990, 0)) {
-        return new Date(timestamp);
-    } else {
-        return new Date(timestamp * 1000);
-    }
-}
-
 export function getDomainFromUrl (url: string): string | undefined {
     try {
         const parsedUrl = new URL(url);
