@@ -28,7 +28,14 @@ Automod Neo supports a `comment_crowd_control_collapsed` attribute when checking
 
 ### Discord alerts
 
-You can use the `discord_alert` action type to send a message to a Discord webhook configured in app settings.
+You can use the `discord_alert` action type to send a message to a Discord webhook configured in app settings. E.g.
+
+```yaml
+discord_alert: |
+  A [{{kind}}]({{permalink}}) has been posted by {{author}} that may attract rule-breaking comments.
+
+  Please keep an eye on it!
+```
 
 ### friendly_name attribute and placeholder
 
