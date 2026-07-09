@@ -112,11 +112,11 @@ export function searchConditionMatchesInput (input: string, condition: Searchabl
 export function anySearchConditionMatchesInput (input: string, conditions: SearchableText[]): boolean {
     for (const condition of conditions) {
         const result = searchConditionMatchesInput(input, condition);
-        if (result) {
-            return true;
+        if (!result) {
+            return false;
         }
     }
-    return false;
+    return true;
 }
 
 export function searchConditionsMatchInput (input: Record<string, string | string[]>, conditions: SearchableText[]): Matches[] | undefined {
