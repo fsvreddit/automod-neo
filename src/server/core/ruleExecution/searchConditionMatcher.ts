@@ -1,15 +1,7 @@
 import escapeStringRegexp from "escape-string-regexp";
-import { SearchableText, SearchOption } from "../types";
+import { Matches, SearchableText, SearchOption } from "../types";
 
-export function searchTextMatches (input: string, textToMatch: string, options?: SearchOption): string[] | undefined {
-    if (!options) {
-        if (input.toLowerCase().includes(textToMatch.toLowerCase())) {
-            return [textToMatch];
-        } else {
-            return;
-        }
-    }
-
+export function searchTextMatches (input: string, textToMatch: string, options: SearchOption): string[] | undefined {
     if (options.negate) {
         const negatedOptions = { ...options, negate: false };
         const result = searchTextMatches(input, textToMatch, negatedOptions);
@@ -69,7 +61,7 @@ export function searchTextMatches (input: string, textToMatch: string, options?:
     }
 
     if (options.search_method === "includes-word") {
-        const regex = new RegExp("\\b" + escapeStringRegexp(textToMatch) + "\\b", options.case_sensitive ?? false ? "" : "i");
+        const regex = new RegExp("\\b" + escapeStringRegexp(textToMatch) + "\\b", options.case_sensitive ? "" : "i");
         if (regex.test(input)) {
             return [textToMatch];
         } else {
@@ -95,7 +87,7 @@ export function searchTextMatches (input: string, textToMatch: string, options?:
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (options.search_method === "regex") {
-        const regex = new RegExp(textToMatch, options.case_sensitive ?? false ? "u" : "iu");
+        const regex = new RegExp(textToMatch, options.case_sensitive ? "u" : "iu");
         const matches = input.match(regex);
         if (matches) {
             return matches.map(match => match.trim());
@@ -115,4 +107,45 @@ export function searchConditionMatchesInput (input: string, condition: Searchabl
     }
 
     return;
+}
+
+export function anySearchConditionMatchesInput (input: string, conditions: SearchableText[]): boolean {
+    for (const condition of conditions) {
+        const result = searchConditionMatchesInput(input, condition);
+        if (!result) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export function searchConditionsMatchInput (input: Record<string, string | string[]>, conditions: SearchableText[]): Matches[] | undefined {
+    const matchesFound: Matches[] = [];
+
+    for (const condition of conditions) {
+        let anyMatch = false;
+        for (const fieldName of condition.searchField) {
+            const fieldValues = input[fieldName];
+            if (Array.isArray(fieldValues)) {
+                for (const fieldValue of fieldValues) {
+                    const result = searchConditionMatchesInput(fieldValue, condition);
+                    if (result) {
+                        matchesFound.push({ category: fieldName, matches: result });
+                        anyMatch = true;
+                    }
+                }
+            } else if (typeof fieldValues === "string") {
+                const result = searchConditionMatchesInput(fieldValues, condition);
+                if (result) {
+                    matchesFound.push({ category: fieldName, matches: result });
+                    anyMatch = true;
+                }
+            }
+        }
+        if (!anyMatch) {
+            return;
+        }
+    }
+
+    return matchesFound;
 }

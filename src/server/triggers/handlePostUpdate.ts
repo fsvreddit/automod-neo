@@ -1,18 +1,36 @@
-import { OnPostUpdateRequest, TriggerResponse } from "@devvit/web/shared";
+import { OnPostUpdateRequest, T3, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { fixContentCreationRequest } from "../core";
-import { checkPost } from "../core/contentMatcher";
-import { actionRules } from "../core/ruleActions/actionRules";
+import { actionRules } from "../core/ruleActions";
+import { fixPostTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
+import { AutomodRuleChecker, getRulesForSubreddit } from "../core/ruleExecution";
+import { addMinutes } from "date-fns";
+import { isUserIgnoredForTriggers } from "../core";
 
 export const handlePostUpdate = async (c: Context) => {
-    const request = await fixContentCreationRequest(await c.req.json<OnPostUpdateRequest>());
+    const request = await fixPostTriggerEvent(await c.req.json<OnPostUpdateRequest>());
     if (!request.post) {
         return c.json<TriggerResponse>({ message: "post update handled, no post in request" }, 200);
     }
 
-    const result = await checkPost(request);
+    if (isUserIgnoredForTriggers(request.author)) {
+        return c.json<TriggerResponse>({ message: "post update handled, author is ignored" }, 200);
+    }
+
+    const rules = await getRulesForSubreddit();
+    if (rules.length === 0) {
+        return c.json<TriggerResponse>({ message: "post update handled, no rules found" }, 200);
+    }
+
+    const ruleChecker = new AutomodRuleChecker({ rules });
+
+    const result = await ruleChecker.checkPost(request.post.id as T3);
+
     if (!result) {
         return c.json<TriggerResponse>({ message: "post update handled, no matches found" }, 200);
+    }
+
+    if (await hasTriggerBeenHandled(`postUpdate:${request.post.id}`, { expiration: addMinutes(new Date(), 1) })) {
+        return c.json<TriggerResponse>({ message: "post update handled, trigger already handled" }, 200);
     }
 
     await actionRules(request.post.id, result);

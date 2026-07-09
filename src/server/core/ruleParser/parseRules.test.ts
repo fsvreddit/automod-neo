@@ -15,8 +15,9 @@ body (regex): "foo\\d+bar"
 
         assert.deepEqual(parsed, [
             {
-                title: [
+                search_conditions: [
                     {
+                        searchField: ["title"],
                         text: [
                             "Hello World",
                         ],
@@ -26,9 +27,8 @@ body (regex): "foo\\d+bar"
                             negate: false,
                         },
                     },
-                ],
-                body: [
                     {
+                        searchField: ["body"],
                         text: [
                             "foo\\d+bar",
                         ],
@@ -53,8 +53,9 @@ body (regex): "foo\\d+bar"
 
         assert.deepEqual(parsed, [
             {
-                title: [
+                search_conditions: [
                     {
+                        searchField: ["title"],
                         text: [
                             "text",
                         ],
@@ -69,12 +70,12 @@ body (regex): "foo\\d+bar"
         ]);
     });
 
-    it("normalizes searchable fields with aliases, qualifiers, and numbered keys", () => {
+    it("normalizes searchable fields with joins, qualifiers, and numbered keys", () => {
         const rules = `
 ---
 id: abcde
 id#primary: fghij
-title+body (includes, case_sensitive): "abcde"
+title+body+url (includes, case_sensitive): "abcde"
 ~body#1: dog
 ~body#2: attack
 body#redact: wolf
@@ -85,18 +86,36 @@ author:
     social_links#1: 'example.com/a'
     social_links#2: 'example.com/b'
 parent_submission:
-  body+title (regex): ['regex1', 'regex2']
-  crosspost_title#1: one
-  crosspost_title#2: two
+    body+title+url (regex): ['regex1', 'regex2']
+    crosspost_title#1: one
+    crosspost_title#2: two
         `;
 
         const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
-                id: ["abcde", "fghij"],
-                title_or_body: [
+                search_conditions: [
                     {
+                        searchField: ["id"],
+                        text: ["abcde"],
+                        options: {
+                            search_method: "full-exact",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                    {
+                        searchField: ["id"],
+                        text: ["fghij"],
+                        options: {
+                            search_method: "full-exact",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                    {
+                        searchField: ["title", "body", "url"],
                         text: ["abcde"],
                         options: {
                             search_method: "includes",
@@ -104,9 +123,8 @@ parent_submission:
                             negate: false,
                         },
                     },
-                ],
-                body: [
                     {
+                        searchField: ["body"],
                         text: ["dog"],
                         options: {
                             search_method: "includes-word",
@@ -115,6 +133,7 @@ parent_submission:
                         },
                     },
                     {
+                        searchField: ["body"],
                         text: ["attack"],
                         options: {
                             search_method: "includes-word",
@@ -123,12 +142,19 @@ parent_submission:
                         },
                     },
                     {
+                        searchField: ["body"],
                         text: ["wolf"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
                 ],
                 author: {
-                    name: [
+                    search_conditions: [
                         {
+                            searchField: ["name"],
                             text: ["^foo.*"],
                             options: {
                                 search_method: "regex",
@@ -136,9 +162,8 @@ parent_submission:
                                 negate: false,
                             },
                         },
-                    ],
-                    display_name: [
                         {
+                            searchField: ["display_name"],
                             text: ["DisplayName"],
                             options: {
                                 search_method: "includes",
@@ -146,9 +171,8 @@ parent_submission:
                                 negate: false,
                             },
                         },
-                    ],
-                    bio_text: [
                         {
+                            searchField: ["bio_text"],
                             text: ["^bio_.*$"],
                             options: {
                                 search_method: "regex",
@@ -156,19 +180,30 @@ parent_submission:
                                 negate: false,
                             },
                         },
-                    ],
-                    social_links: [
                         {
+                            searchField: ["social_links"],
                             text: ["example.com/a"],
+                            options: {
+                                search_method: "includes",
+                                case_sensitive: false,
+                                negate: false,
+                            },
                         },
                         {
+                            searchField: ["social_links"],
                             text: ["example.com/b"],
+                            options: {
+                                search_method: "includes",
+                                case_sensitive: false,
+                                negate: false,
+                            },
                         },
                     ],
                 },
                 parent_submission: {
-                    title_or_body: [
+                    search_conditions: [
                         {
+                            searchField: ["body", "title", "url"],
                             text: ["regex1", "regex2"],
                             options: {
                                 search_method: "regex",
@@ -176,13 +211,23 @@ parent_submission:
                                 negate: false,
                             },
                         },
-                    ],
-                    crosspost_title: [
                         {
+                            searchField: ["crosspost_title"],
                             text: ["one"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
                         },
                         {
+                            searchField: ["crosspost_title"],
                             text: ["two"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
                         },
                     ],
                 },
@@ -203,17 +248,30 @@ author:
 
         assert.deepEqual(parsed, [
             {
-                body: [
+                search_conditions: [
                     {
+                        searchField: ["body"],
                         text: ["alpha"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
                     {
+                        searchField: ["body"],
                         text: ["beta"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
                 ],
                 author: {
-                    social_links: [
+                    search_conditions: [
                         {
+                            searchField: ["social_links"],
                             text: ["x.com/example"],
                             options: {
                                 search_method: "includes",
@@ -238,10 +296,24 @@ body: ['first', 'second']
 
         assert.deepEqual(parsed, [
             {
-                id: ["abcde", "defgh"],
-                body: [
+                search_conditions: [
                     {
+                        searchField: ["id"],
+                        text: ["abcde", "defgh"],
+                        options: {
+                            search_method: "full-exact",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                    {
+                        searchField: ["body"],
                         text: ["first", "second"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
                 ],
             },
@@ -261,8 +333,9 @@ media_description#summary: 'long description'
 
         assert.deepEqual(parsed, [
             {
-                media_author: [
+                search_conditions: [
                     {
+                        searchField: ["media_author"],
                         text: ["^author_[0-9]+$"],
                         options: {
                             search_method: "regex",
@@ -270,9 +343,8 @@ media_description#summary: 'long description'
                             negate: false,
                         },
                     },
-                ],
-                media_author_url: [
                     {
+                        searchField: ["media_author_url"],
                         text: ["example.com/channel"],
                         options: {
                             search_method: "includes",
@@ -280,15 +352,23 @@ media_description#summary: 'long description'
                             negate: false,
                         },
                     },
-                ],
-                media_title: [
                     {
+                        searchField: ["media_title"],
                         text: ["first title", "second title"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
-                ],
-                media_description: [
                     {
+                        searchField: ["media_description"],
                         text: ["long description"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
                 ],
             },
@@ -303,7 +383,7 @@ body (regex): '['
 
         assert.throws(
             () => parseRules(rules),
-            /Invalid regex pattern at rule\[0\]\.body\[0\]\.text\[0\]/,
+            /Rule 1: Invalid regex pattern for attribute 'body \(regex\)'/,
         );
     });
 
@@ -322,8 +402,9 @@ parent_submission:
             {
                 parent_submission: {
                     author: {
-                        name: [
+                        search_conditions: [
                             {
+                                searchField: ["name"],
                                 text: ["^user_[0-9]+$"],
                                 options: {
                                     search_method: "regex",
@@ -331,9 +412,8 @@ parent_submission:
                                     negate: false,
                                 },
                             },
-                        ],
-                        bio_text: [
                             {
+                                searchField: ["bio_text"],
                                 text: ["^bio_[a-z]+$"],
                                 options: {
                                     search_method: "regex",
@@ -357,7 +437,7 @@ author:
 
         assert.throws(
             () => parseRules(rules),
-            /Invalid regex pattern at rule\[0\]\.author\.bio_text\[0\]\.text\[0\]/,
+            /Rule 1: Invalid regex pattern for attribute 'bio_text \(regex\)' in author/,
         );
     });
 
@@ -389,7 +469,7 @@ set_flair: ['one', 'two', 'three']
 
         assert.throws(
             () => parseRules(rules),
-            /set_flair.*must NOT have more than 2 items|must NOT have more than 2 items.*set_flair/,
+            /Rule 1: Attribute 'set_flair' must have at most 2 items\./,
         );
     });
 
@@ -402,7 +482,153 @@ author:
 
         assert.throws(
             () => parseRules(rules),
-            /set_flair.*must NOT have more than 2 items|must NOT have more than 2 items.*set_flair/,
+            /Rule 1: Attribute 'author\.set_flair' must have at most 2 items\./,
         );
+    });
+
+    it("reports unsupported searchable attributes using the raw input key", () => {
+        const rules = `
+---
+suject+body: "typo"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 1: Unsupported attribute 'suject\+body'\./,
+        );
+    });
+
+    it("uses friendly_name in unsupported attribute errors", () => {
+        const rules = `
+---
+friendly_name: "Typo Rule"
+author:
+  nmae: "typo"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 'Typo Rule': Unsupported attribute 'nmae' in author\./,
+        );
+    });
+
+    it("uses friendly_name in regex validation errors", () => {
+        const rules = `
+---
+friendly_name: "Regex Rule"
+body (regex): '['
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 'Regex Rule': Invalid regex pattern for attribute 'body \(regex\)'/,
+        );
+    });
+
+    it("normalizes id as searchable field for author and parent_submission", () => {
+        const rules = `
+---
+author:
+  id: user_123
+parent_submission:
+  id#1: abcde
+  id#2: fghij
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                author: {
+                    search_conditions: [
+                        {
+                            searchField: ["id"],
+                            text: ["user_123"],
+                            options: {
+                                search_method: "full-exact",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+                parent_submission: {
+                    search_conditions: [
+                        {
+                            searchField: ["id"],
+                            text: ["abcde"],
+                            options: {
+                                search_method: "full-exact",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                        {
+                            searchField: ["id"],
+                            text: ["fghij"],
+                            options: {
+                                search_method: "full-exact",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
+    });
+
+    it("preserves discord_alert when provided", () => {
+        const rules = `
+---
+discord_alert: "Ping moderators in Discord"
+body: "urgent"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                discord_alert: "Ping moderators in Discord",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["urgent"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves friendly_name when provided", () => {
+        const rules = `
+---
+friendly_name: "Urgent Body Rule"
+body: "urgent"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                friendly_name: "Urgent Body Rule",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["urgent"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
     });
 });

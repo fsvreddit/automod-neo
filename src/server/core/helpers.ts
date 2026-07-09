@@ -1,45 +1,9 @@
 import { context, reddit, redis, User } from "@devvit/web/server";
-import { OnCommentCreateRequest, OnCommentUpdateRequest, OnPostCreateRequest, OnPostUpdateRequest, T1, T3 } from "@devvit/web/shared";
-import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
+import { UserV2 } from "@devvit/web/shared";
 import { addWeeks } from "date-fns";
 
 export function getBotCommentFooter (): string {
     return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/r/${context.subredditName}/about/moderators) if you have any questions or concerns.*`;
-}
-
-export async function fixContentCreationRequest<T extends OnPostCreateRequest | OnPostUpdateRequest | OnCommentCreateRequest | OnCommentUpdateRequest> (request: T): Promise<T> {
-    const requestToReturn = { ...request };
-
-    if (!requestToReturn.author) {
-        return requestToReturn;
-    }
-
-    if (requestToReturn.author.name !== "[redacted]") {
-        return requestToReturn;
-    }
-
-    let targetId: T1 | T3;
-
-    if ("comment" in request && request.comment) {
-        targetId = request.comment.id as T1;
-    } else if ("post" in request && request.post) {
-        targetId = request.post.id as T3;
-    } else {
-        return requestToReturn;
-    }
-
-    const target = await getPostOrCommentById(targetId);
-    requestToReturn.author.name = target.authorName;
-
-    if ("comment" in requestToReturn && requestToReturn.comment && target.authorId) {
-        requestToReturn.comment.author = target.authorId;
-        requestToReturn.comment.body = target.body ?? "";
-    } else if ("post" in requestToReturn && requestToReturn.post && target.authorId) {
-        requestToReturn.post.authorId = target.authorId;
-        requestToReturn.post.selftext = target.body ?? "";
-    }
-
-    return requestToReturn;
 }
 
 function getApprovedUserCacheKey (userId: string): string {
@@ -92,14 +56,6 @@ export async function clearUserRoleCache (userId: string): Promise<void> {
     await redis.del(getApprovedUserCacheKey(userId), getModeratorCacheKey(userId));
 }
 
-export function normaliseTimestamp (timestamp: number): Date {
-    if (new Date(timestamp) > new Date(1990, 0)) {
-        return new Date(timestamp);
-    } else {
-        return new Date(timestamp * 1000);
-    }
-}
-
 export function getDomainFromUrl (url: string): string | undefined {
     try {
         const parsedUrl = new URL(url);
@@ -125,4 +81,47 @@ export async function isSubredditNSFW (subredditName: string): Promise<boolean> 
 
 export function getTextWithoutBlockquotes (input: string): string {
     return input.split("\n").filter(line => !line.trim().startsWith(">")).join("\n").trim();
+}
+
+export async function sendMessageToWebhook (webhookUrl: string, message: string) {
+    const params = {
+        content: message,
+    };
+
+    try {
+        const result = await fetch(
+            webhookUrl,
+            {
+                method: "post",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(params),
+            },
+        );
+
+        if (!result.ok) {
+            const responseBody = await result.text();
+            console.error(`Webhook send failed with status ${result.status}:`, responseBody);
+            return;
+        }
+
+        console.log("Webhook message sent, status:", result.status);
+    } catch (error) {
+        console.error("Error sending message to webhook:", error);
+    }
+}
+
+export function isUserIgnoredForTriggers (user?: UserV2): boolean {
+    if (!user) {
+        return false;
+    }
+
+    const ignoredUsernames = new Set([
+        context.appSlug,
+        "AutoModerator",
+        `${context.subredditName}-ModTeam`,
+    ]);
+
+    return ignoredUsernames.has(user.name);
 }

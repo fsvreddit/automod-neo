@@ -8,33 +8,46 @@ const actionValues = ["approve", "remove", "report", "spam", "filter"] as const;
 const submissionTypeValues = ["comment", "submission", "text submission", "link submission", "crosspost submission", "poll submission", "gallery submission", "any"] as const;
 const suggestedSortValues = ["best", "new", "qa", "top", "controversial", "hot", "old", "random", "blank"] as const;
 const crowdControlValues = ["OFF", "LENIENT", "MEDIUM", "STRICT"] as const;
+const postSearchFieldValues = ["id", "title", "body", "domain", "url", "flair_text", "flair_css_class", "flair_template_id", "crosspost_title", "media_author", "media_author_url", "media_title", "media_description"] as const;
+const authorSearchFieldValues = ["id", "name", "flair_text", "flair_css_class", "display_name", "bio_text", "social_links"] as const;
+const subredditSearchFieldValues = ["name"] as const;
 
 const searchOptionSchema: JSONSchemaType<SearchOption> = {
     type: "object",
     properties: {
         search_method: { type: "string", enum: searchMethodValues },
-        case_sensitive: { type: "boolean", nullable: true },
-        negate: { type: "boolean", nullable: true },
+        case_sensitive: { type: "boolean" },
+        negate: { type: "boolean" },
     },
-    required: ["search_method"],
+    required: ["search_method", "case_sensitive", "negate"],
     additionalProperties: false,
 };
 
-const searchableTextSchema = {
-    type: "object",
-    properties: {
-        text: {
-            type: "array",
-            items: { type: "string" },
+function createSearchableTextSchema (searchFieldEnum: readonly string[]) {
+    return {
+        type: "object",
+        properties: {
+            searchField: {
+                type: "array",
+                items: { type: "string", enum: searchFieldEnum },
+                minItems: 1,
+            },
+            text: {
+                type: "array",
+                items: { type: "string" },
+            },
+            options: {
+                ...searchOptionSchema,
+            },
         },
-        options: {
-            ...searchOptionSchema,
-            nullable: true,
-        },
-    },
-    required: ["text"],
-    additionalProperties: false,
-} as const;
+        required: ["searchField", "text", "options"],
+        additionalProperties: false,
+    } as const;
+}
+
+const postSearchableTextSchema = createSearchableTextSchema(postSearchFieldValues);
+const authorSearchableTextSchema = createSearchableTextSchema(authorSearchFieldValues);
+const subredditSearchableTextSchema = createSearchableTextSchema(subredditSearchFieldValues);
 
 const setFlairActionDictionarySchema = {
     type: "object",
@@ -63,39 +76,9 @@ const setFlairSchema = {
 const authorSchema = {
     type: "object",
     properties: {
-        id: {
+        search_conditions: {
             type: "array",
-            items: { type: "string" },
-            nullable: true,
-        },
-        name: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        flair_text: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        flair_css_class: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        display_name: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        bio_text: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        social_links: {
-            type: "array",
-            items: searchableTextSchema,
+            items: authorSearchableTextSchema,
             nullable: true,
         },
         comment_karma: { type: "string", nullable: true },
@@ -123,9 +106,9 @@ const authorSchema = {
 const subredditSchema = {
     type: "object",
     properties: {
-        name: {
+        search_conditions: {
             type: "array",
-            items: searchableTextSchema,
+            items: subredditSearchableTextSchema,
             nullable: true,
         },
         is_nsfw: { type: "boolean", nullable: true },
@@ -137,57 +120,17 @@ const subredditSchema = {
 const postConditionSchema = {
     type: "object",
     properties: {
-        id: {
-            type: "array",
-            items: { type: "string" },
-            nullable: true,
-        },
         standard: {
             type: "string",
             enum: standardConditionValues,
             nullable: true,
         },
-        title: {
+        search_conditions: {
             type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        body: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        title_or_body: {
-            type: "array",
-            items: searchableTextSchema,
+            items: postSearchableTextSchema,
             nullable: true,
         },
         ignore_blockquotes: { type: "boolean", nullable: true },
-        domain: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        url: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        flair_text: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        flair_css_class: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        flair_template_id: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
         reports: { type: "number", nullable: true },
         body_longer_than: { type: "number", nullable: true },
         body_shorter_than: { type: "number", nullable: true },
@@ -208,31 +151,6 @@ const postConditionSchema = {
             items: { type: "string" },
             nullable: true,
         },
-        crosspost_title: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        media_author: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        media_author_url: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        media_title: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        media_description: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
         crosspost_author: {
             ...authorSchema,
             nullable: true,
@@ -249,6 +167,7 @@ const postConditionSchema = {
 export const automodSchema: Record<string, unknown> = {
     type: "object",
     properties: {
+        friendly_name: { type: "string", nullable: true },
         type: {
             type: "string",
             enum: submissionTypeValues,
@@ -263,57 +182,18 @@ export const automodSchema: Record<string, unknown> = {
         modmail_subject: { type: "string", nullable: true },
         message: { type: "string", nullable: true },
         message_subject: { type: "string", nullable: true },
+        discord_alert: { type: "string", nullable: true },
         standard: {
             type: "string",
             enum: standardConditionValues,
             nullable: true,
         },
-        id: {
+        search_conditions: {
             type: "array",
-            items: { type: "string" },
-            nullable: true,
-        },
-        title: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        body: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        title_or_body: {
-            type: "array",
-            items: searchableTextSchema,
+            items: postSearchableTextSchema,
             nullable: true,
         },
         ignore_blockquotes: { type: "boolean", nullable: true },
-        domain: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        url: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        flair_text: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        flair_css_class: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        flair_template_id: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
         reports: { type: "number", nullable: true },
         body_longer_than: { type: "number", nullable: true },
         body_shorter_than: { type: "number", nullable: true },
@@ -363,31 +243,6 @@ export const automodSchema: Record<string, unknown> = {
         crosspost_id: {
             type: "array",
             items: { type: "string" },
-            nullable: true,
-        },
-        crosspost_title: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        media_author: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        media_author_url: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        media_title: {
-            type: "array",
-            items: searchableTextSchema,
-            nullable: true,
-        },
-        media_description: {
-            type: "array",
-            items: searchableTextSchema,
             nullable: true,
         },
         crosspost_author: {

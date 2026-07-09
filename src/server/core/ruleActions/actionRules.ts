@@ -1,8 +1,10 @@
-import { context, PostSuggestedCommentSort, reddit } from "@devvit/web/server";
+import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings } from "@devvit/web/server";
 import { isT1, T1, T3 } from "@devvit/web/shared";
-import { AutomodMatch, Matches, SetFlairActionDictionary } from "../types";
+import { AutomodMatch, CommentAction, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
-import { getBotCommentFooter, getDomainFromUrl } from "../helpers";
+import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../helpers";
+import { AppSetting } from "../appSettings";
+import markdownEscape from "markdown-escape";
 
 interface PlaceholderTarget {
     authorName: string;
@@ -13,7 +15,7 @@ interface PlaceholderTarget {
     title?: string;
 }
 
-export function valueWithPlaceholdersReplaced (input: string | undefined, target: PlaceholderTarget, matches: Matches[]): string | undefined {
+export function valueWithPlaceholdersReplaced (input: string | undefined, target: PlaceholderTarget, automodMatch: AutomodMatch): string | undefined {
     if (!input) {
         return;
     }
@@ -22,62 +24,64 @@ export function valueWithPlaceholdersReplaced (input: string | undefined, target
     const blockquotedBody = body
         ? body
                 .split("\n")
-                .map(line => `> ${line}`)
+                .map(line => `> ${markdownEscape(line)}`)
                 .join("\n")
         : "";
 
-    // If body is used in blockquote placeholder form, blockquote every body line.
     let result = input
-        .replace(/(^|\n)>\s*{{body}}(?=\n|$)/g, `$1${blockquotedBody}`)
-        .replaceAll("{{author}}", target.authorName)
-        .replaceAll("{{body}}", body)
+        .replace(/(^|\n)>\s*{{body}}(?=\n|$)/g, (_, prefix: string) => `${prefix}${blockquotedBody}`)
+        .replaceAll("u/{{author}}", `u/${target.authorName}`)
+        .replaceAll("{{author}}", markdownEscape(target.authorName))
+        .replaceAll("{{body}}", markdownEscape(body))
         .replaceAll("{{permalink}}", `https://www.reddit.com${target.permalink}`)
         .replaceAll("{{title}}", target.title ?? "")
-        .replaceAll("{{subreddit}}", target.subredditName)
+        .replaceAll("r/{{subreddit}}", `r/${target.subredditName}`)
+        .replaceAll("{{subreddit}}", markdownEscape(target.subredditName))
         .replaceAll("{{kind}}", target.title === undefined ? "comment" : "post")
         .replaceAll("{{domain}}", getDomainFromUrl(target.url) ?? "")
         .replaceAll("{{url}}", target.url)
+        .replaceAll("{{friendly_name}}", automodMatch.rule.friendly_name ?? "Unnamed rule")
         // {{match}} is replaced with the first match of the first category, or an empty string if there are no matches
-        .replaceAll("{{match}}", matches[0]?.matches[0] ?? "");
+        .replaceAll("{{match}}", automodMatch.matches[0]?.matches[0] ?? "");
 
     const matchRegex = /{{match(-\w+)?(\d+)?}}/g;
     for (const match of result.matchAll(matchRegex)) {
         const [fullMatch, category, index] = match;
-        const categoryMatches = matches.find(m => m.category === category);
+        const categoryMatches = automodMatch.matches.find(m => m.category === category);
         if (!categoryMatches) {
             const indexToUse = index ? parseInt(index) - 1 : 0;
-            result = result.replaceAll(fullMatch, matches[indexToUse]?.matches[0] ?? "");
+            result = result.replaceAll(fullMatch, automodMatch.matches[indexToUse]?.matches[0] ?? "");
         }
     }
 
     return result;
 }
 
-function getFlairOptions (flair: string | string[] | SetFlairActionDictionary, target: PlaceholderTarget, matches: Matches[]) {
+function getFlairOptions (flair: string | string[] | SetFlairActionDictionary, target: PlaceholderTarget, automodMatch: AutomodMatch) {
     if (typeof flair === "string") {
         return {
-            text: valueWithPlaceholdersReplaced(flair, target, matches),
+            text: valueWithPlaceholdersReplaced(flair, target, automodMatch),
         };
     } else if (Array.isArray(flair)) {
         return {
-            text: valueWithPlaceholdersReplaced(flair[0], target, matches),
-            cssClass: valueWithPlaceholdersReplaced(flair[1], target, matches),
+            text: valueWithPlaceholdersReplaced(flair[0], target, automodMatch),
+            cssClass: valueWithPlaceholdersReplaced(flair[1], target, automodMatch),
         };
     } else {
         return {
-            text: valueWithPlaceholdersReplaced(flair.text, target, matches),
-            cssClass: valueWithPlaceholdersReplaced(flair.css_class, target, matches),
+            text: valueWithPlaceholdersReplaced(flair.text, target, automodMatch),
+            cssClass: valueWithPlaceholdersReplaced(flair.css_class, target, automodMatch),
             templateId: flair.template_id,
         };
     }
 }
 
-export async function actionRules (targetId: string, matchedRule: AutomodMatch, doMessages = true): Promise<void> {
-    console.log(`Applying actions on target ${targetId} for rule ${JSON.stringify(matchedRule.rule.id)}`);
+async function doTopLevelAction (target: Post | Comment, action: PostOrCommentCondition | CommentAction, automodMatch: AutomodMatch) {
+    if (!action.action) {
+        return;
+    }
 
-    const target = await getPostOrCommentById(targetId as T1 | T3);
-
-    switch (matchedRule.rule.action) {
+    switch (action.action) {
         case "remove": {
             await target.remove();
             break;
@@ -87,7 +91,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
             break;
         }
         case "report": {
-            const reportReason = valueWithPlaceholdersReplaced(matchedRule.rule.report_reason ?? matchedRule.rule.action_reason, target, matchedRule.matches);
+            const reportReason = valueWithPlaceholdersReplaced(action.report_reason ?? action.action_reason, target, automodMatch);
             await reddit.report(target, { reason: reportReason ?? "Reported by Automod2" });
             break;
         }
@@ -96,17 +100,27 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
             break;
         }
         case "filter": {
-            const reportReason = valueWithPlaceholdersReplaced(matchedRule.rule.report_reason ?? matchedRule.rule.action_reason, target, matchedRule.matches);
-            await target.filter(reportReason ?? "Filtered by Automod2", false);
+            const reportReason = valueWithPlaceholdersReplaced(action.report_reason ?? action.action_reason, target, automodMatch);
+            await target.filter({
+                reason: reportReason ?? "Filtered by Automod Neo",
+                keep: false,
+            });
             break;
         }
         default: {
-            console.warn(`Unknown action: ${matchedRule.rule.action}`);
+            console.warn(`Unknown action: ${action.action}`);
         }
     }
+}
+export async function actionRules (targetId: string, matchedRule: AutomodMatch, doMessages = true): Promise<void> {
+    console.log(`Applying actions on target ${targetId}`);
+
+    const target = await getPostOrCommentById(targetId as T1 | T3) satisfies PlaceholderTarget;
+
+    await doTopLevelAction(target, matchedRule.rule, matchedRule);
 
     if (matchedRule.rule.comment) {
-        const commentBody = valueWithPlaceholdersReplaced(matchedRule.rule.comment, target, matchedRule.matches);
+        const commentBody = valueWithPlaceholdersReplaced(matchedRule.rule.comment, target, matchedRule);
         if (commentBody) {
             const newComment = await reddit.submitComment({
                 id: target.id,
@@ -123,7 +137,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
         const user = await reddit.getUserByUsername(target.authorName);
         const existingUserFlair = user?.getUserFlairBySubreddit(context.subredditName);
         if (matchedRule.rule.author.overwrite_flair || !existingUserFlair) {
-            const flairOptions = getFlairOptions(matchedRule.rule.author.set_flair, target, matchedRule.matches);
+            const flairOptions = getFlairOptions(matchedRule.rule.author.set_flair, target, matchedRule);
             await reddit.setUserFlair({
                 subredditName: context.subredditName,
                 username: target.authorName,
@@ -135,12 +149,16 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
     }
 
     if (matchedRule.rule.parent_submission && "postId" in target) {
-        await actionRules(target.postId, matchedRule, false);
+        const parentSubmissionRules = matchedRule.rule.parent_submission;
+        if (parentSubmissionRules.action || parentSubmissionRules.set_flair || parentSubmissionRules.set_sticky || parentSubmissionRules.set_nsfw || parentSubmissionRules.set_spoiler || parentSubmissionRules.set_suggested_sort || parentSubmissionRules.set_post_crowd_control_level) {
+            const parentPost = await reddit.getPostById(target.postId);
+            await actionRulesForPost(parentPost, matchedRule.rule.parent_submission, matchedRule);
+        }
     }
 
     if (doMessages && matchedRule.rule.message) {
-        const messageBody = valueWithPlaceholdersReplaced(matchedRule.rule.message, target, matchedRule.matches);
-        const messageSubject = valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule.matches) ?? "Message from Automod2";
+        const messageBody = valueWithPlaceholdersReplaced(matchedRule.rule.message, target, matchedRule);
+        const messageSubject = valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule) ?? "Message from Automod2";
         if (messageBody) {
             await reddit.sendPrivateMessage({
                 to: target.authorName,
@@ -151,14 +169,26 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
     }
 
     if (doMessages && matchedRule.rule.modmail) {
-        const modmailBody = valueWithPlaceholdersReplaced(matchedRule.rule.modmail, target, matchedRule.matches);
-        const modmailSubject = valueWithPlaceholdersReplaced(matchedRule.rule.modmail_subject, target, matchedRule.matches) ?? "Modmail from Automod2";
+        const modmailBody = valueWithPlaceholdersReplaced(matchedRule.rule.modmail, target, matchedRule);
+        const modmailSubject = valueWithPlaceholdersReplaced(matchedRule.rule.modmail_subject, target, matchedRule) ?? "Modmail from Automod2";
         if (modmailBody) {
             await reddit.modMail.createModInboxConversation({
                 subredditId: context.subredditId,
                 subject: modmailSubject,
                 bodyMarkdown: modmailBody + "\n\n" + getBotCommentFooter(),
             });
+        }
+    }
+
+    if (doMessages && matchedRule.rule.discord_alert) {
+        const discordAlertBody = valueWithPlaceholdersReplaced(matchedRule.rule.discord_alert, target, matchedRule);
+        const webhookUrl = await settings.get<string>(AppSetting.DiscordWebhookUrl);
+        if (discordAlertBody) {
+            if (webhookUrl) {
+                await sendMessageToWebhook(webhookUrl, discordAlertBody);
+            } else {
+                console.warn("Discord alert specified in rule, but no webhook URL is set in subreddit settings.");
+            }
         }
     }
 
@@ -171,13 +201,18 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
     }
 
     // Post only actions from this point.
+    await actionRulesForPost(target, matchedRule.rule, matchedRule);
+}
 
-    if (matchedRule.rule.set_flair) {
-        if (!target.flair || matchedRule.rule.overwrite_flair) {
-            const flairOptions = getFlairOptions(matchedRule.rule.set_flair, target, matchedRule.matches);
+async function actionRulesForPost (post: Post, actions: PostOrCommentCondition, automodMatch: AutomodMatch): Promise<void> {
+    await doTopLevelAction(post, actions, automodMatch);
+
+    if (actions.set_flair) {
+        if (!post.flair || actions.overwrite_flair) {
+            const flairOptions = getFlairOptions(actions.set_flair, post, automodMatch);
             await reddit.setPostFlair({
                 subredditName: context.subredditName,
-                postId: target.id,
+                postId: post.id,
                 text: flairOptions.text,
                 cssClass: flairOptions.cssClass,
                 flairTemplateId: flairOptions.templateId,
@@ -185,21 +220,21 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
         }
     }
 
-    if (matchedRule.rule.set_sticky) {
-        await target.sticky(typeof matchedRule.rule.set_sticky === "number" ? matchedRule.rule.set_sticky : undefined);
+    if (actions.set_sticky) {
+        await post.sticky(typeof actions.set_sticky === "number" ? actions.set_sticky : undefined);
     }
 
-    if (matchedRule.rule.set_nsfw) {
-        await target.markAsNsfw();
+    if (actions.set_nsfw) {
+        await post.markAsNsfw();
     }
 
-    if (matchedRule.rule.set_spoiler) {
-        await target.markAsSpoiler();
+    if (actions.set_spoiler) {
+        await post.markAsSpoiler();
     }
 
-    if (matchedRule.rule.set_suggested_sort) {
+    if (actions.set_suggested_sort) {
         let suggestedSort: PostSuggestedCommentSort;
-        switch (matchedRule.rule.set_suggested_sort) {
+        switch (actions.set_suggested_sort) {
             case "blank":
                 suggestedSort = "BLANK";
                 break;
@@ -226,13 +261,13 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
                 suggestedSort = "RANDOM";
                 break;
             default:
-                console.warn(`Unknown suggested sort: ${matchedRule.rule.set_suggested_sort}`);
+                console.warn(`Unknown suggested sort: ${actions.set_suggested_sort}`);
                 return;
         }
-        await target.setSuggestedCommentSort(suggestedSort);
+        await post.setSuggestedCommentSort(suggestedSort);
     }
 
-    if (matchedRule.rule.set_post_crowd_control_level) {
-        await target.updateCrowdControlLevel(matchedRule.rule.set_post_crowd_control_level);
+    if (actions.set_post_crowd_control_level) {
+        await post.updateCrowdControlLevel(actions.set_post_crowd_control_level);
     }
 }
