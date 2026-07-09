@@ -3,7 +3,7 @@
     "dev": {
         "subreddit": "fsvsandbox"
     },
-    "name": "fsvtestapp3",
+    "name": "automod-neo",
     "permissions": {
         "http": {
             "domains": [
@@ -42,5 +42,8 @@
                 "validationEndpoint": "/internal/validators/validate-discord-webhook"
             }
         }
+    },
+    "marketingAssets": {
+        "icon": "assets/icon.png"
     }
 }
