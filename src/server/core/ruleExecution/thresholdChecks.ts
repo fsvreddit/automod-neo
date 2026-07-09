@@ -1,15 +1,14 @@
+import { subDays, subHours, subMinutes, subMonths, subWeeks, subYears } from "date-fns";
+
+export const numericComparatorPattern = "^(<|>|<=|>=|=)?\\s?(\\d+)$";
+export const dateComparatorPattern = "^(<|>|<=|>=)?\\s?(\\d+)\\s(minute|hour|day|week|month|year)s?$";
+
 /**
  * A function to compare a number to a text input
  * @param input The numeric input
  * @param threshold The threshold to meet e.g. < 10
  * @returns True or false
  */
-
-import { subDays, subHours, subMinutes, subMonths, subWeeks, subYears } from "date-fns";
-
-export const numericComparatorPattern = "^(<|>|<=|>=|=)?\\s?(\\d+)$";
-export const dateComparatorPattern = "^(<|>|<=|>=)?\\s?(\\d+)\\s(minute|hour|day|week|month|year)s?$";
-
 export function meetsNumericThreshold (input: number, threshold: string): boolean {
     const regex = new RegExp(numericComparatorPattern);
     const matches = regex.exec(threshold);
@@ -42,7 +41,7 @@ export function meetsNumericThreshold (input: number, threshold: string): boolea
 }
 
 /**
- * A function to compare a number to a text input
+ * A function to compare a date to a text input
  * @param input The date input
  * @param threshold The threshold to meet e.g. < 10 years
  * @param defaultOperator The operator to use if none is specified
