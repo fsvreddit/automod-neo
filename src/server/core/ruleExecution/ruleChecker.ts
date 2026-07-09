@@ -5,7 +5,7 @@ import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, Sea
 import { getDomainFromUrl, isApprovedUser, isModerator, isSubredditNSFW } from "../helpers";
 import { meetsDateThreshold, meetsNumericThreshold } from "./thresholdChecks";
 import { subMonths } from "date-fns";
-import { anySearchConditionMatchesInput, postMatchesStandardCondition, searchConditionsMatchInput, sortRulesForExecution } from ".";
+import { anySearchConditionMatchesInput, postMatchesStandardCondition, searchConditionsMatchInput } from ".";
 
 export class AutomodRuleChecker {
     private rules: AutomodRule[];
@@ -24,7 +24,7 @@ export class AutomodRuleChecker {
         post?: Post;
         comment?: Comment;
     }) {
-        this.rules = sortRulesForExecution(opts.rules);
+        this.rules = opts.rules;
 
         if (opts.post) {
             this.posts[opts.post.id] = opts.post;
