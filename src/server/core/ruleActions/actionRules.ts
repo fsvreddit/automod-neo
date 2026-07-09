@@ -24,12 +24,12 @@ export function valueWithPlaceholdersReplaced (input: string | undefined, target
     const blockquotedBody = body
         ? body
                 .split("\n")
-                .map(line => `> ${line}`)
+                .map(line => `> ${markdownEscape(line)}`)
                 .join("\n")
         : "";
 
     let result = input
-        .replace(/(^|\n)>\s*{{body}}(?=\n|$)/g, `$1${markdownEscape(blockquotedBody)}`)
+        .replace(/(^|\n)>\s*{{body}}(?=\n|$)/g, (_, prefix: string) => `${prefix}${blockquotedBody}`)
         .replaceAll("u/{{author}}", `u/${target.authorName}`)
         .replaceAll("{{author}}", markdownEscape(target.authorName))
         .replaceAll("{{body}}", markdownEscape(body))
