@@ -575,6 +575,28 @@ export class AutomodRuleChecker {
                 continue;
             }
 
+            const isSelfPost = post.url.includes(post.permalink);
+
+            if (rule.type === "text submission" && !isSelfPost) {
+                continue;
+            }
+
+            if (rule.type === "link submission" && isSelfPost) {
+                continue;
+            }
+
+            if (rule.type === "crosspost submission" && !post.crosspostParentId) {
+                continue;
+            }
+
+            if (rule.type === "gallery submission" && post.gallery.length === 0) {
+                continue;
+            }
+
+            if (rule.type === "poll submission" && !post.pollData) {
+                continue;
+            }
+
             const matches = await this.checkPostAgainstCondition(post, rule);
             if (!matches) {
                 continue;
