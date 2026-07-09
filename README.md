@@ -54,6 +54,14 @@ body#2 (includes-word): "Redact"
 
 This would match content that hasa both the term "anonymized" and "Redact" in the name, unlike `body (includes-word): ["anonymized", "Redact"]` that would match any content that includes either of those terms. Note that the part after the # does not need to be a number, it can be any string of letters, numbers, hyphens or underscores.
 
+## Limitations
+
+The filter reason is currently only visible in the "modern web" modqueue, and not on mobile or Old Reddit's mod queue, or in the moderation log on any platform.
+
+The removal action reason is currently not visible anywhere.
+
+Both of these limitations require Reddit to make a change on either the Dev Platform or the Reddit website/mobile apps to allow these to show.
+
 ## Unsupported features
 
 The following existing AutoModerator features are not supported due to Devvit limitations, however if it becomes possible to include them in the future, they will be implemented:
