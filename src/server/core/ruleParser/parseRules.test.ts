@@ -144,6 +144,11 @@ parent_submission:
                     {
                         searchField: ["body"],
                         text: ["wolf"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
                 ],
                 author: {
@@ -178,10 +183,20 @@ parent_submission:
                         {
                             searchField: ["social_links"],
                             text: ["example.com/a"],
+                            options: {
+                                search_method: "includes",
+                                case_sensitive: false,
+                                negate: false,
+                            },
                         },
                         {
                             searchField: ["social_links"],
                             text: ["example.com/b"],
+                            options: {
+                                search_method: "includes",
+                                case_sensitive: false,
+                                negate: false,
+                            },
                         },
                     ],
                 },
@@ -199,10 +214,20 @@ parent_submission:
                         {
                             searchField: ["crosspost_title"],
                             text: ["one"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
                         },
                         {
                             searchField: ["crosspost_title"],
                             text: ["two"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
                         },
                     ],
                 },
@@ -227,10 +252,20 @@ author:
                     {
                         searchField: ["body"],
                         text: ["alpha"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
                     {
                         searchField: ["body"],
                         text: ["beta"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
                 ],
                 author: {
@@ -274,6 +309,11 @@ body: ['first', 'second']
                     {
                         searchField: ["body"],
                         text: ["first", "second"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
                 ],
             },
@@ -315,10 +355,20 @@ media_description#summary: 'long description'
                     {
                         searchField: ["media_title"],
                         text: ["first title", "second title"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
                     {
                         searchField: ["media_description"],
                         text: ["long description"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
                     },
                 ],
             },

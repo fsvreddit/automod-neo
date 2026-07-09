@@ -1,22 +1,14 @@
 import escapeStringRegexp from "escape-string-regexp";
 import { Matches, SearchableText, SearchOption } from "../types";
 
-export function searchTextMatches (input: string, textToMatch: string, options?: SearchOption): string[] | undefined {
-    if (options?.negate) {
+export function searchTextMatches (input: string, textToMatch: string, options: SearchOption): string[] | undefined {
+    if (options.negate) {
         const negatedOptions = { ...options, negate: false };
         const result = searchTextMatches(input, textToMatch, negatedOptions);
         if (result) {
             return;
         } else {
             return [];
-        }
-    }
-
-    if (!options) {
-        if (input.toLowerCase().includes(textToMatch.toLowerCase())) {
-            return [textToMatch];
-        } else {
-            return;
         }
     }
 
@@ -69,7 +61,7 @@ export function searchTextMatches (input: string, textToMatch: string, options?:
     }
 
     if (options.search_method === "includes-word") {
-        const regex = new RegExp("\\b" + escapeStringRegexp(textToMatch) + "\\b", options.case_sensitive ?? false ? "" : "i");
+        const regex = new RegExp("\\b" + escapeStringRegexp(textToMatch) + "\\b", options.case_sensitive ? "" : "i");
         if (regex.test(input)) {
             return [textToMatch];
         } else {
@@ -95,7 +87,7 @@ export function searchTextMatches (input: string, textToMatch: string, options?:
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (options.search_method === "regex") {
-        const regex = new RegExp(textToMatch, options.case_sensitive ?? false ? "u" : "iu");
+        const regex = new RegExp(textToMatch, options.case_sensitive ? "u" : "iu");
         const matches = input.match(regex);
         if (matches) {
             return matches.map(match => match.trim());

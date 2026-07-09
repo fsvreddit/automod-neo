@@ -16,10 +16,10 @@ const searchOptionSchema: JSONSchemaType<SearchOption> = {
     type: "object",
     properties: {
         search_method: { type: "string", enum: searchMethodValues },
-        case_sensitive: { type: "boolean", nullable: true },
-        negate: { type: "boolean", nullable: true },
+        case_sensitive: { type: "boolean" },
+        negate: { type: "boolean" },
     },
-    required: ["search_method"],
+    required: ["search_method", "case_sensitive", "negate"],
     additionalProperties: false,
 };
 
@@ -38,10 +38,9 @@ function createSearchableTextSchema (searchFieldEnum: readonly string[]) {
             },
             options: {
                 ...searchOptionSchema,
-                nullable: true,
             },
         },
-        required: ["searchField", "text"],
+        required: ["searchField", "text", "options"],
         additionalProperties: false,
     } as const;
 }

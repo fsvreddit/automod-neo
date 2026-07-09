@@ -1,31 +1,40 @@
 /* eslint-disable camelcase */
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { SearchableText } from "../types.js";
+import { SearchMethod, SearchOption, SearchableText } from "../types.js";
 import { searchConditionsMatchInput, searchTextMatches } from "./searchConditionMatcher.js";
 
+function makeOptions (search_method: SearchMethod, overrides: Partial<Omit<SearchOption, "search_method">> = {}): SearchOption {
+    return {
+        search_method,
+        case_sensitive: false,
+        negate: false,
+        ...overrides,
+    };
+}
+
 describe("searchTextMatches", () => {
-    describe("default behavior (no options)", () => {
+    describe("default includes behavior", () => {
         it("matches when text is included, case-insensitive", () => {
-            assert.deepEqual(searchTextMatches("Hello World", "world"), ["world"]);
+            assert.deepEqual(searchTextMatches("Hello World", "world", makeOptions("includes")), ["world"]);
         });
 
         it("does not match when text is not included", () => {
-            assert.deepEqual(searchTextMatches("Hello World", "planet"), undefined);
+            assert.deepEqual(searchTextMatches("Hello World", "planet", makeOptions("includes")), undefined);
         });
     });
 
     describe("full-exact", () => {
         it("matches exact text with case-insensitive comparison by default", () => {
             assert.deepEqual(
-                searchTextMatches("Hello World", "hello world", { search_method: "full-exact" }),
+                searchTextMatches("Hello World", "hello world", makeOptions("full-exact")),
                 ["hello world"],
             );
         });
 
         it("does not match when content differs", () => {
             assert.deepEqual(
-                searchTextMatches("Hello World", "Hello", { search_method: "full-exact" }),
+                searchTextMatches("Hello World", "Hello", makeOptions("full-exact")),
                 undefined,
             );
         });
@@ -33,7 +42,7 @@ describe("searchTextMatches", () => {
         it("respects case_sensitive=true", () => {
             assert.deepEqual(
                 searchTextMatches("Hello World", "hello world", {
-                    search_method: "full-exact",
+                    ...makeOptions("full-exact"),
                     case_sensitive: true,
                 }),
                 undefined,
@@ -43,7 +52,7 @@ describe("searchTextMatches", () => {
         it("supports negation", () => {
             assert.deepEqual(
                 searchTextMatches("Hello World", "hello world", {
-                    search_method: "full-exact",
+                    ...makeOptions("full-exact"),
                     negate: true,
                 }),
                 undefined,
@@ -54,14 +63,14 @@ describe("searchTextMatches", () => {
     describe("starts-with", () => {
         it("matches when input starts with text", () => {
             assert.deepEqual(
-                searchTextMatches("Hello World", "hello", { search_method: "starts-with" }),
+                searchTextMatches("Hello World", "hello", makeOptions("starts-with")),
                 ["hello"],
             );
         });
 
         it("does not match when prefix is different", () => {
             assert.equal(
-                searchTextMatches("Hello World", "world", { search_method: "starts-with" }),
+                searchTextMatches("Hello World", "world", makeOptions("starts-with")),
                 undefined,
             );
         });
@@ -69,7 +78,7 @@ describe("searchTextMatches", () => {
         it("respects case_sensitive=true", () => {
             assert.equal(
                 searchTextMatches("Hello World", "hello", {
-                    search_method: "starts-with",
+                    ...makeOptions("starts-with"),
                     case_sensitive: true,
                 }),
                 undefined,
@@ -79,7 +88,7 @@ describe("searchTextMatches", () => {
         it("supports negation", () => {
             assert.equal(
                 searchTextMatches("Hello World", "hello", {
-                    search_method: "starts-with",
+                    ...makeOptions("starts-with"),
                     negate: true,
                 }),
                 undefined,
@@ -90,14 +99,14 @@ describe("searchTextMatches", () => {
     describe("ends-with", () => {
         it("matches when input ends with text", () => {
             assert.deepEqual(
-                searchTextMatches("Hello World", "world", { search_method: "ends-with" }),
+                searchTextMatches("Hello World", "world", makeOptions("ends-with")),
                 ["world"],
             );
         });
 
         it("does not match when suffix is different", () => {
             assert.deepEqual(
-                searchTextMatches("Hello World", "hello", { search_method: "ends-with" }),
+                searchTextMatches("Hello World", "hello", makeOptions("ends-with")),
                 undefined,
             );
         });
@@ -105,7 +114,7 @@ describe("searchTextMatches", () => {
         it("respects case_sensitive=true", () => {
             assert.equal(
                 searchTextMatches("Hello World", "world", {
-                    search_method: "ends-with",
+                    ...makeOptions("ends-with"),
                     case_sensitive: true,
                 }),
                 undefined,
@@ -115,7 +124,7 @@ describe("searchTextMatches", () => {
         it("supports negation", () => {
             assert.equal(
                 searchTextMatches("Hello World", "world", {
-                    search_method: "ends-with",
+                    ...makeOptions("ends-with"),
                     negate: true,
                 }),
                 undefined,
@@ -126,21 +135,21 @@ describe("searchTextMatches", () => {
     describe("includes-word", () => {
         it("matches whole words", () => {
             assert.deepEqual(
-                searchTextMatches("The quick brown fox", "quick", { search_method: "includes-word" }),
+                searchTextMatches("The quick brown fox", "quick", makeOptions("includes-word")),
                 ["quick"],
             );
         });
 
         it("does not match partial words", () => {
             assert.equal(
-                searchTextMatches("The quick brown fox", "qui", { search_method: "includes-word" }),
+                searchTextMatches("The quick brown fox", "qui", makeOptions("includes-word")),
                 undefined,
             );
         });
 
         it("escapes regex metacharacters in search text", () => {
             assert.deepEqual(
-                searchTextMatches("Current release is 1.2.3", "1.2.3", { search_method: "includes-word" }),
+                searchTextMatches("Current release is 1.2.3", "1.2.3", makeOptions("includes-word")),
                 ["1.2.3"],
             );
         });
@@ -148,14 +157,14 @@ describe("searchTextMatches", () => {
         it("respects case_sensitive=true", () => {
             assert.deepEqual(
                 searchTextMatches("The quick brown fox", "quick", {
-                    search_method: "includes-word",
+                    ...makeOptions("includes-word"),
                     case_sensitive: true,
                 }),
                 ["quick"],
             );
             assert.deepEqual(
                 searchTextMatches("The quick brown fox", "Quick", {
-                    search_method: "includes-word",
+                    ...makeOptions("includes-word"),
                     case_sensitive: true,
                 }),
                 undefined,
@@ -165,7 +174,7 @@ describe("searchTextMatches", () => {
         it("supports negation", () => {
             assert.deepEqual(
                 searchTextMatches("The quick brown fox", "quick", {
-                    search_method: "includes-word",
+                    ...makeOptions("includes-word"),
                     negate: true,
                 }),
                 undefined,
@@ -176,14 +185,14 @@ describe("searchTextMatches", () => {
     describe("includes", () => {
         it("matches when text is included", () => {
             assert.deepEqual(
-                searchTextMatches("Hello World", "lo wo", { search_method: "includes" }),
+                searchTextMatches("Hello World", "lo wo", makeOptions("includes")),
                 ["lo wo"],
             );
         });
 
         it("does not match when text is missing", () => {
             assert.deepEqual(
-                searchTextMatches("Hello World", "abc", { search_method: "includes" }),
+                searchTextMatches("Hello World", "abc", makeOptions("includes")),
                 undefined,
             );
         });
@@ -191,7 +200,7 @@ describe("searchTextMatches", () => {
         it("respects case_sensitive=true", () => {
             assert.deepEqual(
                 searchTextMatches("Hello World", "lo wo", {
-                    search_method: "includes",
+                    ...makeOptions("includes"),
                     case_sensitive: true,
                 }),
                 undefined,
@@ -201,7 +210,7 @@ describe("searchTextMatches", () => {
         it("supports negation", () => {
             assert.deepEqual(
                 searchTextMatches("Hello World", "lo wo", {
-                    search_method: "includes",
+                    ...makeOptions("includes"),
                     negate: true,
                 }),
                 undefined,
@@ -212,14 +221,14 @@ describe("searchTextMatches", () => {
     describe("regex", () => {
         it("matches when regex pattern matches", () => {
             assert.deepEqual(
-                searchTextMatches("Hello World", "^hello\\s+world$", { search_method: "regex" }),
+                searchTextMatches("Hello World", "^hello\\s+world$", makeOptions("regex")),
                 ["Hello World"],
             );
         });
 
         it("does not match when regex pattern does not match", () => {
             assert.equal(
-                searchTextMatches("Hello World", "^world", { search_method: "regex" }),
+                searchTextMatches("Hello World", "^world", makeOptions("regex")),
                 undefined,
             );
         });
@@ -227,7 +236,7 @@ describe("searchTextMatches", () => {
         it("respects case_sensitive=true", () => {
             assert.deepEqual(
                 searchTextMatches("Hello World", "^hello\\s+world$", {
-                    search_method: "regex",
+                    ...makeOptions("regex"),
                     case_sensitive: true,
                 }),
                 undefined,
@@ -237,7 +246,7 @@ describe("searchTextMatches", () => {
         it("supports negation", () => {
             assert.deepEqual(
                 searchTextMatches("Hello World", "^hello\\s+world$", {
-                    search_method: "regex",
+                    ...makeOptions("regex"),
                     negate: true,
                 }),
                 undefined,
@@ -248,6 +257,7 @@ describe("searchTextMatches", () => {
     it("throws for an unknown search method", () => {
         assert.throws(
             () => searchTextMatches("Hello World", "Hello", {
+                ...makeOptions("includes"),
                 search_method: "not-a-method" as never,
             }),
             /Unknown search method/,
@@ -261,12 +271,12 @@ describe("searchConditionsMatchInput", () => {
             {
                 searchField: ["title"],
                 text: ["hello"],
-                options: { search_method: "includes" },
+                options: { search_method: "includes", case_sensitive: false, negate: false },
             },
             {
                 searchField: ["body"],
                 text: ["world"],
-                options: { search_method: "includes" },
+                options: { search_method: "includes", case_sensitive: false, negate: false },
             },
         ];
 
@@ -291,7 +301,7 @@ describe("searchConditionsMatchInput", () => {
             {
                 searchField: ["title", "body"],
                 text: ["urgent"],
-                options: { search_method: "includes" },
+                options: { search_method: "includes", case_sensitive: false, negate: false },
             },
         ];
 

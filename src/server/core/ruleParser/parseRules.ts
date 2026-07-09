@@ -44,7 +44,7 @@ function toStringArray (value: unknown): string[] | undefined {
     return undefined;
 }
 
-function toSearchableText (value: unknown, searchField: SearchableText["searchField"], options?: SearchOption): SearchableText | undefined {
+function toSearchableText (value: unknown, searchField: SearchableText["searchField"], options: SearchOption): SearchableText | undefined {
     const text = toStringArray(value);
     if (!text) {
         return undefined;
@@ -53,11 +53,8 @@ function toSearchableText (value: unknown, searchField: SearchableText["searchFi
     const searchableText: SearchableText = {
         searchField,
         text,
+        options,
     };
-
-    if (options) {
-        searchableText.options = options;
-    }
 
     return searchableText;
 }
@@ -79,7 +76,7 @@ function defaultSearchMethodForField (fieldName: SearchField): SearchMethod {
     }
 }
 
-function buildSearchOptions (fieldName: SearchField, qualifierText: string | undefined, negate: boolean): SearchOption | undefined {
+function buildSearchOptions (fieldName: SearchField, qualifierText: string | undefined, negate: boolean): SearchOption {
     const rawParts = (qualifierText ?? "").split(",").map(part => part.trim()).filter(Boolean);
     const caseSensitive = rawParts.includes("case-sensitive") || rawParts.includes("case_sensitive");
     const parts = rawParts.filter(part => part !== "case-sensitive" && part !== "case_sensitive");
@@ -88,10 +85,6 @@ function buildSearchOptions (fieldName: SearchField, qualifierText: string | und
     const searchMethod = searchMethodCandidate && searchMethodValues.includes(searchMethodCandidate as SearchMethod)
         ? searchMethodCandidate as SearchMethod
         : defaultSearchMethodForField(fieldName);
-
-    if (!qualifierText && !negate && fieldName !== "id") {
-        return undefined;
-    }
 
     return {
         search_method: searchMethod,

@@ -2,8 +2,8 @@ export type SearchMethod = "includes-word" | "includes" | "starts-with" | "ends-
 
 export interface SearchOption {
     search_method: SearchMethod;
-    case_sensitive?: boolean;
-    negate?: boolean;
+    case_sensitive: boolean;
+    negate: boolean;
 }
 
 type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "media_author" | "media_author_url" | "media_title" | "media_description";
@@ -16,7 +16,7 @@ export type SearchField = PostSearchField | CommentSearchField | AuthorSearchFie
 export interface SearchableText {
     searchField: SearchField[];
     text: string[];
-    options?: SearchOption;
+    options: SearchOption;
 }
 
 export interface SetFlairActionDictionary {
