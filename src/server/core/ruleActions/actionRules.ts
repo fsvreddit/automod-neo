@@ -183,8 +183,12 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
     if (doMessages && matchedRule.rule.discord_alert) {
         const discordAlertBody = valueWithPlaceholdersReplaced(matchedRule.rule.discord_alert, target, matchedRule);
         const webhookUrl = await settings.get<string>(AppSetting.DiscordWebhookUrl);
-        if (discordAlertBody && webhookUrl) {
-            await sendMessageToWebhook(webhookUrl, discordAlertBody);
+        if (discordAlertBody) {
+            if (webhookUrl) {
+                await sendMessageToWebhook(webhookUrl, discordAlertBody);
+            } else {
+                console.warn("Discord alert specified in rule, but no webhook URL is set in subreddit settings.");
+            }
         }
     }
 
