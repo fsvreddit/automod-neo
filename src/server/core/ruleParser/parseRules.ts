@@ -11,7 +11,6 @@ const topLevelSearchableFields = new Set([
     "id",
     "title",
     "body",
-    "title_or_body",
     "domain",
     "url",
     "flair_text",
@@ -23,6 +22,7 @@ const topLevelSearchableFields = new Set([
     "media_title",
     "media_description",
 ]);
+
 const authorSearchableFields = new Set(["id", "name", "flair_text", "flair_css_class", "display_name", "bio_text", "social_links"]);
 const subredditSearchableFields = new Set(["name"]);
 
