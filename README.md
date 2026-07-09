@@ -6,7 +6,7 @@ For documentation, please see the official AutoModerator documentation but note 
 
 All regular expressions use Javascript regex syntax. This can be different to Python regex (that used by AutoModerator) but most regular expressions that worked in OG Automod will work here too. Unlike OG AutoMod, full lookahead/lookbehind support is available. Some regexes that use Unicode code points may need to be reworked.
 
-All regular expressions are evaluated with Unicode mode on, allowing for placeholders such as `\p{Emoji}`.
+All regular expressions are evaluated with the Unicode flag on, allowing for placeholders such as `\p{Emoji_Presentation}`.
 
 ## New features
 
