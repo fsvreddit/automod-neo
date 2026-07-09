@@ -25,9 +25,9 @@ These can be searched just like the title or body e.g. `bio_text (includes): 'sn
 
 You can use the `discord_alert` action type to send a message to a Discord webhook configured in app settings.
 
-### friendly_name attribute
+### friendly_name attribute and placeholder
 
-Rules can have an `friendly_name` attribute, useful for debugging. This can save using comments to accomplish the same thing.
+Rules can have an `friendly_name` attribute, useful for debugging. This can save using comments to accomplish the same thing. {{friendly-name}} is also a supported placeholder on all output (comments, modmail, Discord alerts).
 
 ## Unsupported features
 
