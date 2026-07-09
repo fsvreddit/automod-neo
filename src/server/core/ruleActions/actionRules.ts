@@ -4,6 +4,7 @@ import { AutomodMatch, CommentAction, PostOrCommentCondition, SetFlairActionDict
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../helpers";
 import { AppSetting } from "../appSettings";
+import markdownEscape from "markdown-escape";
 
 interface PlaceholderTarget {
     authorName: string;
@@ -27,14 +28,15 @@ export function valueWithPlaceholdersReplaced (input: string | undefined, target
                 .join("\n")
         : "";
 
-    // If body is used in blockquote placeholder form, blockquote every body line.
     let result = input
-        .replace(/(^|\n)>\s*{{body}}(?=\n|$)/g, `$1${blockquotedBody}`)
-        .replaceAll("{{author}}", target.authorName)
-        .replaceAll("{{body}}", body)
+        .replace(/(^|\n)>\s*{{body}}(?=\n|$)/g, `$1${markdownEscape(blockquotedBody)}`)
+        .replaceAll("u/{{author}}", `u/${target.authorName}`)
+        .replaceAll("{{author}}", markdownEscape(target.authorName))
+        .replaceAll("{{body}}", markdownEscape(body))
         .replaceAll("{{permalink}}", `https://www.reddit.com${target.permalink}`)
         .replaceAll("{{title}}", target.title ?? "")
-        .replaceAll("{{subreddit}}", target.subredditName)
+        .replaceAll("r/{{subreddit}}", `r/${target.subredditName}`)
+        .replaceAll("{{subreddit}}", markdownEscape(target.subredditName))
         .replaceAll("{{kind}}", target.title === undefined ? "comment" : "post")
         .replaceAll("{{domain}}", getDomainFromUrl(target.url) ?? "")
         .replaceAll("{{url}}", target.url)
@@ -113,7 +115,7 @@ async function doTopLevelAction (target: Post | Comment, action: PostOrCommentCo
 export async function actionRules (targetId: string, matchedRule: AutomodMatch, doMessages = true): Promise<void> {
     console.log(`Applying actions on target ${targetId}`);
 
-    const target = await getPostOrCommentById(targetId as T1 | T3);
+    const target = await getPostOrCommentById(targetId as T1 | T3) satisfies PlaceholderTarget;
 
     await doTopLevelAction(target, matchedRule.rule, matchedRule);
 
