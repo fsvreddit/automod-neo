@@ -3,39 +3,22 @@ import { AppSetting } from "../appSettings";
 import { parseRules } from "../ruleParser";
 import { settings } from "@devvit/web/server";
 
-function getActionPrecedence (rule: AutomodRule): number {
-    switch (rule.action) {
-        case "remove":
-        case "spam":
-            return 0;
-        case "filter":
-            return 1;
-        case "report":
-            return 2;
-        default:
-            return 3;
-    }
+function isRemovalRule (rule: AutomodRule): boolean {
+    return rule.action === "remove" || rule.action === "spam" || rule.action === "filter";
 }
 
 export function sortRulesForExecution (rules: AutomodRule[]): AutomodRule[] {
-    return rules
-        .map((rule, index) => ({ rule, index }))
-        .sort((a, b) => {
-            const priorityA = a.rule.priority ?? 0;
-            const priorityB = b.rule.priority ?? 0;
-            if (priorityA !== priorityB) {
-                return priorityB - priorityA;
-            }
+    // First, add all the removal rules in priority order (highest priority first)
+    const removalRules = rules.filter(isRemovalRule);
+    removalRules.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+    const rulesToReturn = [...removalRules];
 
-            const actionPrecedenceA = getActionPrecedence(a.rule);
-            const actionPrecedenceB = getActionPrecedence(b.rule);
-            if (actionPrecedenceA !== actionPrecedenceB) {
-                return actionPrecedenceA - actionPrecedenceB;
-            }
+    // Then, add all the non-removal rules in priority order (highest priority first)
+    const nonRemovalRules = rules.filter(rule => !isRemovalRule(rule));
+    nonRemovalRules.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+    rulesToReturn.push(...nonRemovalRules);
 
-            return a.index - b.index;
-        })
-        .map(entry => entry.rule);
+    return rulesToReturn;
 }
 
 export async function getRulesForSubreddit (): Promise<AutomodRule[]> {

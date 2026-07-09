@@ -1,38 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it, vi } from "vitest";
-
-vi.mock("@devvit/web/server", () => ({
-    reddit: {},
-}));
-
-vi.mock("./commentChecks", () => ({
-    commentMatchesRule: vi.fn(),
-}));
-
-vi.mock("./postChecks", () => ({
-    postMatchesRule: vi.fn(),
-}));
-
-vi.mock("./authorChecks", () => ({
-    authorMatchesCondition: vi.fn(),
-}));
-
-vi.mock("../helpers", () => ({
-    isModerator: vi.fn(),
-}));
-
-vi.mock("@fsvreddit/fsv-devvit-web-helpers", () => ({
-    hasTriggerBeenHandled: vi.fn(),
-}));
-
-vi.mock("../appSettings", () => ({
-    AppSetting: { Rules: "Rules" },
-    getSettings: vi.fn(),
-}));
-
-vi.mock("../ruleParser", () => ({
-    parseRules: vi.fn(),
-}));
+import { describe, it } from "vitest";
 
 import { AutomodRule } from "../types.js";
 import { sortRulesForExecution } from "./ruleRetrieval.js";
@@ -54,21 +21,21 @@ describe("sortRulesForExecution", () => {
         );
     });
 
-    it("orders same-priority rules by action precedence: remove/spam, then filter, then report, then others", () => {
+    it("orders removal rules before other rules, each bucket by priority descending", () => {
         const rules: AutomodRule[] = [
-            { comment: "other-a", priority: 2, action: "approve" },
-            { comment: "filter", priority: 2, action: "filter" },
-            { comment: "spam", priority: 2, action: "spam" },
-            { comment: "other-b", priority: 2 },
-            { comment: "remove", priority: 2, action: "remove" },
-            { comment: "report", priority: 2, action: "report" },
+            { comment: "other-high", priority: 5, action: "approve" },
+            { comment: "remove-low", priority: 1, action: "remove" },
+            { comment: "spam-high", priority: 4, action: "spam" },
+            { comment: "filter-mid", priority: 3, action: "filter" },
+            { comment: "other-mid", priority: 3 },
+            { comment: "other-low", priority: 1, action: "report" },
         ];
 
         const sorted = sortRulesForExecution(rules);
 
         assert.deepEqual(
             sorted.map(rule => rule.comment),
-            ["spam", "remove", "filter", "report", "other-a", "other-b"],
+            ["spam-high", "filter-mid", "remove-low", "other-high", "other-mid", "other-low"],
         );
     });
 
@@ -87,18 +54,20 @@ describe("sortRulesForExecution", () => {
         );
     });
 
-    it("applies action precedence only within the same priority bucket", () => {
+    it("keeps removal and non-removal groups independently ordered by priority", () => {
         const rules: AutomodRule[] = [
-            { comment: "priority-3-other", priority: 3, action: "approve" },
-            { comment: "priority-2-remove", priority: 2, action: "remove" },
-            { comment: "priority-3-filter", priority: 3, action: "filter" },
+            { comment: "other-high", priority: 8, action: "approve" },
+            { comment: "remove-low", priority: 1, action: "remove" },
+            { comment: "spam-mid", priority: 5, action: "spam" },
+            { comment: "other-mid", priority: 5 },
+            { comment: "filter-high", priority: 9, action: "filter" },
         ];
 
         const sorted = sortRulesForExecution(rules);
 
         assert.deepEqual(
             sorted.map(rule => rule.comment),
-            ["priority-3-filter", "priority-3-other", "priority-2-remove"],
+            ["filter-high", "spam-mid", "remove-low", "other-high", "other-mid"],
         );
     });
 });
