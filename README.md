@@ -1,15 +1,10 @@
-This app replicates AutoModerator and adds some new features.
+This app replicates nearly all features of AutoModerator and adds some new features.
 
 ## Behaviour differences
 
-All regular expressions use Javascript regex syntax. This can be different to Python regex (that used by AutoModerator) but most regular expressions that worked in OG Automod will work here too. Unlike OG AutoMod, full lookahead/lookbehind support is available.
+All regular expressions use Javascript regex syntax. This can be different to Python regex (that used by AutoModerator) but most regular expressions that worked in OG Automod will work here too. Unlike OG AutoMod, full lookahead/lookbehind support is available. Some regexes that use Unicode code points may need to be reworked.
 
 All regular expressions are evaluated with Unicode mode on, allowing for placeholders such as `\p{Emoji}`.
-
-## Todo
-
-Fix actions on parent submissions
-Discord alerts using configurable webhooks
 
 ## New features
 
@@ -20,6 +15,10 @@ These can be searched just like the title or body e.g. `bio_text (includes): 'sn
 * bio_text
 * display_name
 * social_links
+
+### Parent submission and parent author actions
+
+All actions (such as remove, set flair and so on) are now supported at the parent submission and parent submission author levels
 
 ### Discord alerts
 
@@ -44,3 +43,11 @@ On submissions:
 
 * discussion_type
 * is_meta_discussion
+
+## Things I will never do
+
+This app will never support a "ban user" or "mute user" feature, sorry. I can see too much scope for abuse.
+
+## About this app
+
+Automod Neo is open source. [You can find the source code on GitHub here](https://github.com/fsvreddit/automod-neo).

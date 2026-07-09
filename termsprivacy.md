@@ -1,10 +1,10 @@
-# Youtube Information App
+# Automod Neo
 
 ## Privacy Policy
 
 Data on Reddit falls under the [Reddit Privacy Policy](https://www.reddit.com/policies/privacy-policy).
 
-This app uses the YouTube API to retrieve information about videos and channels. No personal information is sent to the API - just video and channel IDs.
+This app uses the Discord webhook API to optionally send alerts to Discord, if configured to do so.
 
 ## Terms and Conditions
 
