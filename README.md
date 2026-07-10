@@ -9,7 +9,6 @@ TODO:
 * For gallery submissions, the optional image captions are included in evaluation of `body`
 * `domain` should check either the domain or a subdomain by default
 * author flair placeholders in actions
-* media placeholders in actions
 
 ## Behaviour differences
 

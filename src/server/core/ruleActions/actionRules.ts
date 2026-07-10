@@ -1,21 +1,20 @@
+/* eslint-disable camelcase */
 import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings } from "@devvit/web/server";
-import { isT1, T1, T3 } from "@devvit/web/shared";
+import { isT1, isT3, T1, T3 } from "@devvit/web/shared";
 import { AutomodMatch, CommentAction, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../helpers";
 import { AppSetting } from "../appSettings";
 import markdownEscape from "markdown-escape";
 
-interface PlaceholderTarget {
-    authorName: string;
-    body?: string;
-    permalink: string;
-    subredditName: string;
-    url: string;
-    title?: string;
+interface AdditionalPlaceholders {
+    media_author?: string;
+    media_author_url?: string;
+    media_title?: string;
+    media_description?: string;
 }
 
-export function valueWithPlaceholdersReplaced (input: string | undefined, target: PlaceholderTarget, automodMatch: AutomodMatch): string | undefined {
+export function valueWithPlaceholdersReplaced (input: string | undefined, target: Post | Comment, additionalPlaceholders: AdditionalPlaceholders, automodMatch: AutomodMatch): string | undefined {
     if (!input) {
         return;
     }
@@ -34,12 +33,16 @@ export function valueWithPlaceholdersReplaced (input: string | undefined, target
         .replaceAll("{{author}}", markdownEscape(target.authorName))
         .replaceAll("{{body}}", markdownEscape(body))
         .replaceAll("{{permalink}}", `https://www.reddit.com${target.permalink}`)
-        .replaceAll("{{title}}", target.title ?? "")
+        .replaceAll("{{title}}", "title" in target ? markdownEscape(target.title) : "")
         .replaceAll("r/{{subreddit}}", `r/${target.subredditName}`)
         .replaceAll("{{subreddit}}", markdownEscape(target.subredditName))
-        .replaceAll("{{kind}}", target.title === undefined ? "comment" : "submission")
+        .replaceAll("{{kind}}", isT3(target.id) ? "submission" : "comment")
         .replaceAll("{{domain}}", getDomainFromUrl(target.url) ?? "")
         .replaceAll("{{url}}", target.url)
+        .replaceAll("{{media_author}}", additionalPlaceholders.media_author ?? "")
+        .replaceAll("{{media_author_url}}", additionalPlaceholders.media_author_url ?? "")
+        .replaceAll("{{media_title}}", additionalPlaceholders.media_title ?? "")
+        .replaceAll("{{media_description}}", additionalPlaceholders.media_description ?? "")
         .replaceAll("{{friendly_name}}", automodMatch.rule.friendly_name ?? "Unnamed rule")
         // {{match}} is replaced with the first match of the first category, or an empty string if there are no matches
         .replaceAll("{{match}}", automodMatch.matches[0]?.matches[0] ?? "");
@@ -57,26 +60,26 @@ export function valueWithPlaceholdersReplaced (input: string | undefined, target
     return result;
 }
 
-function getFlairOptions (flair: string | string[] | SetFlairActionDictionary, target: PlaceholderTarget, automodMatch: AutomodMatch) {
+function getFlairOptions (flair: string | string[] | SetFlairActionDictionary, target: Post | Comment, automodMatch: AutomodMatch) {
     if (typeof flair === "string") {
         return {
-            text: valueWithPlaceholdersReplaced(flair, target, automodMatch),
+            text: valueWithPlaceholdersReplaced(flair, target, {}, automodMatch),
         };
     } else if (Array.isArray(flair)) {
         return {
-            text: valueWithPlaceholdersReplaced(flair[0], target, automodMatch),
-            cssClass: valueWithPlaceholdersReplaced(flair[1], target, automodMatch),
+            text: valueWithPlaceholdersReplaced(flair[0], target, {}, automodMatch),
+            cssClass: valueWithPlaceholdersReplaced(flair[1], target, {}, automodMatch),
         };
     } else {
         return {
-            text: valueWithPlaceholdersReplaced(flair.text, target, automodMatch),
-            cssClass: valueWithPlaceholdersReplaced(flair.css_class, target, automodMatch),
+            text: valueWithPlaceholdersReplaced(flair.text, target, {}, automodMatch),
+            cssClass: valueWithPlaceholdersReplaced(flair.css_class, target, {}, automodMatch),
             templateId: flair.template_id,
         };
     }
 }
 
-async function doTopLevelAction (target: Post | Comment, action: PostOrCommentCondition | CommentAction, automodMatch: AutomodMatch) {
+async function doTopLevelAction (target: Post | Comment, additionalPlaceholders: AdditionalPlaceholders, action: PostOrCommentCondition | CommentAction, automodMatch: AutomodMatch) {
     if (!action.action) {
         return;
     }
@@ -91,7 +94,7 @@ async function doTopLevelAction (target: Post | Comment, action: PostOrCommentCo
             break;
         }
         case "report": {
-            const reportReason = valueWithPlaceholdersReplaced(action.report_reason ?? action.action_reason, target, automodMatch);
+            const reportReason = valueWithPlaceholdersReplaced(action.report_reason ?? action.action_reason, target, additionalPlaceholders, automodMatch);
             await reddit.report(target, { reason: reportReason ?? "Reported by Automod Neo" });
             break;
         }
@@ -100,7 +103,7 @@ async function doTopLevelAction (target: Post | Comment, action: PostOrCommentCo
             break;
         }
         case "filter": {
-            const reportReason = valueWithPlaceholdersReplaced(action.report_reason ?? action.action_reason, target, automodMatch);
+            const reportReason = valueWithPlaceholdersReplaced(action.report_reason ?? action.action_reason, target, additionalPlaceholders, automodMatch);
             await target.filter({
                 reason: reportReason ?? "Filtered by Automod Neo",
                 keep: false,
@@ -115,12 +118,24 @@ async function doTopLevelAction (target: Post | Comment, action: PostOrCommentCo
 export async function actionRules (targetId: string, matchedRule: AutomodMatch, doMessages = true): Promise<void> {
     console.log(`Applying actions on target ${targetId}`);
 
-    const target = await getPostOrCommentById(targetId as T1 | T3) satisfies PlaceholderTarget;
+    const target = await getPostOrCommentById(targetId as T1 | T3);
+    let additionalPlaceholders: AdditionalPlaceholders;
+    if (isT3(target.id)) {
+        const postTarget = target as Post;
+        additionalPlaceholders = {
+            media_author: postTarget.secureMedia?.oembed?.authorName,
+            media_author_url: postTarget.secureMedia?.oembed?.authorUrl,
+            media_title: postTarget.secureMedia?.oembed?.title,
+            media_description: postTarget.secureMedia?.oembed?.html,
+        };
+    } else {
+        additionalPlaceholders = {};
+    }
 
-    await doTopLevelAction(target, matchedRule.rule, matchedRule);
+    await doTopLevelAction(target, additionalPlaceholders, matchedRule.rule, matchedRule);
 
     if (matchedRule.rule.comment) {
-        const commentBody = valueWithPlaceholdersReplaced(matchedRule.rule.comment, target, matchedRule);
+        const commentBody = valueWithPlaceholdersReplaced(matchedRule.rule.comment, target, additionalPlaceholders, matchedRule);
         if (commentBody) {
             const newComment = await reddit.submitComment({
                 id: target.id,
@@ -152,13 +167,13 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
         const parentSubmissionRules = matchedRule.rule.parent_submission;
         if (parentSubmissionRules.action || parentSubmissionRules.set_flair || parentSubmissionRules.set_sticky || parentSubmissionRules.set_nsfw || parentSubmissionRules.set_spoiler || parentSubmissionRules.set_suggested_sort || parentSubmissionRules.set_post_crowd_control_level) {
             const parentPost = await reddit.getPostById(target.postId);
-            await actionRulesForPost(parentPost, matchedRule.rule.parent_submission, matchedRule);
+            await actionRulesForPost(parentPost, additionalPlaceholders, matchedRule.rule.parent_submission, matchedRule);
         }
     }
 
     if (doMessages && matchedRule.rule.message) {
-        const messageBody = valueWithPlaceholdersReplaced(matchedRule.rule.message, target, matchedRule);
-        const messageSubject = valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule) ?? "Automod Neo Notification";
+        const messageBody = valueWithPlaceholdersReplaced(matchedRule.rule.message, target, additionalPlaceholders, matchedRule);
+        const messageSubject = valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, additionalPlaceholders, matchedRule) ?? "Automod Neo Notification";
         if (messageBody) {
             await reddit.sendPrivateMessage({
                 to: target.authorName,
@@ -169,8 +184,8 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
     }
 
     if (doMessages && matchedRule.rule.modmail) {
-        const modmailBody = valueWithPlaceholdersReplaced(matchedRule.rule.modmail, target, matchedRule);
-        const modmailSubject = valueWithPlaceholdersReplaced(matchedRule.rule.modmail_subject, target, matchedRule) ?? "Automod Neo Notification";
+        const modmailBody = valueWithPlaceholdersReplaced(matchedRule.rule.modmail, target, additionalPlaceholders, matchedRule);
+        const modmailSubject = valueWithPlaceholdersReplaced(matchedRule.rule.modmail_subject, target, additionalPlaceholders, matchedRule) ?? "Automod Neo Notification";
         if (modmailBody) {
             await reddit.modMail.createModInboxConversation({
                 subredditId: context.subredditId,
@@ -181,7 +196,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
     }
 
     if (doMessages && matchedRule.rule.discord_alert) {
-        const discordAlertBody = valueWithPlaceholdersReplaced(matchedRule.rule.discord_alert, target, matchedRule);
+        const discordAlertBody = valueWithPlaceholdersReplaced(matchedRule.rule.discord_alert, target, additionalPlaceholders, matchedRule);
         const webhookUrl = await settings.get<string>(AppSetting.DiscordWebhookUrl);
         if (discordAlertBody) {
             if (webhookUrl) {
@@ -201,11 +216,11 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
     }
 
     // Post only actions from this point.
-    await actionRulesForPost(target, matchedRule.rule, matchedRule);
+    await actionRulesForPost(target, additionalPlaceholders, matchedRule.rule, matchedRule);
 }
 
-async function actionRulesForPost (post: Post, actions: PostOrCommentCondition, automodMatch: AutomodMatch): Promise<void> {
-    await doTopLevelAction(post, actions, automodMatch);
+async function actionRulesForPost (post: Post, additionalPlaceholders: AdditionalPlaceholders, actions: PostOrCommentCondition, automodMatch: AutomodMatch): Promise<void> {
+    await doTopLevelAction(post, additionalPlaceholders, actions, automodMatch);
 
     if (actions.set_flair) {
         if (!post.flair || actions.overwrite_flair) {

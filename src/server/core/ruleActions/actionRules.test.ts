@@ -8,6 +8,7 @@ vi.mock("@devvit/web/server", () => ({
 
 vi.mock("@devvit/web/shared", () => ({
     isT1: () => false,
+    isT3: () => true,
 }));
 
 vi.mock("@fsvreddit/fsv-devvit-web-helpers", () => ({
@@ -27,6 +28,7 @@ vi.mock("../helpers", () => ({
 
 import { valueWithPlaceholdersReplaced } from "./actionRules";
 import { AutomodRule, Matches } from "../types";
+import { Post } from "@devvit/web/server";
 
 const baseTarget = {
     authorName: "example_author",
@@ -34,13 +36,13 @@ const baseTarget = {
     permalink: "/r/test/comments/abc123/example",
     subredditName: "test",
     url: "https://example.com/path",
-};
+} as unknown as Post;
 
 const blankRule: AutomodRule = {};
 
 describe("valueWithPlaceholdersReplaced", () => {
     it("returns undefined when input is undefined", () => {
-        const result = valueWithPlaceholdersReplaced(undefined, baseTarget, { rule: blankRule, matches: [] });
+        const result = valueWithPlaceholdersReplaced(undefined, baseTarget, {}, { rule: blankRule, matches: [] });
 
         assert.equal(result, undefined);
     });
@@ -54,9 +56,11 @@ describe("valueWithPlaceholdersReplaced", () => {
         const result = valueWithPlaceholdersReplaced(
             "Author={{author}} | Body={{body}} | Link={{permalink}} | Kind={{kind}} | Domain={{domain}} | Url={{url}} | Match={{match}}",
             {
+                // eslint-disable-next-line @typescript-eslint/no-misused-spread
                 ...baseTarget,
                 title: "My title",
-            },
+            } as unknown as Post,
+            {},
             { rule: blankRule, matches },
         );
 
@@ -70,6 +74,7 @@ describe("valueWithPlaceholdersReplaced", () => {
         const result = valueWithPlaceholdersReplaced(
             "Before\n> {{body}}\nAfter",
             baseTarget,
+            {},
             { rule: blankRule, matches: [] },
         );
 
@@ -80,6 +85,7 @@ describe("valueWithPlaceholdersReplaced", () => {
         const result = valueWithPlaceholdersReplaced(
             "> {{body}}\n\nPlain: {{body}}",
             baseTarget,
+            {},
             { rule: blankRule, matches: [] },
         );
 
@@ -90,6 +96,7 @@ describe("valueWithPlaceholdersReplaced", () => {
         const result = valueWithPlaceholdersReplaced(
             "Start\n>    {{body}}\nEnd",
             baseTarget,
+            {},
             { rule: blankRule, matches: [] },
         );
 
