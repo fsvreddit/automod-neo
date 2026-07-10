@@ -62,7 +62,7 @@ describe("valueWithPlaceholdersReplaced", () => {
 
         assert.equal(
             result,
-            "Author=example\\_author | Body=line one\nline two | Link=https://www.reddit.com/r/test/comments/abc123/example | Kind=post | Domain=example.com | Url=https://example.com/path | Match=first_match",
+            "Author=example\\_author | Body=line one\nline two | Link=https://www.reddit.com/r/test/comments/abc123/example | Kind=submission | Domain=example.com | Url=https://example.com/path | Match=first_match",
         );
     });
 
