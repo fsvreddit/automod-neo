@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings } from "@devvit/web/server";
-import { isT1, isT3, T1, T3 } from "@devvit/web/shared";
+import { isT3, T1, T3 } from "@devvit/web/shared";
 import { AutomodMatch, CommentAction, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../helpers";
@@ -48,17 +48,18 @@ export function valueWithPlaceholdersReplaced (input: string | undefined, target
         .replaceAll("{{author_flair_text}}", additionalPlaceholders.author_flair_text ?? "")
         .replaceAll("{{author_flair_css_class}}", additionalPlaceholders.author_flair_css_class ?? "")
         .replaceAll("{{friendly_name}}", automodMatch.rule.friendly_name ?? "Unnamed rule")
+        .replaceAll("{{friendly-name}}", automodMatch.rule.friendly_name ?? "Unnamed rule")
         // {{match}} is replaced with the first match of the first category, or an empty string if there are no matches
         .replaceAll("{{match}}", automodMatch.matches[0]?.matches[0] ?? "");
 
-    const matchRegex = /{{match(-\w+)?(\d+)?}}/g;
+    const matchRegex = /{{match(?:-([a-z_]+))?(?:-(\d+))?}}/gi;
     for (const match of result.matchAll(matchRegex)) {
         const [fullMatch, category, index] = match;
-        const categoryMatches = automodMatch.matches.find(m => m.category === category);
-        if (!categoryMatches) {
-            const indexToUse = index ? parseInt(index) - 1 : 0;
-            result = result.replaceAll(fullMatch, automodMatch.matches[indexToUse]?.matches[0] ?? "");
-        }
+        const categoryMatches = category
+            ? automodMatch.matches.find(candidate => candidate.category === category)
+            : automodMatch.matches[0];
+        const indexToUse = index ? parseInt(index) - 1 : 0;
+        result = result.replaceAll(fullMatch, categoryMatches?.matches[indexToUse] ?? "");
     }
 
     return result;
@@ -81,6 +82,29 @@ function getFlairOptions (flair: string | string[] | SetFlairActionDictionary, t
             templateId: flair.template_id,
         };
     }
+}
+
+async function applyUserFlairAction (
+    username: string,
+    flair: string | string[] | SetFlairActionDictionary,
+    overwriteFlair: boolean | undefined,
+    target: Post | Comment,
+    automodMatch: AutomodMatch,
+): Promise<void> {
+    const user = await reddit.getUserByUsername(username);
+    const existingUserFlair = await user?.getUserFlairBySubreddit(context.subredditName);
+    if (!overwriteFlair && existingUserFlair) {
+        return;
+    }
+
+    const flairOptions = getFlairOptions(flair, target, automodMatch);
+    await reddit.setUserFlair({
+        subredditName: context.subredditName,
+        username,
+        text: flairOptions.text,
+        cssClass: flairOptions.cssClass,
+        flairTemplateId: flairOptions.templateId,
+    });
 }
 
 async function doTopLevelAction (target: Post | Comment, additionalPlaceholders: AdditionalPlaceholders, action: PostOrCommentCondition | CommentAction, automodMatch: AutomodMatch) {
@@ -165,30 +189,37 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
             if (matchedRule.rule.comment_locked) {
                 await newComment.lock();
             }
-            await newComment.distinguish(matchedRule.rule.comment_stickied && isT1(targetId));
+            await newComment.distinguish(matchedRule.rule.comment_stickied && isT3(targetId));
         }
     }
 
     if (matchedRule.rule.author?.set_flair) {
-        const user = await reddit.getUserByUsername(target.authorName);
-        const existingUserFlair = user?.getUserFlairBySubreddit(context.subredditName);
-        if (matchedRule.rule.author.overwrite_flair || !existingUserFlair) {
-            const flairOptions = getFlairOptions(matchedRule.rule.author.set_flair, target, matchedRule);
-            await reddit.setUserFlair({
-                subredditName: context.subredditName,
-                username: target.authorName,
-                text: flairOptions.text,
-                cssClass: flairOptions.cssClass,
-                flairTemplateId: flairOptions.templateId,
-            });
-        }
+        await applyUserFlairAction(
+            target.authorName,
+            matchedRule.rule.author.set_flair,
+            matchedRule.rule.author.overwrite_flair,
+            target,
+            matchedRule,
+        );
+    }
+
+    if ("crosspostParentId" in target && target.crosspostParentId && matchedRule.rule.crosspost_author?.set_flair) {
+        const crosspostParent = await reddit.getPostById(target.crosspostParentId);
+        await applyUserFlairAction(
+            crosspostParent.authorName,
+            matchedRule.rule.crosspost_author.set_flair,
+            matchedRule.rule.crosspost_author.overwrite_flair,
+            crosspostParent,
+            matchedRule,
+        );
     }
 
     if (matchedRule.rule.parent_submission && "postId" in target) {
         const parentSubmissionRules = matchedRule.rule.parent_submission;
         if (parentSubmissionRules.action || parentSubmissionRules.set_flair || parentSubmissionRules.set_sticky || parentSubmissionRules.set_nsfw || parentSubmissionRules.set_spoiler || parentSubmissionRules.set_suggested_sort || parentSubmissionRules.set_post_crowd_control_level) {
             const parentPost = await reddit.getPostById(target.postId);
-            await actionRulesForPost(parentPost, additionalPlaceholders, matchedRule.rule.parent_submission, matchedRule);
+            await doTopLevelAction(parentPost, additionalPlaceholders, parentSubmissionRules, matchedRule);
+            await actionRulesForPost(parentPost, parentSubmissionRules, matchedRule);
         }
     }
 
@@ -228,8 +259,12 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
         }
     }
 
-    if (matchedRule.rule.set_locked) {
-        await target.lock();
+    if (matchedRule.rule.set_locked !== undefined) {
+        if (matchedRule.rule.set_locked) {
+            await target.lock();
+        } else {
+            await target.unlock();
+        }
     }
 
     if (!("title" in target)) {
@@ -237,12 +272,10 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
     }
 
     // Post only actions from this point.
-    await actionRulesForPost(target, additionalPlaceholders, matchedRule.rule, matchedRule);
+    await actionRulesForPost(target, matchedRule.rule, matchedRule);
 }
 
-async function actionRulesForPost (post: Post, additionalPlaceholders: AdditionalPlaceholders, actions: PostOrCommentCondition, automodMatch: AutomodMatch): Promise<void> {
-    await doTopLevelAction(post, additionalPlaceholders, actions, automodMatch);
-
+async function actionRulesForPost (post: Post, actions: PostOrCommentCondition, automodMatch: AutomodMatch): Promise<void> {
     if (actions.set_flair) {
         if (!post.flair || actions.overwrite_flair) {
             const flairOptions = getFlairOptions(actions.set_flair, post, automodMatch);

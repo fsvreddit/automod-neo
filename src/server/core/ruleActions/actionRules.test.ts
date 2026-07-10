@@ -102,4 +102,31 @@ describe("valueWithPlaceholdersReplaced", () => {
 
         assert.equal(result, "Start\n> line one\n> line two\nEnd");
     });
+
+
+    it("supports both friendly-name placeholder spellings", () => {
+        const result = valueWithPlaceholdersReplaced(
+            "{{friendly_name}} / {{friendly-name}}",
+            baseTarget,
+            {},
+            { rule: { friendly_name: "Example Rule" }, matches: [] },
+        );
+
+        assert.equal(result, "Example Rule / Example Rule");
+    });
+
+    it("resolves category and capture-group match placeholders", () => {
+        const matches: Matches[] = [
+            { category: "body", matches: ["whole body match", "body capture"] },
+            { category: "title", matches: ["whole title match", "title capture"] },
+        ];
+        const result = valueWithPlaceholdersReplaced(
+            "{{match-title}} | {{match-2}} | {{match-title-2}}",
+            baseTarget,
+            {},
+            { rule: blankRule, matches },
+        );
+
+        assert.equal(result, "whole title match | body capture | title capture");
+    });
 });
