@@ -4,6 +4,7 @@ import { AutomodRule, SearchField, SearchMethod, SearchOption, SearchableText } 
 import { parseAllDocuments } from "yaml";
 import Ajv, { type ErrorObject, type ValidateFunction } from "ajv";
 import { automodSchema } from "./automodSchema";
+import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecution";
 
 const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "full-exact", "regex"];
 
@@ -360,8 +361,69 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
     }
 }
 
+function validateNumericThresholdFormatInNode (node: MutableNode, ruleReference: string, numericThresholdFields: string[]): void {
+    const numericThresholdRegex = new RegExp(numericComparatorPattern, "i");
+
+    for (const fieldName of numericThresholdFields) {
+        const fieldValue = node[fieldName];
+        if (!fieldValue) {
+            continue;
+        }
+
+        if (typeof fieldValue === "number" && Number.isInteger(fieldValue)) {
+            continue;
+        }
+
+        if (typeof fieldValue !== "string" || !numericThresholdRegex.test(fieldValue)) {
+            const source = searchableSourceMetadata.get(node);
+            const attributeName = source?.rawKey ?? fieldName;
+            const containerPath = source?.containerPath;
+            throw new Error(`${ruleReference}: Invalid numeric threshold format for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}`);
+        }
+    }
+}
+
+function validateDateThresholdFormatInNode (node: MutableNode, ruleReference: string, dateThresholdFields: string[]): void {
+    const dateThresholdRegex = new RegExp(dateComparatorPattern, "i");
+
+    for (const fieldName of dateThresholdFields) {
+        const fieldValue = node[fieldName];
+        if (!fieldValue) {
+            continue;
+        }
+
+        if (typeof fieldValue === "number" && Number.isInteger(fieldValue)) {
+            continue;
+        }
+
+        if (typeof fieldValue !== "string" || !dateThresholdRegex.test(fieldValue)) {
+            const source = searchableSourceMetadata.get(node);
+            const attributeName = source?.rawKey ?? fieldName;
+            const containerPath = source?.containerPath;
+            throw new Error(`${ruleReference}: Invalid date threshold format for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}`);
+        }
+    }
+}
+
 function validateRegexPatternsInAuthorNode (node: MutableNode, ruleReference: string): void {
     validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference);
+
+    const numericThresholdFields = [
+        "comment_karma",
+        "post_karma",
+        "combined_karma",
+        "comment_subreddit_karma",
+        "post_subreddit_karma",
+        "combined_subreddit_karma",
+    ];
+
+    validateNumericThresholdFormatInNode(node, ruleReference, numericThresholdFields);
+
+    const dateThresholdFields = [
+        "account_age",
+    ];
+
+    validateDateThresholdFormatInNode(node, ruleReference, dateThresholdFields);
 }
 
 function validateRegexPatternsInSubredditNode (node: MutableNode, ruleReference: string): void {
@@ -385,6 +447,10 @@ function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleRe
 
     if (isObjectRecord(node.crosspost_subreddit)) {
         validateRegexPatternsInSubredditNode(node.crosspost_subreddit, ruleReference);
+    }
+
+    if (node.poll_option_count !== undefined) {
+        validateNumericThresholdFormatInNode(node, ruleReference, ["poll_option_count"]);
     }
 }
 

@@ -1,6 +1,7 @@
 /* eslint-disable camelcase */
 import { JSONSchemaType } from "ajv";
 import { SearchMethod, SearchOption } from "../types";
+import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecution";
 
 const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "full-exact", "full-text", "regex"];
 const standardConditionValues = ["image hosting sites", "direct image links", "video hosting sites", "streaming sites", "crowdfunding sites", "meme generator sites", "facebook links", "amazon affiliate links"] as const;
@@ -81,13 +82,13 @@ const authorSchema = {
             items: authorSearchableTextSchema,
             nullable: true,
         },
-        comment_karma: { type: "string", nullable: true },
-        post_karma: { type: "string", nullable: true },
-        combined_karma: { type: "string", nullable: true },
-        comment_subreddit_karma: { type: "string", nullable: true },
-        post_subreddit_karma: { type: "string", nullable: true },
-        combined_subreddit_karma: { type: "string", nullable: true },
-        account_age: { type: "string", nullable: true },
+        comment_karma: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        post_karma: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        combined_karma: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        comment_subreddit_karma: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        post_subreddit_karma: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        combined_subreddit_karma: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        account_age: { type: "string", nullable: true, pattern: dateComparatorPattern },
         satisfy_any_threshold: { type: "boolean", nullable: true },
         has_verified_email: { type: "boolean", nullable: true },
         is_gold: { type: "boolean", nullable: true },
@@ -137,7 +138,7 @@ const postConditionSchema = {
         is_edited: { type: "boolean", nullable: true },
         is_poll: { type: "boolean", nullable: true },
         is_gallery: { type: "boolean", nullable: true },
-        poll_option_count: { type: "string", nullable: true },
+        poll_option_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
         past_archive_date: { type: "boolean", nullable: true },
         author: {
             ...authorSchema,
@@ -202,7 +203,7 @@ export const automodSchema: Record<string, unknown> = {
         is_edited: { type: "boolean", nullable: true },
         is_poll: { type: "boolean", nullable: true },
         is_gallery: { type: "boolean", nullable: true },
-        poll_option_count: { type: "string", nullable: true },
+        poll_option_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
         past_archive_date: { type: "boolean", nullable: true },
         is_top_level: { type: "boolean", nullable: true },
         comment_crowd_control_collapsed: { type: "boolean", nullable: true },
