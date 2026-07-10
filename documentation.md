@@ -309,7 +309,6 @@ When used inside a string that supports placeholders, these will be replaced wit
 * `{{author}}` - the author's name (do /u/{{author}} for a link to the author's user page)
 * `{{author_flair_text}}` - the author's flair text (will be replaced with nothing if they have no flair set, or have it disabled)
 * `{{author_flair_css_class}}` - the author's flair CSS class (will be replaced with nothing if they have no flair set, or have it disabled)
-* `{{author_flair_template_id}}` - the author's template id (will be replaced with nothing if they have no flair set, or have it disabled)
 * `{{body}}` - the full body text of the text submission or comment
 * `{{permalink}}` - a link to the item
 * `{{subreddit}}` - the subreddit's name (do /r/{{subreddit}} for a link to the subreddit)

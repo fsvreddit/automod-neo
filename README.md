@@ -8,7 +8,6 @@ TODO:
 * poll_option_count - The number of options a poll post has.
 * For gallery submissions, the optional image captions are included in evaluation of `body`
 * `domain` should check either the domain or a subdomain by default
-* author flair placeholders in actions
 
 ## Behaviour differences
 

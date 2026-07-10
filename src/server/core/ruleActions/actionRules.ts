@@ -8,6 +8,8 @@ import { AppSetting } from "../appSettings";
 import markdownEscape from "markdown-escape";
 
 interface AdditionalPlaceholders {
+    author_flair_text?: string;
+    author_flair_css_class?: string;
     media_author?: string;
     media_author_url?: string;
     media_title?: string;
@@ -43,6 +45,8 @@ export function valueWithPlaceholdersReplaced (input: string | undefined, target
         .replaceAll("{{media_author_url}}", additionalPlaceholders.media_author_url ?? "")
         .replaceAll("{{media_title}}", additionalPlaceholders.media_title ?? "")
         .replaceAll("{{media_description}}", additionalPlaceholders.media_description ?? "")
+        .replaceAll("{{author_flair_text}}", additionalPlaceholders.author_flair_text ?? "")
+        .replaceAll("{{author_flair_css_class}}", additionalPlaceholders.author_flair_css_class ?? "")
         .replaceAll("{{friendly_name}}", automodMatch.rule.friendly_name ?? "Unnamed rule")
         // {{match}} is replaced with the first match of the first category, or an empty string if there are no matches
         .replaceAll("{{match}}", automodMatch.matches[0]?.matches[0] ?? "");
@@ -130,6 +134,17 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
         };
     } else {
         additionalPlaceholders = {};
+    }
+
+    try {
+        const targetAuthorFlair = await reddit.getUserByUsername(target.authorName).then(user => user?.getUserFlairBySubreddit(context.subredditName));
+        if (targetAuthorFlair) {
+            additionalPlaceholders.author_flair_text = targetAuthorFlair.flairText;
+            additionalPlaceholders.author_flair_css_class = targetAuthorFlair.flairCssClass;
+        }
+    } catch {
+        // Ignore errors when fetching author flair, as it is not critical to the action execution.
+        console.error(`Failed to fetch author flair for ${target.authorName}`);
     }
 
     await doTopLevelAction(target, additionalPlaceholders, matchedRule.rule, matchedRule);
