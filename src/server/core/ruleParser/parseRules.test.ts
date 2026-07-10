@@ -631,4 +631,31 @@ body: "urgent"
             },
         ]);
     });
+
+    it("preserves verbose_logs when provided", () => {
+        const rules = `
+---
+verbose_logs: true
+body: "log this"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                verbose_logs: true,
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["log this"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
 });

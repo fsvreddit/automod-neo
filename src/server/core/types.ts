@@ -107,6 +107,7 @@ export interface PostOrCommentCondition {
 
 export type AutomodRule = PostOrCommentCondition & CommentAction & {
     friendly_name?: string;
+    verbose_logs?: boolean;
 
     // Top-level checks/actions
     type?: "comment" | "submission" | "text submission" | "link submission" | "crosspost submission" | "poll submission" | "gallery submission" | "any";

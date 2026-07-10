@@ -19,6 +19,8 @@ export class AutomodRuleChecker {
     private userIsModerator: Record<string, boolean> = {};
     private userSubredditKarma: Record<string, { fromComments: number; fromPosts: number }> = {};
 
+    private verboseLogs = false;
+
     constructor (opts: {
         rules: AutomodRule[];
         post?: Post;
@@ -128,6 +130,16 @@ export class AutomodRuleChecker {
         return this.comments[commentId];
     }
 
+    private log (message: string, checkContext?: string): void {
+        if (this.verboseLogs) {
+            if (checkContext) {
+                console.log(`Verbose Logs [${checkContext}]: ${message}`);
+            } else {
+                console.log(`Verbose Logs: ${message}`);
+            }
+        }
+    }
+
     private getTextWithoutBlockquotes (text: string): string {
         const textLines: string[] = text.split("\n");
         const textWithoutBlockquotes: string[] = [];
@@ -149,33 +161,38 @@ export class AutomodRuleChecker {
         return conditions;
     }
 
-    private async authorMatchesCondition (username: string, authorCondition: Author): Promise<Matches[] | undefined> {
+    private async authorMatchesCondition (username: string, authorCondition: Author, checkContext?: string): Promise<Matches[] | undefined> {
         const user = await this.getUserByUsername(username);
         if (!user) {
+            this.log(`${username} not found for author condition check.`, checkContext);
             return;
         }
 
         // Simple checks for author conditions
         if (authorCondition.has_verified_email !== undefined) {
             if (user.hasVerifiedEmail !== authorCondition.has_verified_email) {
+                this.log(`${username} does not match has_verified_email condition (${authorCondition.has_verified_email}).`, checkContext);
                 return;
             }
         }
 
         if (authorCondition.is_gold !== undefined) {
             if (user.hasRedditPremium !== authorCondition.is_gold) {
+                this.log(`${username} does not match is_gold condition (${authorCondition.is_gold}).`, checkContext);
                 return;
             }
         }
 
         if (authorCondition.is_contributor !== undefined) {
             if (await this.getIsUserApprovedUser(user) !== authorCondition.is_contributor) {
+                this.log(`${username} does not match is_contributor condition (${authorCondition.is_contributor}).`, checkContext);
                 return;
             }
         }
 
         if (authorCondition.is_moderator !== undefined) {
             if (await this.getIsUserModerator(user) !== authorCondition.is_moderator) {
+                this.log(`${username} does not match is_moderator condition (${authorCondition.is_moderator}).`, checkContext);
                 return;
             }
         }
@@ -184,6 +201,7 @@ export class AutomodRuleChecker {
 
         if (authorCondition.comment_karma !== undefined) {
             if (!meetsNumericThreshold(user.commentKarma, authorCondition.comment_karma)) {
+                this.log(`${username} does not match comment_karma condition (${authorCondition.comment_karma}).`, checkContext);
                 if (!authorCondition.satisfy_any_threshold) {
                     return;
                 } else {
@@ -196,6 +214,7 @@ export class AutomodRuleChecker {
 
         if (authorCondition.post_karma !== undefined) {
             if (!meetsNumericThreshold(user.linkKarma, authorCondition.post_karma)) {
+                this.log(`${username} does not match post_karma condition (${authorCondition.post_karma}).`, checkContext);
                 if (!authorCondition.satisfy_any_threshold) {
                     return;
                 } else {
@@ -209,6 +228,7 @@ export class AutomodRuleChecker {
         if (authorCondition.combined_karma !== undefined) {
             const combinedKarma = user.commentKarma + user.linkKarma;
             if (!meetsNumericThreshold(combinedKarma, authorCondition.combined_karma)) {
+                this.log(`${username} does not match combined_karma condition (${authorCondition.combined_karma}).`, checkContext);
                 if (!authorCondition.satisfy_any_threshold) {
                     return;
                 } else {
@@ -221,6 +241,7 @@ export class AutomodRuleChecker {
 
         if (authorCondition.account_age !== undefined) {
             if (!meetsDateThreshold(user.createdAt, authorCondition.account_age)) {
+                this.log(`${username} does not match account_age condition (${authorCondition.account_age}).`, checkContext);
                 if (!authorCondition.satisfy_any_threshold) {
                     return;
                 } else {
@@ -237,6 +258,7 @@ export class AutomodRuleChecker {
 
             if (authorCondition.comment_subreddit_karma !== undefined) {
                 if (!meetsNumericThreshold(subredditKarma.fromComments, authorCondition.comment_subreddit_karma)) {
+                    this.log(`${username} does not match comment_subreddit_karma condition (${authorCondition.comment_subreddit_karma}).`, checkContext);
                     if (!authorCondition.satisfy_any_threshold) {
                         return;
                     } else {
@@ -249,6 +271,7 @@ export class AutomodRuleChecker {
 
             if (authorCondition.post_subreddit_karma !== undefined) {
                 if (!meetsNumericThreshold(subredditKarma.fromPosts, authorCondition.post_subreddit_karma)) {
+                    this.log(`${username} does not match post_subreddit_karma condition (${authorCondition.post_subreddit_karma}).`, checkContext);
                     if (!authorCondition.satisfy_any_threshold) {
                         return;
                     } else {
@@ -262,6 +285,7 @@ export class AutomodRuleChecker {
             if (authorCondition.combined_subreddit_karma !== undefined) {
                 const combinedSubredditKarma = subredditKarma.fromComments + subredditKarma.fromPosts;
                 if (!meetsNumericThreshold(combinedSubredditKarma, authorCondition.combined_subreddit_karma)) {
+                    this.log(`${username} does not match combined_subreddit_karma condition (${authorCondition.combined_subreddit_karma}).`, checkContext);
                     if (!authorCondition.satisfy_any_threshold) {
                         return;
                     } else {
@@ -274,6 +298,7 @@ export class AutomodRuleChecker {
         }
 
         if (authorCondition.satisfy_any_threshold && anyThresholdMatched === false) {
+            this.log(`${username} does not match any threshold conditions.`, checkContext);
             return;
         }
 
@@ -301,24 +326,32 @@ export class AutomodRuleChecker {
             }
         }
 
-        return searchConditionsMatchInput(searchFields, authorCondition.search_conditions ?? []);
+        const matched = searchConditionsMatchInput(searchFields, authorCondition.search_conditions ?? []);
+        if (!matched) {
+            this.log(`${username} does not match author search conditions.`, checkContext);
+        }
+
+        return matched;
     }
 
-    public async checkPostAgainstCondition (post: Post, rule: PostOrCommentCondition): Promise<Matches[] | undefined> {
+    public async checkPostAgainstCondition (post: Post, rule: PostOrCommentCondition, checkContext?: string): Promise<Matches[] | undefined> {
         if (rule.standard !== undefined) {
             if (!postMatchesStandardCondition(post, rule.standard)) {
+                this.log(`Post ${post.id} does not match standard condition (${rule.standard}).`, checkContext);
                 return;
             }
         }
 
         if (rule.is_edited !== undefined) {
             if (post.edited !== rule.is_edited) {
+                this.log(`Post ${post.id} does not match is_edited condition (${rule.is_edited}).`, checkContext);
                 return;
             }
         }
 
         if (rule.is_gallery !== undefined) {
             if ((post.gallery.length > 0) !== rule.is_gallery) {
+                this.log(`Post ${post.id} does not match is_gallery condition (${rule.is_gallery}).`, checkContext);
                 return;
             }
         }
@@ -326,6 +359,7 @@ export class AutomodRuleChecker {
         if (rule.past_archive_date !== undefined) {
             const isPastArchiveDate = post.createdAt < subMonths(new Date(), 6);
             if (isPastArchiveDate !== rule.past_archive_date) {
+                this.log(`Post ${post.id} does not match past_archive_date condition (${rule.past_archive_date}).`, checkContext);
                 return;
             }
         }
@@ -333,6 +367,7 @@ export class AutomodRuleChecker {
         if (rule.subreddit?.search_conditions && rule.subreddit.search_conditions.length > 0) {
             const subredditMatches = anySearchConditionMatchesInput(post.subredditName, rule.subreddit.search_conditions);
             if (!subredditMatches) {
+                this.log(`Post ${post.id} does not match subreddit search conditions.`, checkContext);
                 return;
             }
         }
@@ -340,18 +375,21 @@ export class AutomodRuleChecker {
         if (rule.subreddit?.is_nsfw !== undefined) {
             const isSubredditNSFWResult = await isSubredditNSFW(post.subredditName);
             if (isSubredditNSFWResult !== rule.subreddit.is_nsfw) {
+                this.log(`Post ${post.id} does not match subreddit is_nsfw condition (${rule.subreddit.is_nsfw}).`, checkContext);
                 return;
             }
         }
 
         if (rule.is_poll !== undefined) {
             if ((post.pollData !== undefined) !== rule.is_poll) {
+                this.log(`Post ${post.id} does not match is_poll condition (${rule.is_poll}).`, checkContext);
                 return;
             }
         }
 
         if (rule.reports !== undefined) {
             if (post.numberOfReports < rule.reports) {
+                this.log(`Post ${post.id} does not match reports condition (${rule.reports}).`, checkContext);
                 return;
             }
         }
@@ -410,6 +448,7 @@ export class AutomodRuleChecker {
 
         const searchMatches = searchConditionsMatchInput(searchFields, rule.search_conditions ?? []);
         if (!searchMatches) {
+            this.log(`Post ${post.id} does not match search conditions.`, checkContext);
             return;
         }
         matches.push(...searchMatches);
@@ -417,18 +456,21 @@ export class AutomodRuleChecker {
         // Crosspost checks
         if (rule.crosspost_id !== undefined) {
             if (!rule.crosspost_id.some(id => post.crosspostParentId === `t3_${id}`)) {
+                this.log(`Post ${post.id} does not match crosspost_id condition (${rule.crosspost_id}).`, checkContext);
                 return;
             }
         }
 
         if (rule.crosspost_author !== undefined) {
             if (!post.crosspostParentId) {
+                this.log(`Post ${post.id} does not have a crosspost parent, but crosspost_author condition is specified.`, checkContext);
                 return;
             }
 
             const crossPost = await this.getPostById(post.crosspostParentId);
             const crosspostAuthorMatches = await this.authorMatchesCondition(crossPost.authorName, rule.crosspost_author);
             if (!crosspostAuthorMatches) {
+                this.log(`Post ${post.id} does not match crosspost_author condition.`, checkContext);
                 return;
             }
         }
@@ -442,6 +484,7 @@ export class AutomodRuleChecker {
             if (rule.crosspost_subreddit.search_conditions !== undefined) {
                 const crosspostSubredditMatches = anySearchConditionMatchesInput(crossPost.subredditName, rule.crosspost_subreddit.search_conditions);
                 if (!crosspostSubredditMatches) {
+                    this.log(`Post ${post.id} does not match crosspost_subreddit search conditions.`, checkContext);
                     return;
                 }
             }
@@ -449,6 +492,7 @@ export class AutomodRuleChecker {
             if (rule.crosspost_subreddit.is_nsfw !== undefined) {
                 const isCrosspostSubredditNSFW = await isSubredditNSFW(crossPost.subredditName);
                 if (isCrosspostSubredditNSFW !== rule.crosspost_subreddit.is_nsfw) {
+                    this.log(`Post ${post.id} does not match crosspost_subreddit is_nsfw condition (${rule.crosspost_subreddit.is_nsfw}).`, checkContext);
                     return;
                 }
             }
@@ -457,6 +501,7 @@ export class AutomodRuleChecker {
         if (rule.author) {
             const authorMatches = await this.authorMatchesCondition(post.authorName, rule.author);
             if (!authorMatches) {
+                this.log(`Post ${post.id} does not match author condition.`, checkContext);
                 return;
             }
             matches.push(...authorMatches);
@@ -477,30 +522,36 @@ export class AutomodRuleChecker {
                 continue;
             }
 
+            this.verboseLogs = rule.verbose_logs ?? false;
+
             const comment = await this.getCommentById(commentId);
 
             const commentBody = rule.ignore_blockquotes ? this.getTextWithoutBlockquotes(comment.body) : comment.body;
 
             if (rule.reports !== undefined) {
                 if (comment.numReports < rule.reports) {
+                    this.log(`Comment ${comment.id} does not match reports condition (${rule.reports}).`);
                     continue;
                 }
             }
 
             if (rule.body_shorter_than !== undefined) {
                 if (commentBody.length >= rule.body_shorter_than) {
+                    this.log(`Comment ${comment.id} does not match body_shorter_than condition (${rule.body_shorter_than}).`);
                     continue;
                 }
             }
 
             if (rule.body_longer_than !== undefined) {
                 if (commentBody.length <= rule.body_longer_than) {
+                    this.log(`Comment ${comment.id} does not match body_longer_than condition (${rule.body_longer_than}).`);
                     continue;
                 }
             }
 
             if (rule.is_edited !== undefined) {
                 if (comment.edited !== rule.is_edited) {
+                    this.log(`Comment ${comment.id} does not match is_edited condition (${rule.is_edited}).`);
                     continue;
                 }
             }
@@ -508,6 +559,7 @@ export class AutomodRuleChecker {
             if (rule.is_top_level !== undefined) {
                 const isTopLevel = isT3(comment.parentId);
                 if (isTopLevel !== rule.is_top_level) {
+                    this.log(`Comment ${comment.id} does not match is_top_level condition (${rule.is_top_level}).`);
                     continue;
                 }
             }
@@ -515,12 +567,14 @@ export class AutomodRuleChecker {
             if (rule.past_archive_date !== undefined) {
                 const isPastArchiveDate = comment.createdAt < subMonths(new Date(), 6);
                 if (isPastArchiveDate !== rule.past_archive_date) {
+                    this.log(`Comment ${comment.id} does not match past_archive_date condition (${rule.past_archive_date}).`);
                     continue;
                 }
             }
 
             if (rule.comment_crowd_control_collapsed !== undefined) {
                 if (comment.collapsedBecauseCrowdControl !== rule.comment_crowd_control_collapsed) {
+                    this.log(`Comment ${comment.id} does not match comment_crowd_control_collapsed condition (${rule.comment_crowd_control_collapsed}).`);
                     continue;
                 }
             }
@@ -533,6 +587,7 @@ export class AutomodRuleChecker {
 
             const searchMatches = searchConditionsMatchInput(searchFields, rule.search_conditions ?? []);
             if (!searchMatches) {
+                this.log(`Comment ${comment.id} does not match search conditions.`);
                 continue;
             }
             matches.push(...searchMatches);
@@ -540,7 +595,8 @@ export class AutomodRuleChecker {
             // Parent submissions
             if (rule.parent_submission !== undefined) {
                 const parentSubmission = await this.getPostById(comment.postId);
-                if (!await this.checkPostAgainstCondition(parentSubmission, rule.parent_submission)) {
+                if (!await this.checkPostAgainstCondition(parentSubmission, rule.parent_submission, "parentSubmission")) {
+                    this.log(`Comment ${comment.id} does not match parent_submission condition.`);
                     continue;
                 }
             }
@@ -548,12 +604,14 @@ export class AutomodRuleChecker {
             if (rule.author) {
                 const authorMatches = await this.authorMatchesCondition(comment.authorName, rule.author);
                 if (!authorMatches) {
+                    this.log(`Comment ${comment.id} does not match author condition.`);
                     continue;
                 }
 
                 if (rule.author.is_submitter !== undefined) {
                     const parentSubmission = await this.getPostById(comment.postId);
                     if (rule.author.is_submitter !== (parentSubmission.authorName === comment.authorName)) {
+                        this.log(`Comment ${comment.id} does not match is_submitter condition (${rule.author.is_submitter}).`);
                         continue;
                     }
                 }
@@ -583,32 +641,40 @@ export class AutomodRuleChecker {
                 continue;
             }
 
+            this.verboseLogs = rule.verbose_logs ?? false;
+
             const post = await this.getPostById(postId);
 
             const isSelfPost = post.url.includes(post.permalink);
 
             if (rule.type === "text submission" && !isSelfPost) {
+                this.log(`Post ${post.id} does not match text submission condition because it is not a self post.`);
                 continue;
             }
 
             if (rule.type === "link submission" && isSelfPost) {
+                this.log(`Post ${post.id} does not match link submission condition because it is a self post.`);
                 continue;
             }
 
             if (rule.type === "crosspost submission" && !post.crosspostParentId) {
+                this.log(`Post ${post.id} does not match crosspost submission condition because it is not a crosspost.`);
                 continue;
             }
 
             if (rule.type === "gallery submission" && post.gallery.length === 0) {
+                this.log(`Post ${post.id} does not match gallery submission condition because it is not a gallery.`);
                 continue;
             }
 
             if (rule.type === "poll submission" && !post.pollData) {
+                this.log(`Post ${post.id} does not match poll submission condition because it is not a poll.`);
                 continue;
             }
 
             const matches = await this.checkPostAgainstCondition(post, rule);
             if (!matches) {
+                this.log(`Post ${post.id} does not match conditions.`);
                 continue;
             }
 
