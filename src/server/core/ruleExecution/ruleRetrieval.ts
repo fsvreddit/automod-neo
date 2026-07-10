@@ -4,6 +4,7 @@ import { parseRules } from "../ruleParser";
 import { redis, settings } from "@devvit/web/server";
 import { addHours } from "date-fns";
 
+const CACHED_UNPARSED_RULES_KEY = "cachedUnparsedRules";
 const CACHED_RULES_KEY = "cachedRules";
 
 function isRemovalRule (rule: AutomodRule): boolean {
@@ -42,4 +43,8 @@ export async function getRulesForSubreddit (): Promise<AutomodRule[]> {
 
 export async function clearCachedRules () {
     await redis.del(CACHED_RULES_KEY);
+}
+
+export async function saveUnparsedRules (rawRules: string) {
+    await redis.set(CACHED_UNPARSED_RULES_KEY, rawRules);
 }

@@ -1,7 +1,7 @@
 import { SettingsValidationRequest, SettingsValidationResponse } from "@devvit/web/shared";
 import { Context } from "hono";
 import { parseRules } from "../core/ruleParser";
-import { clearCachedRules } from "../core/ruleExecution";
+import { clearCachedRules, saveUnparsedRules } from "../core/ruleExecution";
 
 export const validateAutomodSetting = async (c: Context) => {
     const validationRequest = await c.req.json<SettingsValidationRequest<string>>();
@@ -23,6 +23,7 @@ export const validateAutomodSetting = async (c: Context) => {
     }
 
     await clearCachedRules();
+    await saveUnparsedRules(validationRequest.value);
 
     return c.json<SettingsValidationResponse>({ success: true }, 200);
 };
