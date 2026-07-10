@@ -11,7 +11,11 @@ export const handlePostSubmit = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "post submit handled, no post in request" }, 200);
     }
 
-    if (isUserIgnoredForTriggers(request.author)) {
+    if (!request.author?.name) {
+        return c.json<TriggerResponse>({ message: "post submit handled, no author name in request" }, 200);
+    }
+
+    if (isUserIgnoredForTriggers(request.author.name)) {
         return c.json<TriggerResponse>({ message: "post submit handled, author is ignored" }, 200);
     }
 

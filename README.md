@@ -10,7 +10,6 @@ TODO:
 * For gallery submissions, the optional image captions are included in evaluation of `body`
 * `full-text` search method (ignores punctuation or speling on the start or end of the text being checked)
 * `domain` should check either the domain or a subdomain by default
-* Trigger on reports (only for rules with report_count checks)
 * author flair placeholders in actions
 * media placeholders in actions
 

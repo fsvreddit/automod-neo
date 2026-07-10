@@ -24,8 +24,10 @@
     "triggers": {
         "onCommentSubmit": "/internal/triggers/on-comment-submit",
         "onCommentUpdate": "/internal/triggers/on-comment-update",
+        "onCommentReport": "/internal/triggers/on-comment-report",
         "onPostSubmit": "/internal/triggers/on-post-submit",
         "onPostUpdate": "/internal/triggers/on-post-update",
+        "onPostReport": "/internal/triggers/on-post-report",
         "onModAction": "/internal/triggers/on-mod-action"
     },
     "settings": {

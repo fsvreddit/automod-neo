@@ -15,7 +15,7 @@ export const handleCommentSubmit = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "comment submit handled, no author name in request" }, 200);
     }
 
-    if (isUserIgnoredForTriggers(request.author)) {
+    if (isUserIgnoredForTriggers(request.author.name)) {
         return c.json<TriggerResponse>({ message: "comment submit handled, author is ignored" }, 200);
     }
 
