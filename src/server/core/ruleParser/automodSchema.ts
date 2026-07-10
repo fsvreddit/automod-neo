@@ -137,6 +137,7 @@ const postConditionSchema = {
         is_edited: { type: "boolean", nullable: true },
         is_poll: { type: "boolean", nullable: true },
         is_gallery: { type: "boolean", nullable: true },
+        poll_option_count: { type: "string", nullable: true },
         past_archive_date: { type: "boolean", nullable: true },
         author: {
             ...authorSchema,
@@ -201,6 +202,7 @@ export const automodSchema: Record<string, unknown> = {
         is_edited: { type: "boolean", nullable: true },
         is_poll: { type: "boolean", nullable: true },
         is_gallery: { type: "boolean", nullable: true },
+        poll_option_count: { type: "string", nullable: true },
         past_archive_date: { type: "boolean", nullable: true },
         is_top_level: { type: "boolean", nullable: true },
         comment_crowd_control_collapsed: { type: "boolean", nullable: true },

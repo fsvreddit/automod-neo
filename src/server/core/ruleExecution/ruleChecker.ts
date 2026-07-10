@@ -403,6 +403,19 @@ export class AutomodRuleChecker {
             }
         }
 
+        if (rule.poll_option_count !== undefined) {
+            if (!post.pollData) {
+                this.log(`Post ${post.id} does not have poll data, but poll_option_count condition is specified.`, checkContext);
+                return;
+            }
+            const pollOptionCount = post.pollData.options.length;
+            const meetsThreshold = meetsNumericThreshold(pollOptionCount, rule.poll_option_count);
+            if (!meetsThreshold) {
+                this.log(`Post ${post.id} does not match poll_option_count condition (${rule.poll_option_count}).`, checkContext);
+                return;
+            }
+        }
+
         const matches: Matches[] = [];
 
         const searchFields: Record<string, string | string[]> = {
@@ -414,6 +427,10 @@ export class AutomodRuleChecker {
 
         if (postBody) {
             searchFields.body = postBody;
+        }
+
+        if (post.pollData && distinctSearchFields.has("poll_option_text")) {
+            searchFields.poll_option_text = post.pollData.options.map(option => option.text);
         }
 
         if (isCrossPost && (distinctSearchFields.has("domain") || distinctSearchFields.has("url"))) {

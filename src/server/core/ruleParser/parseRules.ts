@@ -13,6 +13,7 @@ const topLevelSearchableFields = new Set([
     "body",
     "domain",
     "url",
+    "poll_option_text",
     "flair_text",
     "flair_css_class",
     "flair_template_id",

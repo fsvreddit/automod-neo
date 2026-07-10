@@ -124,15 +124,15 @@ These checks can be used to look for words, phrases, patterns in different field
 * `id` - the submission's base-36 ID
 * `title` - the submission's title
 * `domain` - the submission's domain. For a text submission, this is "self.subredditname". For gallery submissions, the domain of the optional image outbound urls.
-* `url` - the submission's full url. Cannot be checked for text submissions. For gallery submissions, the url of the optional image outbound urls.
-* `body` - The full text of the post. It will always be checked for text posts, and checked for other post types only when text is present. For gallery submissions, the optional image captions are included in evaluation.
+* `url` - the submission's full url. Cannot be checked for text submissions.
+* `body` - The full text of the post. It will always be checked for text posts, and checked for other post types only when text is present.
 * `flair_text` - the text of the submission's link flair
 * `flair_css_class` - the css class of the submission's link flair
 * `flair_template_id` - the template id of the submission's link flair
 * `poll_option_text` - The text of any option in a poll post
-* `poll_option_count` - The number of options a poll post has.
+* `poll_option_count` - The number of options a poll post has in the form `poll_option_count: 3` (to match the exact number), `poll_option_count: '> 2'` (for a comparison)
 
-### For crossposts submissions:
+### For crossposts submissions
 
 The following fields will always be checked against the fields of the original submission.
 
@@ -154,7 +154,7 @@ On submissions, it is also possible to do some checks against the "media object"
 * `media_title` - the media title returned from embed.ly
 * `media_description` - the media description returned from embed.ly
 
-### For comments (base item only):
+### For comments (base item only)
 
 * `id` - the comment's base-36 ID
 * `body` - the full text of the comment.
@@ -295,7 +295,7 @@ The supported threshold checks are:
 * `action` - A moderation action to perform on the item. Valid values are `approve`, `remove`, `spam`, `filter` or `report`
 * `report_reason` - If the action is report, sets the report reason that will be used. Supports placeholders.
 
-### For users (inside author or crosspost_author sub-group):
+### For users (inside author or crosspost_author sub-group)
 
 * `set_flair` - Takes either a single string, a list of two strings or a dictionary. If given a single string, the submission's flair text will be set to the string. If given two strings, the first string will be used for the flair text, and the second string for the flair css class. If given a dictionary, the keys will be one of 'text', 'css_class', or 'template_id'. If set, the value of 'text' will be used for the flair text and the value of 'css_class' will be used for the css class. When using the dictionary syntax, 'template_id' must be set, and the value of 'template_id' will be used to set the flair template (template Ids are accessible in Post Flair and User Flair sections of Mod Tools).
 * `overwrite_flair` - true/false - If true, a set_flair action will overwrite any previous user flair. If false (same as default behavior), any existing flair will not be overwritten.
@@ -368,4 +368,3 @@ The available standard conditions are:
 * `amazon affiliate links` - will match submissions or comments including Amazon links with an affiliate code
 
 If you want to look at the specifics of what a particular standard condition will match, the definitions are available for reference on the [standard conditions page](https://www.reddit.com/r/reddit.com/wiki/automoderator/standard-conditions).
-

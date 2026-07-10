@@ -658,4 +658,85 @@ body: "log this"
             },
         ]);
     });
+
+    it("preserves poll_option_count when provided as a number", () => {
+        const rules = `
+---
+poll_option_count: 3
+body: "poll"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                poll_option_count: "3",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["poll"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves poll_option_count when provided as a greater-than expression", () => {
+        const rules = `
+---
+poll_option_count: "> 3"
+body: "poll"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                poll_option_count: "> 3",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["poll"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves poll_option_count when provided as a less-than expression", () => {
+        const rules = `
+---
+poll_option_count: "< 4"
+body: "poll"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                poll_option_count: "< 4",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["poll"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
 });

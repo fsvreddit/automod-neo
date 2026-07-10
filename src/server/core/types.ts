@@ -6,7 +6,7 @@ export interface SearchOption {
     negate: boolean;
 }
 
-type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "media_author" | "media_author_url" | "media_title" | "media_description";
+type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "poll_option_text" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "media_author" | "media_author_url" | "media_title" | "media_description";
 type CommentSearchField = "id" | "body";
 type AuthorSearchField = "id" | "name" | "flair_text" | "flair_css_class" | "display_name" | "bio_text" | "social_links";
 type SubredditSearchField = "name";
@@ -71,6 +71,7 @@ export interface PostOrCommentCondition {
     is_edited?: boolean;
     is_poll?: boolean; // Posts only
     is_gallery?: boolean; // Posts only
+    poll_option_count?: string; // Posts only
     past_archive_date?: boolean;
     is_top_level?: boolean; // Comments only
     comment_crowd_control_collapsed?: boolean; // Comments only
