@@ -382,3 +382,48 @@ describe("searchTextMatches (full-text)", () => {
         );
     });
 });
+
+describe("negated search conditions", () => {
+    it("requires every configured text option to be absent", () => {
+        const conditions: SearchableText[] = [{
+            searchField: ["body"],
+            text: ["dog", "cat"],
+            options: { search_method: "includes", case_sensitive: false, negate: true },
+        }];
+
+        assert.equal(searchConditionsMatchInput({ body: "A dog is here" }, conditions), undefined);
+        assert.deepEqual(searchConditionsMatchInput({ body: "A bird is here" }, conditions), []);
+    });
+
+    it("requires the prohibited text to be absent from every selected field", () => {
+        const conditions: SearchableText[] = [{
+            searchField: ["title", "body"],
+            text: ["urgent"],
+            options: { search_method: "includes", case_sensitive: false, negate: true },
+        }];
+
+        assert.equal(searchConditionsMatchInput({
+            title: "Routine update",
+            body: "This is urgent",
+        }, conditions), undefined);
+        assert.deepEqual(searchConditionsMatchInput({
+            title: "Routine update",
+            body: "Nothing unusual",
+        }, conditions), []);
+    });
+
+    it("requires the prohibited text to be absent from every array value", () => {
+        const conditions: SearchableText[] = [{
+            searchField: ["social_links"],
+            text: ["example.com"],
+            options: { search_method: "includes", case_sensitive: false, negate: true },
+        }];
+
+        assert.equal(searchConditionsMatchInput({
+            social_links: ["https://safe.example", "https://example.com/profile"],
+        }, conditions), undefined);
+        assert.deepEqual(searchConditionsMatchInput({
+            social_links: ["https://safe.example", "https://another.example"],
+        }, conditions), []);
+    });
+});
