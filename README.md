@@ -81,6 +81,11 @@ On submissions:
 
 This app will never support a "ban user" or "mute user" feature due to the scope for abuse.
 
+## Future developments
+
+* An Automod configuration UI that includes syntax highlighting
+* More detections and actions (Ask me what you'd find useful!)
+
 ## About this app
 
 Automod Neo is open source. [You can find the source code on GitHub here](https://github.com/fsvreddit/automod-neo).
