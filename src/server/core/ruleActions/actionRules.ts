@@ -220,16 +220,28 @@ async function actionRulesForPost (post: Post, actions: PostOrCommentCondition, 
         }
     }
 
-    if (actions.set_sticky) {
-        await post.sticky(typeof actions.set_sticky === "number" ? actions.set_sticky : undefined);
+    if (actions.set_sticky !== undefined) {
+        if (actions.set_sticky) {
+            await post.sticky(typeof actions.set_sticky === "number" ? actions.set_sticky : undefined);
+        } else {
+            await post.unsticky();
+        }
     }
 
-    if (actions.set_nsfw) {
-        await post.markAsNsfw();
+    if (actions.set_nsfw !== undefined) {
+        if (actions.set_nsfw) {
+            await post.markAsNsfw();
+        } else {
+            await post.unmarkAsNsfw();
+        }
     }
 
-    if (actions.set_spoiler) {
-        await post.markAsSpoiler();
+    if (actions.set_spoiler !== undefined) {
+        if (actions.set_spoiler) {
+            await post.markAsSpoiler();
+        } else {
+            await post.unmarkAsSpoiler();
+        }
     }
 
     if (actions.set_suggested_sort) {
