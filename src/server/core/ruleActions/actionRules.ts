@@ -107,6 +107,18 @@ async function applyUserFlairAction (
     });
 }
 
+async function applyLockAction (target: Post | Comment, setLocked: boolean | undefined): Promise<void> {
+    if (setLocked === undefined) {
+        return;
+    }
+
+    if (setLocked) {
+        await target.lock();
+    } else {
+        await target.unlock();
+    }
+}
+
 async function doTopLevelAction (target: Post | Comment, additionalPlaceholders: AdditionalPlaceholders, action: PostOrCommentCondition | CommentAction, automodMatch: AutomodMatch) {
     if (!action.action) {
         return;
@@ -216,9 +228,20 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
 
     if (matchedRule.rule.parent_submission && "postId" in target) {
         const parentSubmissionRules = matchedRule.rule.parent_submission;
-        if (parentSubmissionRules.action || parentSubmissionRules.set_flair || parentSubmissionRules.set_sticky || parentSubmissionRules.set_nsfw || parentSubmissionRules.set_spoiler || parentSubmissionRules.set_suggested_sort || parentSubmissionRules.set_post_crowd_control_level) {
+        const hasParentSubmissionAction = Boolean(
+            parentSubmissionRules.action
+            || parentSubmissionRules.set_flair
+            || parentSubmissionRules.set_sticky !== undefined
+            || parentSubmissionRules.set_nsfw !== undefined
+            || parentSubmissionRules.set_spoiler !== undefined
+            || parentSubmissionRules.set_suggested_sort
+            || parentSubmissionRules.set_locked !== undefined
+            || parentSubmissionRules.set_post_crowd_control_level,
+        );
+        if (hasParentSubmissionAction) {
             const parentPost = await reddit.getPostById(target.postId);
             await doTopLevelAction(parentPost, additionalPlaceholders, parentSubmissionRules, matchedRule);
+            await applyLockAction(parentPost, parentSubmissionRules.set_locked);
             await actionRulesForPost(parentPost, parentSubmissionRules, matchedRule);
         }
     }
@@ -259,13 +282,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
         }
     }
 
-    if (matchedRule.rule.set_locked !== undefined) {
-        if (matchedRule.rule.set_locked) {
-            await target.lock();
-        } else {
-            await target.unlock();
-        }
-    }
+    await applyLockAction(target, matchedRule.rule.set_locked);
 
     if (!("title" in target)) {
         return;

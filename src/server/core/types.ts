@@ -99,8 +99,6 @@ export interface PostOrCommentCondition {
     set_sticky?: boolean | 1 | 2 | 3 | 4;
     set_nsfw?: boolean;
     set_spoiler?: boolean;
-    set_contest_mode?: boolean;
-    set_original_content?: boolean;
     set_suggested_sort?: "best" | "new" | "qa" | "top" | "controversial" | "hot" | "old" | "random" | "blank";
     set_locked?: boolean;
     set_post_crowd_control_level?: "OFF" | "LENIENT" | "MEDIUM" | "STRICT";

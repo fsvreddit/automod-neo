@@ -46,7 +46,7 @@ vi.mock("../helpers", () => ({
     sendMessageToWebhook: vi.fn(),
 }));
 
-import type { Post } from "@devvit/web/server";
+import type { Comment, Post } from "@devvit/web/server";
 import { actionRules } from "./actionRules.js";
 
 function makePost (overrides: Partial<Post> = {}): Post {
@@ -64,6 +64,23 @@ function makePost (overrides: Partial<Post> = {}): Post {
         unlock: vi.fn(),
         ...overrides,
     } as unknown as Post;
+}
+
+function makeComment (overrides: Partial<Comment> = {}): Comment {
+    return {
+        id: "t1_comment",
+        authorName: "comment_author",
+        body: "comment body",
+        permalink: "/r/test/comments/post/example/comment",
+        subredditName: "test",
+        url: "https://www.reddit.com/r/test/comments/post/example/comment",
+        postId: "t3_parent",
+        approved: false,
+        removed: false,
+        lock: vi.fn(),
+        unlock: vi.fn(),
+        ...overrides,
+    } as unknown as Comment;
 }
 
 describe("actionRules", () => {
@@ -149,4 +166,32 @@ describe("actionRules", () => {
         assert.equal(mocks.setUserFlair.mock.calls.length, 1);
         assert.equal(mocks.setUserFlair.mock.calls[0]?.[0].username, "original_author");
     });
+
+    it("executes supported false-valued actions on a parent submission", async () => {
+        const comment = makeComment();
+        const parentPost = makePost({
+            id: "t3_parent",
+            unmarkAsNsfw: vi.fn(),
+        });
+        mocks.getPostOrCommentById.mockResolvedValue(comment);
+        mocks.getPostById.mockResolvedValue(parentPost);
+
+        await actionRules(comment.id, {
+            rule: {
+                parent_submission: {
+                    action: "report",
+                    report_reason: "Parent report",
+                    set_nsfw: false,
+                    set_locked: false,
+                },
+            },
+            matches: [],
+        });
+
+        assert.equal(mocks.report.mock.calls.length, 1);
+        assert.equal(mocks.report.mock.calls[0]?.[0], parentPost);
+        assert.equal(vi.mocked(parentPost.unmarkAsNsfw).mock.calls.length, 1);
+        assert.equal(vi.mocked(parentPost.unlock).mock.calls.length, 1);
+    });
+
 });

@@ -287,6 +287,8 @@ The supported threshold checks are:
 * `overwrite_flair` - true/false - If true, a set_flair action will overwrite any previous link flair on the submission. If false (same as default behavior), any existing flair will not be overwritten.
 * `set_sticky` - true/false or a number - Sets or unsets the matched submission as a sticky in the subreddit. If you use a number (for example set_sticky: 1), the post will replace any existing sticky in that slot. Using true will work the same as clicking the "sticky this post" link on the post - it will go into the bottom sticky slot (replacing a post that's already there, if necessary).
 * `set_nsfw` - true/false - Enables (true) or disables (false) the NSFW flag on the submission.
+* `set_spoiler` - true/false - Enables (true) or disables (false) the spoiler flag on the submission.
+* `set_suggested_sort` - Sets the suggested comment sort. Valid values are `best`, `new`, `qa`, `top`, `controversial`, `hot`, `old`, `random`, and `blank`.
 * `set_locked` - true/false - Locks or unlocks the submission or comment.
 * `set_post_crowd_control_level` - Sets the Crowd Control level of a submission. Valid values are OFF, LENIENT, MEDIUM, and STRICT.
 

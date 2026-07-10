@@ -70,7 +70,6 @@ The following existing AutoModerator features are not supported due to Devvit li
 * Author flair template ID
 * is_original_content on post checks
 * Set Contest Mode
-* Set Spoiler
 * Set Original Content
 * Temporary Events label
 

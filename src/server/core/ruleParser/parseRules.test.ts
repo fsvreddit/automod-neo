@@ -739,4 +739,45 @@ body: "poll"
             },
         ]);
     });
+    it("accepts supported actions inside parent_submission", () => {
+        const result = parseRules(`
+type: comment
+parent_submission:
+    action: report
+    report_reason: Parent report
+    set_flair: Parent flair
+    overwrite_flair: true
+    set_sticky: false
+    set_nsfw: false
+    set_spoiler: true
+    set_suggested_sort: new
+    set_locked: false
+    set_post_crowd_control_level: MEDIUM
+`);
+
+        assert.deepEqual(result[0]?.parent_submission, {
+            action: "report",
+            report_reason: "Parent report",
+            set_flair: "Parent flair",
+            overwrite_flair: true,
+            set_sticky: false,
+            set_nsfw: false,
+            set_spoiler: true,
+            set_suggested_sort: "new",
+            set_locked: false,
+            set_post_crowd_control_level: "MEDIUM",
+        });
+    });
+
+    it("rejects unsupported contest-mode and original-content actions", () => {
+        assert.throws(
+            () => parseRules("set_contest_mode: true"),
+            /Unsupported attribute 'set_contest_mode'/,
+        );
+        assert.throws(
+            () => parseRules("set_original_content: true"),
+            /Unsupported attribute 'set_original_content'/,
+        );
+    });
+
 });

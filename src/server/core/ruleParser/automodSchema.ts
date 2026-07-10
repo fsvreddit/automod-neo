@@ -161,6 +161,37 @@ const postConditionSchema = {
             ...subredditSchema,
             nullable: true,
         },
+        action: {
+            type: "string",
+            enum: actionValues,
+            nullable: true,
+        },
+        action_reason: { type: "string", nullable: true },
+        report_reason: { type: "string", nullable: true },
+        set_flair: {
+            ...setFlairSchema,
+        },
+        overwrite_flair: { type: "boolean", nullable: true },
+        set_sticky: {
+            anyOf: [
+                { type: "boolean" },
+                { type: "number", enum: [1, 2, 3, 4] },
+                { type: "null" },
+            ],
+        },
+        set_nsfw: { type: "boolean", nullable: true },
+        set_spoiler: { type: "boolean", nullable: true },
+        set_suggested_sort: {
+            type: "string",
+            enum: suggestedSortValues,
+            nullable: true,
+        },
+        set_locked: { type: "boolean", nullable: true },
+        set_post_crowd_control_level: {
+            type: "string",
+            enum: crowdControlValues,
+            nullable: true,
+        },
     },
     required: [],
     additionalProperties: false,
@@ -227,8 +258,6 @@ export const automodSchema: Record<string, unknown> = {
         },
         set_nsfw: { type: "boolean", nullable: true },
         set_spoiler: { type: "boolean", nullable: true },
-        set_contest_mode: { type: "boolean", nullable: true },
-        set_original_content: { type: "boolean", nullable: true },
         set_suggested_sort: {
             type: "string",
             enum: suggestedSortValues,
