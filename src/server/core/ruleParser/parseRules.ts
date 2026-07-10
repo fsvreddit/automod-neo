@@ -153,11 +153,12 @@ function assertValidRuleSchema (rule: MutableNode, ruleReference: string, valida
 function defaultSearchMethodForField (fieldName: SearchField): SearchMethod {
     switch (fieldName) {
         case "id":
+        case "flair_text":
+        case "flair_css_class":
+        case "flair_template_id":
             return "full-exact";
         case "domain":
             return "ends-with";
-        case "flair_template_id":
-            return "full-exact";
         case "url":
         case "media_author_url":
         case "social_links":

@@ -37,7 +37,7 @@ export function valueWithPlaceholdersReplaced (input: string | undefined, target
         .replaceAll("{{title}}", target.title ?? "")
         .replaceAll("r/{{subreddit}}", `r/${target.subredditName}`)
         .replaceAll("{{subreddit}}", markdownEscape(target.subredditName))
-        .replaceAll("{{kind}}", target.title === undefined ? "comment" : "post")
+        .replaceAll("{{kind}}", target.title === undefined ? "comment" : "submission")
         .replaceAll("{{domain}}", getDomainFromUrl(target.url) ?? "")
         .replaceAll("{{url}}", target.url)
         .replaceAll("{{friendly_name}}", automodMatch.rule.friendly_name ?? "Unnamed rule")
@@ -92,7 +92,7 @@ async function doTopLevelAction (target: Post | Comment, action: PostOrCommentCo
         }
         case "report": {
             const reportReason = valueWithPlaceholdersReplaced(action.report_reason ?? action.action_reason, target, automodMatch);
-            await reddit.report(target, { reason: reportReason ?? "Reported by Automod2" });
+            await reddit.report(target, { reason: reportReason ?? "Reported by Automod Neo" });
             break;
         }
         case "spam": {
@@ -158,7 +158,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
 
     if (doMessages && matchedRule.rule.message) {
         const messageBody = valueWithPlaceholdersReplaced(matchedRule.rule.message, target, matchedRule);
-        const messageSubject = valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule) ?? "Message from Automod2";
+        const messageSubject = valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule) ?? "Automod Neo Notification";
         if (messageBody) {
             await reddit.sendPrivateMessage({
                 to: target.authorName,
@@ -170,7 +170,7 @@ export async function actionRules (targetId: string, matchedRule: AutomodMatch, 
 
     if (doMessages && matchedRule.rule.modmail) {
         const modmailBody = valueWithPlaceholdersReplaced(matchedRule.rule.modmail, target, matchedRule);
-        const modmailSubject = valueWithPlaceholdersReplaced(matchedRule.rule.modmail_subject, target, matchedRule) ?? "Modmail from Automod2";
+        const modmailSubject = valueWithPlaceholdersReplaced(matchedRule.rule.modmail_subject, target, matchedRule) ?? "Automod Neo Notification";
         if (modmailBody) {
             await reddit.modMail.createModInboxConversation({
                 subredditId: context.subredditId,

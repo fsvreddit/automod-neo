@@ -1,6 +1,20 @@
 This app replicates nearly all features of AutoModerator and adds some new features. Most existing AutoModerator rules are **fully compatible** with Automod Neo and can be copied from your existing AutoModerator config into this app's config.
 
-For documentation, please see the official AutoModerator documentation but note the differences below. Rules are configured in the app's settings for your subreddit.
+[Full Documentation](https://github.com/fsvreddit/automod-neo/blob/main/documentation.md). Rules are configured in the app's settings for your subreddit.
+
+TODO: 
+
+* poll_option_text - The text of each option in a poll post
+* poll_option_count - The number of options a poll post has.
+* For crossposts, `domain`, `url` and `body` should be checked against the original submission and not the item being checked
+* For a text submission, domain should be "self.subredditname"
+* For gallery submissions, the optional image captions are included in evaluation of `body`
+* `full-text` search method (ignores punctuation or speling on the start or end of the text being checked)
+* `domain` should check either the domain or a subdomain by default
+* Trigger on reports (only for rules with report_count checks)
+* `set_nsfw` action
+* author flair placeholders in actions
+* media placeholders in actions
 
 ## Behaviour differences
 
@@ -72,6 +86,7 @@ The following existing AutoModerator features are not supported due to Devvit li
 * Set Contest Mode
 * Set Spoiler
 * Set Original Content
+* Temporary Events label
 
 On submissions:
 
@@ -83,3 +98,4 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 ## About this app
 
 Automod Neo is open source. [You can find the source code on GitHub here](https://github.com/fsvreddit/automod-neo).
+

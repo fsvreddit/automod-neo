@@ -161,15 +161,6 @@ export class AutomodRuleChecker {
         return conditions;
     }
 
-    private normalizeDate (input: number): Date {
-        if (input < 1750633200000) { // before 2025-07-23, Reddit's launch
-            // Assume that timestamp is in seconds, which is expected for CommentV2 createdAt but this may change in the future.
-            return new Date(input * 1000);
-        } else {
-            return new Date(input);
-        }
-    }
-
     private async authorMatchesCondition (username: string, authorCondition: Author, checkContext?: string): Promise<Matches[] | undefined> {
         if (authorCondition.is_contributor !== undefined) {
             if (await this.getIsUserApprovedUser(username) !== authorCondition.is_contributor) {
@@ -565,7 +556,8 @@ export class AutomodRuleChecker {
             }
 
             if (rule.past_archive_date !== undefined) {
-                const isPastArchiveDate = this.normalizeDate(comment.createdAt) < subMonths(new Date(), 6);
+                const parentSubmission = await this.getPostById(comment.postId as T3);
+                const isPastArchiveDate = parentSubmission.createdAt < subMonths(new Date(), 6);
                 if (isPastArchiveDate !== rule.past_archive_date) {
                     this.log(`Comment ${comment.id} does not match past_archive_date condition (${rule.past_archive_date}).`);
                     continue;
