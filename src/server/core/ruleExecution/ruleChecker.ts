@@ -364,6 +364,15 @@ export class AutomodRuleChecker {
             }
         }
 
+        const isCrossPost = post.crosspostParentId !== undefined;
+        let postBody: string | undefined;
+        if (isCrossPost) {
+            const crosspostParent = await this.getPostById(post.crosspostParentId);
+            postBody = crosspostParent.body && rule.ignore_blockquotes ? this.getTextWithoutBlockquotes(crosspostParent.body) : crosspostParent.body;
+        } else {
+            postBody = post.body && rule.ignore_blockquotes ? this.getTextWithoutBlockquotes(post.body) : post.body;
+        }
+
         if (rule.subreddit?.search_conditions && rule.subreddit.search_conditions.length > 0) {
             const subredditMatches = anySearchConditionMatchesInput(post.subredditName, rule.subreddit.search_conditions);
             if (!subredditMatches) {
@@ -395,27 +404,41 @@ export class AutomodRuleChecker {
         }
 
         const matches: Matches[] = [];
-        const postBody = post.body && rule.ignore_blockquotes ? this.getTextWithoutBlockquotes(post.body) : post.body;
 
         const searchFields: Record<string, string | string[]> = {
             id: post.id,
             title: post.title,
-            url: post.url,
         };
+
         const distinctSearchFields = this.getDistinctSearchFields(rule.search_conditions ?? []);
 
         if (postBody) {
             searchFields.body = postBody;
         }
 
-        const isSelfPost = post.url.includes(post.permalink);
-        if (isSelfPost) {
-            searchFields.domain = `self.${post.subredditName}`;
-        } else {
-            const domain = getDomainFromUrl(post.url);
-            if (domain) {
-                searchFields.domain = domain;
+        if (isCrossPost && (distinctSearchFields.has("domain") || distinctSearchFields.has("url"))) {
+            const crosspostParent = await this.getPostById(post.crosspostParentId);
+            const crossPostIsSelfPost = crosspostParent.url.includes(crosspostParent.permalink);
+            if (crossPostIsSelfPost) {
+                searchFields.domain = `self.${crosspostParent.subredditName}`;
+            } else {
+                const domain = getDomainFromUrl(crosspostParent.url);
+                if (domain) {
+                    searchFields.domain = domain;
+                }
             }
+            searchFields.url = crosspostParent.url;
+        } else {
+            const isSelfPost = post.url.includes(post.permalink);
+            if (isSelfPost) {
+                searchFields.domain = `self.${post.subredditName}`;
+            } else {
+                const domain = getDomainFromUrl(post.url);
+                if (domain) {
+                    searchFields.domain = domain;
+                }
+            }
+            searchFields.url = post.url;
         }
 
         if (post.flair?.text) {
