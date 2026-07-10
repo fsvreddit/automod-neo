@@ -408,9 +408,14 @@ export class AutomodRuleChecker {
             searchFields.body = postBody;
         }
 
-        const domain = getDomainFromUrl(post.url);
-        if (domain) {
-            searchFields.domain = domain;
+        const isSelfPost = post.url.includes(post.permalink);
+        if (isSelfPost) {
+            searchFields.domain = `self.${post.subredditName}`;
+        } else {
+            const domain = getDomainFromUrl(post.url);
+            if (domain) {
+                searchFields.domain = domain;
+            }
         }
 
         if (post.flair?.text) {
