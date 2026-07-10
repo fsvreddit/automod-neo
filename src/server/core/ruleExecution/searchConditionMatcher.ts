@@ -103,6 +103,17 @@ export function searchTextMatches (input: string, textToMatch: string, options: 
         }
     }
 
+    if (options.search_method === "domain") {
+        // Checks to see if the input is either the exact value, or a subdomain of the value. Ignores case-sensitive.
+        const inputLower = input.toLowerCase();
+        const textToMatchLower = textToMatch.toLowerCase();
+        if (inputLower === textToMatchLower || inputLower.endsWith("." + textToMatchLower)) {
+            return [textToMatch];
+        } else {
+            return;
+        }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (options.search_method === "regex") {
         const regex = new RegExp(textToMatch, options.case_sensitive ? "u" : "iu");

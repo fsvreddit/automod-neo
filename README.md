@@ -2,10 +2,6 @@ This app replicates nearly all features of AutoModerator and adds some new featu
 
 [Full Documentation](https://github.com/fsvreddit/automod-neo/blob/main/documentation.md). Rules are configured in the app's settings for your subreddit.
 
-TODO:
-
-* `domain` should check either the domain or a subdomain by default
-
 ## Behaviour differences
 
 All regular expressions use Javascript regex syntax. This can be different to Python regex (that used by AutoModerator) but most regular expressions that worked in OG Automod will work here too. Unlike OG AutoMod, full lookahead/lookbehind support is available. Some regexes that use Unicode code points may need to be reworked.

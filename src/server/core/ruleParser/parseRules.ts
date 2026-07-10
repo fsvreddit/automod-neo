@@ -160,7 +160,7 @@ function defaultSearchMethodForField (fieldName: SearchField): SearchMethod {
         case "flair_template_id":
             return "full-exact";
         case "domain":
-            return "ends-with";
+            return "domain";
         case "url":
         case "media_author_url":
         case "social_links":
