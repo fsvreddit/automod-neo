@@ -5,8 +5,10 @@ This page is a full specificaiton about how Automod Neo's capabilities and behav
 ## General knowledge and behaviour
 
 * Automod Neo's configuration is kept on your subreddit's app settings. You can configure this via your [My Communities](https://developers.reddit.com/my/communities) page, then your subreddit, and finally the Automod Neo entry in there.
+* By default, submissions and comments made by moderators of the subreddit will not be checked against any rules that may cause the post to be removed or reported. You can override this behaviour with the `moderators_exempt` flag.
 * Rules that may result in an item being removed (action of `remove`, `spam`, or `filter`) are always checked before all other rules in priority order, followed by all other rules in priority order.
-* Automod Neo triggers on comment and post creation and edits
+* Rules that remove content will not run against content that has already been approved by mods, and rules that approve content will not run against content that has already been removed by mods.
+* Automod Neo triggers on comment and post creation, edits and reports. For reports, only rules with a `reports` check will run.
 * Only one rule will act on a post or comment
 
 ## Syntax

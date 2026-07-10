@@ -90,11 +90,15 @@ async function doTopLevelAction (target: Post | Comment, additionalPlaceholders:
 
     switch (action.action) {
         case "remove": {
-            await target.remove();
+            if (!target.approved) {
+                await target.remove();
+            }
             break;
         }
         case "approve": {
-            await target.approve();
+            if (!target.removed) {
+                await target.approve();
+            }
             break;
         }
         case "report": {
@@ -103,7 +107,9 @@ async function doTopLevelAction (target: Post | Comment, additionalPlaceholders:
             break;
         }
         case "spam": {
-            await target.remove(true);
+            if (!target.approved) {
+                await target.remove(true);
+            }
             break;
         }
         case "filter": {
