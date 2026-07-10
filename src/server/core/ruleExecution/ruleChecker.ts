@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 import { Comment, context, Post, reddit, User, UserFlair, UserSocialLink } from "@devvit/web/server";
-import { isT3, T1, T3 } from "@devvit/web/shared";
+import { CommentV2, isT3, T1, T3 } from "@devvit/web/shared";
 import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, SearchableText } from "../types";
 import { getDomainFromUrl, isApprovedUser, isModerator, isSubredditNSFW } from "../helpers";
 import { meetsDateThreshold, meetsNumericThreshold } from "./thresholdChecks";
@@ -74,25 +74,25 @@ export class AutomodRuleChecker {
         return this.userSocialLinks[username] ?? [];
     }
 
-    private async getIsUserApprovedUser (user: User): Promise<boolean> {
-        let isSubmitter = this.userIsApprovedUser[user.username];
+    private async getIsUserApprovedUser (username: string): Promise<boolean> {
+        let isSubmitter = this.userIsApprovedUser[username];
         if (isSubmitter !== undefined) {
             return isSubmitter;
         }
 
-        isSubmitter = await isApprovedUser(user);
-        this.userIsApprovedUser[user.username] = isSubmitter;
+        isSubmitter = await isApprovedUser(username);
+        this.userIsApprovedUser[username] = isSubmitter;
         return isSubmitter;
     }
 
-    private async getIsUserModerator (user: User): Promise<boolean> {
-        let isMod = this.userIsModerator[user.username];
+    private async getIsUserModerator (username: string): Promise<boolean> {
+        let isMod = this.userIsModerator[username];
         if (isMod !== undefined) {
             return isMod;
         }
 
-        isMod = await isModerator(user);
-        this.userIsModerator[user.username] = isMod;
+        isMod = await isModerator(username);
+        this.userIsModerator[username] = isMod;
         return isMod;
     }
 
@@ -161,7 +161,30 @@ export class AutomodRuleChecker {
         return conditions;
     }
 
+    private normalizeDate (input: number): Date {
+        if (input < 1750633200000) { // before 2025-07-23, Reddit's launch
+            // Assume that timestamp is in seconds, which is expected for CommentV2 createdAt but this may change in the future.
+            return new Date(input * 1000);
+        } else {
+            return new Date(input);
+        }
+    }
+
     private async authorMatchesCondition (username: string, authorCondition: Author, checkContext?: string): Promise<Matches[] | undefined> {
+        if (authorCondition.is_contributor !== undefined) {
+            if (await this.getIsUserApprovedUser(username) !== authorCondition.is_contributor) {
+                this.log(`${username} does not match is_contributor condition (${authorCondition.is_contributor}).`, checkContext);
+                return;
+            }
+        }
+
+        if (authorCondition.is_moderator !== undefined) {
+            if (await this.getIsUserModerator(username) !== authorCondition.is_moderator) {
+                this.log(`${username} does not match is_moderator condition (${authorCondition.is_moderator}).`, checkContext);
+                return;
+            }
+        }
+
         const user = await this.getUserByUsername(username);
         if (!user) {
             this.log(`${username} not found for author condition check.`, checkContext);
@@ -179,20 +202,6 @@ export class AutomodRuleChecker {
         if (authorCondition.is_gold !== undefined) {
             if (user.hasRedditPremium !== authorCondition.is_gold) {
                 this.log(`${username} does not match is_gold condition (${authorCondition.is_gold}).`, checkContext);
-                return;
-            }
-        }
-
-        if (authorCondition.is_contributor !== undefined) {
-            if (await this.getIsUserApprovedUser(user) !== authorCondition.is_contributor) {
-                this.log(`${username} does not match is_contributor condition (${authorCondition.is_contributor}).`, checkContext);
-                return;
-            }
-        }
-
-        if (authorCondition.is_moderator !== undefined) {
-            if (await this.getIsUserModerator(user) !== authorCondition.is_moderator) {
-                this.log(`${username} does not match is_moderator condition (${authorCondition.is_moderator}).`, checkContext);
                 return;
             }
         }
@@ -510,7 +519,7 @@ export class AutomodRuleChecker {
         return matches;
     }
 
-    public async checkComment (commentId: T1): Promise<AutomodMatch | undefined> {
+    public async checkComment (comment: CommentV2, authorName: string): Promise<AutomodMatch | undefined> {
         if (this.rules.length === 0) {
             return;
         }
@@ -523,8 +532,6 @@ export class AutomodRuleChecker {
             }
 
             this.verboseLogs = rule.verbose_logs ?? false;
-
-            const comment = await this.getCommentById(commentId);
 
             const commentBody = rule.ignore_blockquotes ? this.getTextWithoutBlockquotes(comment.body) : comment.body;
 
@@ -549,13 +556,6 @@ export class AutomodRuleChecker {
                 }
             }
 
-            if (rule.is_edited !== undefined) {
-                if (comment.edited !== rule.is_edited) {
-                    this.log(`Comment ${comment.id} does not match is_edited condition (${rule.is_edited}).`);
-                    continue;
-                }
-            }
-
             if (rule.is_top_level !== undefined) {
                 const isTopLevel = isT3(comment.parentId);
                 if (isTopLevel !== rule.is_top_level) {
@@ -565,7 +565,7 @@ export class AutomodRuleChecker {
             }
 
             if (rule.past_archive_date !== undefined) {
-                const isPastArchiveDate = comment.createdAt < subMonths(new Date(), 6);
+                const isPastArchiveDate = this.normalizeDate(comment.createdAt) < subMonths(new Date(), 6);
                 if (isPastArchiveDate !== rule.past_archive_date) {
                     this.log(`Comment ${comment.id} does not match past_archive_date condition (${rule.past_archive_date}).`);
                     continue;
@@ -594,7 +594,7 @@ export class AutomodRuleChecker {
 
             // Parent submissions
             if (rule.parent_submission !== undefined) {
-                const parentSubmission = await this.getPostById(comment.postId);
+                const parentSubmission = await this.getPostById(comment.postId as T3);
                 if (!await this.checkPostAgainstCondition(parentSubmission, rule.parent_submission, "parentSubmission")) {
                     this.log(`Comment ${comment.id} does not match parent_submission condition.`);
                     continue;
@@ -602,24 +602,31 @@ export class AutomodRuleChecker {
             }
 
             if (rule.author) {
-                const authorMatches = await this.authorMatchesCondition(comment.authorName, rule.author);
+                const authorMatches = await this.authorMatchesCondition(authorName, rule.author);
                 if (!authorMatches) {
                     this.log(`Comment ${comment.id} does not match author condition.`);
                     continue;
                 }
 
                 if (rule.author.is_submitter !== undefined) {
-                    const parentSubmission = await this.getPostById(comment.postId);
-                    if (rule.author.is_submitter !== (parentSubmission.authorName === comment.authorName)) {
+                    const parentSubmission = await this.getPostById(comment.postId as T3);
+                    if (rule.author.is_submitter !== (parentSubmission.authorName === authorName)) {
                         this.log(`Comment ${comment.id} does not match is_submitter condition (${rule.author.is_submitter}).`);
                         continue;
                     }
                 }
             }
 
+            if (rule.is_edited !== undefined) {
+                const fullCommentObject = await this.getCommentById(comment.id as T1);
+                if (fullCommentObject.edited !== rule.is_edited) {
+                    this.log(`Comment ${comment.id} does not match is_edited condition (${rule.is_edited}).`);
+                    continue;
+                }
+            }
+
             if (rule.moderators_exempt !== false) {
-                const user = await this.getUserByUsername(comment.authorName);
-                if (user && await this.getIsUserModerator(user)) {
+                if (await this.getIsUserModerator(authorName)) {
                     console.log(`Skipping comment ${comment.id} because author is a moderator and rule does not exempt moderators.`);
                     continue;
                 }
@@ -679,8 +686,7 @@ export class AutomodRuleChecker {
             }
 
             if (rule.moderators_exempt !== false) {
-                const user = await this.getUserByUsername(post.authorName);
-                if (user && await this.getIsUserModerator(user)) {
+                if (await this.getIsUserModerator(post.authorName)) {
                     console.log(`Skipping post ${post.id} because author is a moderator and rule does not exempt moderators.`);
                     continue;
                 }

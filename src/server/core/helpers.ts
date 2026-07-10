@@ -1,4 +1,4 @@
-import { context, reddit, redis, User } from "@devvit/web/server";
+import { context, reddit, redis } from "@devvit/web/server";
 import { UserV2 } from "@devvit/web/shared";
 import { addWeeks } from "date-fns";
 
@@ -6,16 +6,16 @@ export function getBotCommentFooter (): string {
     return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/r/${context.subredditName}/about/moderators) if you have any questions or concerns.*`;
 }
 
-function getApprovedUserCacheKey (userId: string): string {
-    return `isApprovedUser:${userId}`;
+function getApprovedUserCacheKey (username: string): string {
+    return `isApprovedUser:${username}`;
 }
 
-function getModeratorCacheKey (userId: string): string {
-    return `isModerator:${userId}`;
+function getModeratorCacheKey (username: string): string {
+    return `isModerator:${username}`;
 }
 
-export async function isApprovedUser (user: User): Promise<boolean> {
-    const cacheKey = getApprovedUserCacheKey(user.id);
+export async function isApprovedUser (username: string): Promise<boolean> {
+    const cacheKey = getApprovedUserCacheKey(username);
     const cachedValue = await redis.get(cacheKey);
 
     if (cachedValue !== undefined) {
@@ -24,7 +24,7 @@ export async function isApprovedUser (user: User): Promise<boolean> {
 
     const approvedUsers = await reddit.getApprovedUsers({
         subredditName: context.subredditName,
-        username: user.username,
+        username,
     }).all();
 
     const isUserSubmitter = approvedUsers.length > 0;
@@ -33,8 +33,8 @@ export async function isApprovedUser (user: User): Promise<boolean> {
     return isUserSubmitter;
 }
 
-export async function isModerator (user: User): Promise<boolean> {
-    const cacheKey = getModeratorCacheKey(user.id);
+export async function isModerator (username: string): Promise<boolean> {
+    const cacheKey = getModeratorCacheKey(username);
     const cachedValue = await redis.get(cacheKey);
 
     if (cachedValue !== undefined) {
@@ -43,7 +43,7 @@ export async function isModerator (user: User): Promise<boolean> {
 
     const moderators = await reddit.getModerators({
         subredditName: context.subredditName,
-        username: user.username,
+        username,
     }).all();
 
     const isUserModerator = moderators.length > 0;
@@ -52,8 +52,8 @@ export async function isModerator (user: User): Promise<boolean> {
     return isUserModerator;
 }
 
-export async function clearUserRoleCache (userId: string): Promise<void> {
-    await redis.del(getApprovedUserCacheKey(userId), getModeratorCacheKey(userId));
+export async function clearUserRoleCache (username: string): Promise<void> {
+    await redis.del(getApprovedUserCacheKey(username), getModeratorCacheKey(username));
 }
 
 export function getDomainFromUrl (url: string): string | undefined {

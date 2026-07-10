@@ -1,4 +1,4 @@
-import { OnCommentCreateRequest, T1, TriggerResponse } from "@devvit/web/shared";
+import { OnCommentCreateRequest, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
 import { actionRules } from "../core/ruleActions";
 import { fixCommentTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
@@ -9,6 +9,10 @@ export const handleCommentSubmit = async (c: Context) => {
     const request = await fixCommentTriggerEvent(await c.req.json<OnCommentCreateRequest>());
     if (!request.comment) {
         return c.json<TriggerResponse>({ message: "comment submit handled, no comment in request" }, 200);
+    }
+
+    if (!request.author?.name) {
+        return c.json<TriggerResponse>({ message: "comment submit handled, no author name in request" }, 200);
     }
 
     if (isUserIgnoredForTriggers(request.author)) {
@@ -22,7 +26,7 @@ export const handleCommentSubmit = async (c: Context) => {
 
     const ruleChecker = new AutomodRuleChecker({ rules });
 
-    const result = await ruleChecker.checkComment(request.comment.id as T1);
+    const result = await ruleChecker.checkComment(request.comment, request.author.name);
 
     if (!result) {
         return c.json<TriggerResponse>({ message: "comment submit handled, no matches found" }, 200);
