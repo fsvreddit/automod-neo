@@ -4,7 +4,6 @@ This app replicates nearly all features of AutoModerator and adds some new featu
 
 TODO:
 
-* Safeguard against contradicting previous mod actions (e.g. approving previously removed items or vice versa)
 * `domain` should check either the domain or a subdomain by default
 
 ## Behaviour differences
