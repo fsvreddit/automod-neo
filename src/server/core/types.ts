@@ -1,4 +1,4 @@
-export type SearchMethod = "includes-word" | "includes" | "starts-with" | "ends-with" | "full-exact" | "regex";
+export type SearchMethod = "includes-word" | "includes" | "starts-with" | "ends-with" | "full-exact" | "full-text" | "regex";
 
 export interface SearchOption {
     search_method: SearchMethod;

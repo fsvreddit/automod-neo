@@ -28,6 +28,24 @@ export function searchTextMatches (input: string, textToMatch: string, options: 
         }
     }
 
+    if (options.search_method === "full-text") {
+        // This matches text with leading or trailing punctuation and whitespace disregarded.
+        const inputToCheck = textToMatch.trim().replace(/^[\p{P}\p{Z}]+|[\p{P}\p{Z}]+$/gu, "");
+        if (options.case_sensitive) {
+            if (input === inputToCheck) {
+                return [textToMatch];
+            } else {
+                return;
+            }
+        } else {
+            if (input.toLowerCase() === inputToCheck.toLowerCase()) {
+                return [textToMatch];
+            } else {
+                return;
+            }
+        }
+    }
+
     if (options.search_method === "starts-with") {
         if (options.case_sensitive) {
             if (input.startsWith(textToMatch)) {

@@ -315,3 +315,70 @@ describe("searchConditionsMatchInput", () => {
         ]);
     });
 });
+
+describe("searchTextMatches (full-text)", () => {
+    it("matches when leading/trailing punctuation and whitespace in textToMatch are ignored", () => {
+        assert.deepEqual(
+            searchTextMatches("Hello World", "  !!Hello World??  ", makeOptions("full-text")),
+            ["  !!Hello World??  "],
+        );
+    });
+
+    it("does not ignore internal punctuation", () => {
+        assert.deepEqual(
+            searchTextMatches("Hello World", "Hello, World", makeOptions("full-text")),
+            undefined,
+        );
+    });
+
+    it("is case-insensitive by default", () => {
+        assert.deepEqual(
+            searchTextMatches("hello world", "  --HeLLo WoRLD--  ", makeOptions("full-text")),
+            ["  --HeLLo WoRLD--  "],
+        );
+    });
+
+    it("respects case_sensitive=true", () => {
+        assert.deepEqual(
+            searchTextMatches("hello world", "  --HeLLo WoRLD--  ", {
+                ...makeOptions("full-text"),
+                case_sensitive: true,
+            }),
+            undefined,
+        );
+    });
+
+    it("does not trim or strip punctuation from input", () => {
+        assert.deepEqual(
+            searchTextMatches("  Hello World  ", "Hello World", makeOptions("full-text")),
+            undefined,
+        );
+    });
+
+    it("supports negation when a positive full-text match exists", () => {
+        assert.deepEqual(
+            searchTextMatches("Hello World", "!!Hello World!!", {
+                ...makeOptions("full-text"),
+                negate: true,
+            }),
+            undefined,
+        );
+    });
+
+    it("supports negation when a positive full-text match does not exist", () => {
+        assert.deepEqual(
+            searchTextMatches("Hello World", "!!Different Text!!", {
+                ...makeOptions("full-text"),
+                negate: true,
+            }),
+            [],
+        );
+    });
+
+    it("matches empty input when textToMatch normalizes to empty", () => {
+        assert.deepEqual(
+            searchTextMatches("", "   !!!   ", makeOptions("full-text")),
+            ["   !!!   "],
+        );
+    });
+});

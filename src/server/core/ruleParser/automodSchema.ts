@@ -2,7 +2,7 @@
 import { JSONSchemaType } from "ajv";
 import { SearchMethod, SearchOption } from "../types";
 
-const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "full-exact", "regex"];
+const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "full-exact", "full-text", "regex"];
 const standardConditionValues = ["image hosting sites", "direct image links", "video hosting sites", "streaming sites", "crowdfunding sites", "meme generator sites", "facebook links", "amazon affiliate links"] as const;
 const actionValues = ["approve", "remove", "report", "spam", "filter"] as const;
 const submissionTypeValues = ["comment", "submission", "text submission", "link submission", "crosspost submission", "poll submission", "gallery submission", "any"] as const;
