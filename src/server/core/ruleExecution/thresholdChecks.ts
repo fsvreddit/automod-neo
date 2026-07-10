@@ -1,6 +1,6 @@
 import { subDays, subHours, subMinutes, subMonths, subWeeks, subYears } from "date-fns";
 
-export const numericComparatorPattern = "^(<|>|<=|>=|=)?\\s?(\\d+)$";
+export const numericComparatorPattern = "^(<|>|<=|>=|=)?\\s?(-?\\d+)$";
 export const dateComparatorPattern = "^(<|>|<=|>=)?\\s?(\\d+)\\s(minute|hour|day|week|month|year)s?$";
 
 /**
