@@ -4,6 +4,7 @@ This app replicates nearly all features of AutoModerator and adds some new featu
 
 TODO:
 
+* Safeguard against contradicting previous mod actions (e.g. approving previously removed items or vice versa)
 * poll_option_text - The text of each option in a poll post
 * poll_option_count - The number of options a poll post has.
 * For gallery submissions, the optional image captions are included in evaluation of `body`
