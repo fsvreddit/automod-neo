@@ -36,8 +36,6 @@ export const handleCommentSubmit = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "comment submit handled, trigger already handled" }, 200);
     }
 
-    console.log(JSON.stringify(results, null, 2));
-
     const actionRules = new ActionRules({ targetId: request.comment.id as T1, matchedRules: results });
     await actionRules.actionRules();
 

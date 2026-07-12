@@ -104,7 +104,6 @@ export class ActionRules {
 
         const matchRegex = /{{match(?:-([a-z]+))?(?:-(\d+))?}}/g;
         for (const match of result.matchAll(matchRegex)) {
-            // console.log(match);
             const [fullMatch, category, index] = match;
             const indexToUse = index ? parseInt(index) - 1 : 0;
             const categoryMatch = automodMatch.matches.find(m => m.category === category);
