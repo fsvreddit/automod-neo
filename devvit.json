@@ -41,7 +41,7 @@
             "combineComments": {
                 "type": "boolean",
                 "label": "Combine Comments",
-                "helpText": "If enabled, multiple comments by Automod Neo on the same post or comment will be combined together into a single comment separated by horizontal rules.",
+                "helpText": "If enabled, multiple comments by Automod Neo in reply to the same post or comment will be combined together into a single comment separated by horizontal rules.",
                 "defaultValue": true
             },
             "discordWebhookUrl": {
