@@ -11,6 +11,7 @@ This page is a full specificaiton about how Automod Neo's capabilities and behav
 * Automod Neo triggers on comment and post creation, edits and reports. For reports, only rules with a `reports` check will run.
 * By default, only one rule with an action of `remove`, `spam` or `filter` will run on a given post or comment. However multiple rules without these actions can run on a given post or comment. This can be changed using the `stop_on_match` directive.
 * By default, if two or more Automod Neo rules match against a post or comment that add comments in reply, one comment will be left containing the text defined in all matching rules.
+* AutoMod Neo will never act against posts or comments made by itself, AutoModerator, or the *subreddit*-ModTeam user, even when `moderators_exempt` is false.
 
 ## Syntax
 
