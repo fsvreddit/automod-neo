@@ -186,6 +186,7 @@ export const automodSchema: Record<string, unknown> = {
         message: { type: "string", nullable: true },
         message_subject: { type: "string", nullable: true },
         discord_alert: { type: "string", nullable: true },
+        stop_on_match: { type: "boolean", nullable: true },
         standard: {
             type: "string",
             enum: standardConditionValues,

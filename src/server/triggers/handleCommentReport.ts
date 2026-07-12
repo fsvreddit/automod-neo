@@ -23,9 +23,9 @@ export const handleCommentReport = async (c: Context) => {
 
     const ruleChecker = new AutomodRuleChecker({ rules });
 
-    const result = await ruleChecker.checkComment(request.comment, commentAuthor.username);
+    const results = await ruleChecker.checkComment(request.comment, commentAuthor.username);
 
-    if (!result) {
+    if (results.length === 0) {
         return c.json<TriggerResponse>({ message: "comment report handled, no matches found" }, 200);
     }
 
@@ -33,7 +33,9 @@ export const handleCommentReport = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "comment report handled, trigger already handled" }, 200);
     }
 
-    await actionRules(request.comment.id, result);
+    for (const result of results) {
+        await actionRules(request.comment.id, result);
+    }
 
     return c.json<TriggerResponse>({ message: "comment report handled" }, 200);
 };

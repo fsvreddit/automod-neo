@@ -151,6 +151,18 @@ export class AutomodRuleChecker {
         return textWithoutBlockquotes.join("\n");
     }
 
+    private shouldStop (rule: AutomodRule): boolean {
+        if (rule.stop_on_match !== undefined) {
+            return rule.stop_on_match;
+        }
+
+        if (!rule.action) {
+            return false;
+        }
+
+        return rule.action === "remove" || rule.action === "spam" || rule.action === "filter";
+    }
+
     private getDistinctSearchFields (textSearchConditions: SearchableText[]): Set<string> {
         const conditions = new Set<string>();
         for (const condition of textSearchConditions) {
@@ -555,10 +567,12 @@ export class AutomodRuleChecker {
         return matches;
     }
 
-    public async checkComment (comment: CommentV2, authorName: string): Promise<AutomodMatch | undefined> {
+    public async checkComment (comment: CommentV2, authorName: string): Promise<AutomodMatch[]> {
         if (this.rules.length === 0) {
-            return;
+            return [];
         }
+
+        const results: AutomodMatch[] = [];
 
         for (const rule of this.rules) {
             const matches: Matches[] = [];
@@ -671,14 +685,22 @@ export class AutomodRuleChecker {
 
             console.log(`Rule matched for comment ${comment.id}: ${rule.friendly_name ?? "Unnamed rule"}`);
 
-            return { rule, matches };
+            results.push({ rule, matches });
+            if (this.shouldStop(rule)) {
+                console.log(`Stopping further rule checks for comment ${comment.id} because rule has stop_on_match set to true or action is remove/spam/filter.`);
+                break;
+            }
         }
+
+        return results;
     }
 
-    public async checkPost (postId: T3): Promise<AutomodMatch | undefined> {
+    public async checkPost (postId: T3): Promise<AutomodMatch[]> {
         if (this.rules.length === 0) {
-            return;
+            return [];
         }
+
+        const results: AutomodMatch[] = [];
 
         for (const rule of this.rules) {
             if (rule.type === "comment") {
@@ -731,7 +753,13 @@ export class AutomodRuleChecker {
 
             console.log(`Rule matched for post ${post.id}: ${rule.friendly_name ?? "Unnamed rule"}`);
 
-            return { rule, matches };
+            results.push({ rule, matches });
+            if (this.shouldStop(rule)) {
+                console.log(`Stopping further rule checks for post ${post.id} because rule has stop_on_match set to true or action is remove/spam/filter.`);
+                break;
+            }
         }
+
+        return results;
     }
 }

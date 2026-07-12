@@ -122,6 +122,9 @@ export type AutomodRule = PostOrCommentCondition & CommentAction & {
     message?: string;
     message_subject?: string;
     discord_alert?: string;
+
+    // Behaviour modifiers
+    stop_on_match?: boolean;
 };
 
 export interface Matches {

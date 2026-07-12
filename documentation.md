@@ -9,7 +9,7 @@ This page is a full specificaiton about how Automod Neo's capabilities and behav
 * Rules that may result in an item being removed (action of `remove`, `spam`, or `filter`) are always checked before all other rules in priority order, followed by all other rules in priority order.
 * Rules that remove content will not run against content that has already been approved by mods, and rules that approve content will not run against content that has already been removed by mods.
 * Automod Neo triggers on comment and post creation, edits and reports. For reports, only rules with a `reports` check will run.
-* Only one rule will act on a post or comment
+* By default, only one rule with an action of `remove`, `spam` or `filter` will run on a given post or comment. However multiple rules without these actions can run on a given post or comment. This can be changed using the `stop_on_match` directive.
 
 ## Syntax
 
@@ -303,6 +303,7 @@ The supported threshold checks are:
 ### Other directives
 
 * `ignore_blockquotes` - true/false - If set to true, any text inside blockquotes will not be considered by this rule when doing search checks against body, or counting length with body_shorter_than/body_longer_than.
+* `stop_on_match` - true/false. By default, any rule with an action of `remove`, `spam` or `filter` is treated as `stop_on_match: true`, and other rules as `stop_on_match: false` to match OG AutoModerator functionality.
 
 ### Placeholders
 

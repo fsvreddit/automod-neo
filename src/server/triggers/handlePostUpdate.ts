@@ -27,9 +27,9 @@ export const handlePostUpdate = async (c: Context) => {
 
     const ruleChecker = new AutomodRuleChecker({ rules });
 
-    const result = await ruleChecker.checkPost(request.post.id as T3);
+    const results = await ruleChecker.checkPost(request.post.id as T3);
 
-    if (!result) {
+    if (results.length === 0) {
         return c.json<TriggerResponse>({ message: "post update handled, no matches found" }, 200);
     }
 
@@ -37,7 +37,9 @@ export const handlePostUpdate = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "post update handled, trigger already handled" }, 200);
     }
 
-    await actionRules(request.post.id, result);
+    for (const result of results) {
+        await actionRules(request.post.id, result);
+    }
 
     return c.json<TriggerResponse>({ message: "post update handled" }, 200);
 };
