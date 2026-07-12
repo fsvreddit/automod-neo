@@ -326,7 +326,6 @@ body: ['first', 'second']
 media_author (regex): '^author_[0-9]+$'
 media_author_url (includes): 'example.com/channel'
 media_title: ['first title', 'second title']
-media_description#summary: 'long description'
         `;
 
         const parsed = parseRules(rules);
@@ -355,15 +354,6 @@ media_description#summary: 'long description'
                     {
                         searchField: ["media_title"],
                         text: ["first title", "second title"],
-                        options: {
-                            search_method: "includes-word",
-                            case_sensitive: false,
-                            negate: false,
-                        },
-                    },
-                    {
-                        searchField: ["media_description"],
-                        text: ["long description"],
                         options: {
                             search_method: "includes-word",
                             case_sensitive: false,

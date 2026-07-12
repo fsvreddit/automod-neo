@@ -499,10 +499,6 @@ export class AutomodRuleChecker {
             searchFields.media_title = post.secureMedia.oembed.title;
         }
 
-        if (distinctSearchFields.has("media_description") && post.secureMedia?.oembed?.html) {
-            searchFields.media_description = post.secureMedia.oembed.html;
-        }
-
         const searchMatches = searchConditionsMatchInput(searchFields, rule.search_conditions ?? []);
         if (!searchMatches) {
             this.log(`Post ${post.id} does not match search conditions.`, checkContext);

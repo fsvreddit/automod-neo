@@ -26,9 +26,10 @@ vi.mock("../helpers", () => ({
     },
 }));
 
-import { valueWithPlaceholdersReplaced } from "./actionRules";
+import { ActionRules } from "./actionRules";
 import { AutomodRule, Matches } from "../types";
 import { Post } from "@devvit/web/server";
+import { T3 } from "@devvit/web/shared";
 
 const baseTarget = {
     authorName: "example_author",
@@ -41,8 +42,9 @@ const baseTarget = {
 const blankRule: AutomodRule = {};
 
 describe("valueWithPlaceholdersReplaced", () => {
+    const actionRules = new ActionRules({ targetId: "abc123" as T3, matchedRules: [] });
     it("returns undefined when input is undefined", () => {
-        const result = valueWithPlaceholdersReplaced(undefined, baseTarget, {}, { rule: blankRule, matches: [] });
+        const result = actionRules.valueWithPlaceholdersReplaced(undefined, baseTarget, { rule: blankRule, matches: [] });
 
         assert.equal(result, undefined);
     });
@@ -53,14 +55,13 @@ describe("valueWithPlaceholdersReplaced", () => {
             matches: ["first_match"],
         }];
 
-        const result = valueWithPlaceholdersReplaced(
+        const result = actionRules.valueWithPlaceholdersReplaced(
             "Author={{author}} | Body={{body}} | Link={{permalink}} | Kind={{kind}} | Domain={{domain}} | Url={{url}} | Match={{match}}",
             {
                 // eslint-disable-next-line @typescript-eslint/no-misused-spread
                 ...baseTarget,
                 title: "My title",
             } as unknown as Post,
-            {},
             { rule: blankRule, matches },
         );
 
@@ -71,10 +72,9 @@ describe("valueWithPlaceholdersReplaced", () => {
     });
 
     it("blockquotes every line when body placeholder is in blockquote form", () => {
-        const result = valueWithPlaceholdersReplaced(
+        const result = actionRules.valueWithPlaceholdersReplaced(
             "Before\n> {{body}}\nAfter",
             baseTarget,
-            {},
             { rule: blankRule, matches: [] },
         );
 
@@ -82,10 +82,9 @@ describe("valueWithPlaceholdersReplaced", () => {
     });
 
     it("supports blockquote body and normal body placeholders in same template", () => {
-        const result = valueWithPlaceholdersReplaced(
+        const result = actionRules.valueWithPlaceholdersReplaced(
             "> {{body}}\n\nPlain: {{body}}",
             baseTarget,
-            {},
             { rule: blankRule, matches: [] },
         );
 
@@ -93,10 +92,9 @@ describe("valueWithPlaceholdersReplaced", () => {
     });
 
     it("supports optional spaces between > and {{body}}", () => {
-        const result = valueWithPlaceholdersReplaced(
+        const result = actionRules.valueWithPlaceholdersReplaced(
             "Start\n>    {{body}}\nEnd",
             baseTarget,
-            {},
             { rule: blankRule, matches: [] },
         );
 

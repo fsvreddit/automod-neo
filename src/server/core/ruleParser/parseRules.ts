@@ -6,7 +6,7 @@ import Ajv, { type ErrorObject, type ValidateFunction } from "ajv";
 import { automodSchema } from "./automodSchema";
 import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecution";
 
-const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "full-exact", "regex"];
+const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "domain", "full-exact", "full-text", "regex"];
 
 const topLevelSearchableFields = new Set([
     "id",
@@ -22,7 +22,6 @@ const topLevelSearchableFields = new Set([
     "media_author",
     "media_author_url",
     "media_title",
-    "media_description",
 ]);
 
 const authorSearchableFields = new Set(["id", "name", "flair_text", "flair_css_class", "display_name", "bio_text", "social_links"]);

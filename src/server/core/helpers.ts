@@ -2,7 +2,7 @@ import { context, reddit, redis } from "@devvit/web/server";
 import { addWeeks } from "date-fns";
 
 export function getBotCommentFooter (): string {
-    return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/r/${context.subredditName}/about/moderators) if you have any questions or concerns.*`;
+    return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/${context.subredditName}) if you have any questions or concerns.*`;
 }
 
 function getApprovedUserCacheKey (username: string): string {

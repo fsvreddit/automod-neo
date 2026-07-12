@@ -1,6 +1,6 @@
 import { OnPostCreateRequest, T3, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { actionRules } from "../core/ruleActions";
+import { ActionRules } from "../core/ruleActions";
 import { fixPostTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import { AutomodRuleChecker, getRulesForSubreddit } from "../core/ruleExecution";
 import { isUserIgnoredForTriggers } from "../core";
@@ -36,9 +36,8 @@ export const handlePostSubmit = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "post submit handled, trigger already handled" }, 200);
     }
 
-    for (const result of results) {
-        await actionRules(request.post.id, result);
-    }
+    const actionRules = new ActionRules({ targetId: request.post.id as T3, matchedRules: results });
+    await actionRules.actionRules();
 
     return c.json<TriggerResponse>({ message: "post submit handled" }, 200);
 };

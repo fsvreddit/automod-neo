@@ -1,6 +1,6 @@
 import { OnPostReportRequest, T2, T3, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { actionRules } from "../core/ruleActions";
+import { ActionRules } from "../core/ruleActions";
 import { fixPostReportTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import { AutomodRuleChecker, getRulesForSubreddit } from "../core/ruleExecution";
 import { reddit } from "@devvit/web/server";
@@ -33,9 +33,13 @@ export const handlePostReport = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "post report handled, trigger already handled" }, 200);
     }
 
-    for (const result of results) {
-        await actionRules(request.post.id, result);
-    }
+    const actionRules = new ActionRules({
+        targetId: request.post.id as T3,
+        matchedRules: results,
+        user: postAuthor,
+    });
+
+    await actionRules.actionRules();
 
     return c.json<TriggerResponse>({ message: "post report handled" }, 200);
 };

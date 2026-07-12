@@ -1,6 +1,6 @@
-import { OnCommentCreateRequest, TriggerResponse } from "@devvit/web/shared";
+import { OnCommentCreateRequest, T1, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { actionRules } from "../core/ruleActions";
+import { ActionRules } from "../core/ruleActions";
 import { fixCommentTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import { AutomodRuleChecker, getRulesForSubreddit } from "../core/ruleExecution";
 import { isUserIgnoredForTriggers } from "../core";
@@ -36,9 +36,10 @@ export const handleCommentSubmit = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "comment submit handled, trigger already handled" }, 200);
     }
 
-    for (const result of results) {
-        await actionRules(request.comment.id, result);
-    }
+    console.log(JSON.stringify(results, null, 2));
+
+    const actionRules = new ActionRules({ targetId: request.comment.id as T1, matchedRules: results });
+    await actionRules.actionRules();
 
     return c.json<TriggerResponse>({ message: "comment submit handled" }, 200);
 };

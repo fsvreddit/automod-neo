@@ -73,6 +73,7 @@ The following existing AutoModerator features are not supported due to Devvit li
 * Set Spoiler
 * Set Original Content
 * Temporary Events label
+* the `media_description` check and associated placeholder
 
 On submissions:
 

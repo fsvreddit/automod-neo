@@ -151,7 +151,6 @@ On submissions, it is also possible to do some checks against the "media object"
 * `media_author` - the author name returned from embed.ly (usually the username of the uploader on the media site)
 * `media_author_url` - the author's url returned from embed.ly (usually the link to their user page on the media site)
 * `media_title` - the media title returned from embed.ly
-* `media_description` - the media description returned from embed.ly
 
 ### For comments (base item only)
 
@@ -327,7 +326,6 @@ Note that if you use a media placeholder anywhere in a rule, it will make it so 
 * `{{media_author}}` - the media's author username
 * `{{media_author_url}}` - the media's author url
 * `{{media_title}}` - the media's title
-* `{{media_description}}` - the media's description
 
 ### Match placeholders
 
