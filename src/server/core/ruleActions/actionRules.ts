@@ -6,6 +6,7 @@ import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../helpers";
 import { AppSetting } from "../appSettings";
 import markdownEscape from "markdown-escape";
+import _ from "lodash";
 
 interface AdditionalPlaceholders {
     author_flair_text?: string;
@@ -15,11 +16,20 @@ interface AdditionalPlaceholders {
     media_title?: string;
 }
 
+interface CommentToAdd {
+    ruleName: string;
+    text: string;
+    shouldLock: boolean;
+    shouldSticky: boolean;
+}
+
 export class ActionRules {
     private targetId: T1 | T3;
     private matchedRules: AutomodMatch[];
     private additionalPlaceholders: AdditionalPlaceholders = {};
     private webhookUrl: string | undefined;
+
+    private commentsToAdd: Record<T1 | T3, CommentToAdd[]> = {};
 
     private users: Record<string, User | undefined> = {};
 
@@ -39,6 +49,11 @@ export class ActionRules {
     private async getPostById (postId: T3): Promise<Post> {
         this.posts[postId] ??= await reddit.getPostById(postId);
         return this.posts[postId];
+    }
+
+    private addCommentToAdd (targetId: T1 | T3, comment: CommentToAdd) {
+        this.commentsToAdd[targetId] ??= [];
+        this.commentsToAdd[targetId].push(comment);
     }
 
     constructor (opts: {
@@ -177,17 +192,12 @@ export class ActionRules {
 
         if (matchedRule.rule.comment) {
             const commentBody = this.valueWithPlaceholdersReplaced(matchedRule.rule.comment, target, matchedRule);
-            if (commentBody) {
-                const newComment = await reddit.submitComment({
-                    id: target.id,
-                    text: commentBody + "\n\n" + getBotCommentFooter(),
-                });
-                if (matchedRule.rule.comment_locked) {
-                    await newComment.lock();
-                }
-                console.log(`Commented on target ${target.id} due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}"`);
-                await newComment.distinguish(matchedRule.rule.comment_stickied && isT1(target.id));
-            }
+            this.addCommentToAdd(target.id, {
+                ruleName: matchedRule.rule.friendly_name ?? "Unnamed rule",
+                text: commentBody ?? "",
+                shouldLock: matchedRule.rule.comment_locked ?? false,
+                shouldSticky: (matchedRule.rule.comment_stickied && isT1(target.id)) ?? false,
+            });
         }
 
         if (matchedRule.rule.author?.set_flair) {
@@ -388,6 +398,58 @@ export class ActionRules {
             } catch (e) {
                 const message = e instanceof Error ? e.message : String(e);
                 console.error(`Error applying actions for rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}" on target ${target.id}:`, message);
+            }
+        }
+
+        if (Object.keys(this.commentsToAdd).length === 0) {
+            return;
+        }
+
+        const combineComments = await settings.get<boolean>(AppSetting.CombineComments);
+
+        for (const targetId of Object.keys(this.commentsToAdd) as (T1 | T3)[]) {
+            const comments = this.commentsToAdd[targetId];
+            if (!comments || comments.length === 0) {
+                continue;
+            }
+
+            if (combineComments) {
+                const shouldLock = comments.some(comment => comment.shouldLock);
+                const shouldSticky = comments.some(comment => comment.shouldSticky) && isT3(targetId);
+
+                const combinedCommentText = _.compact(comments.map(comment => comment.text.trim())).join("\n\n---\n\n") + "\n\n" + getBotCommentFooter();
+
+                const newComment = await reddit.submitComment({
+                    id: targetId,
+                    text: combinedCommentText,
+                });
+
+                console.log(`Added combined comment to target ${targetId} due to rules: ${comments.map(comment => comment.ruleName).join(", ")}`);
+
+                if (shouldLock) {
+                    await newComment.lock();
+                    console.log(`Locked combined comment on target ${targetId}`);
+                }
+
+                await newComment.distinguish(shouldSticky);
+                console.log(`Distinguished combined comment on target ${targetId}`);
+            } else {
+                for (const comment of comments) {
+                    const newComment = await reddit.submitComment({
+                        id: targetId,
+                        text: comment.text + "\n\n" + getBotCommentFooter(),
+                    });
+
+                    console.log(`Added comment to target ${targetId} due to rule "${comment.ruleName}"`);
+
+                    if (comment.shouldLock) {
+                        await newComment.lock();
+                        console.log(`Locked comment on target ${targetId} due to rule "${comment.ruleName}"`);
+                    }
+
+                    await newComment.distinguish(comment.shouldSticky);
+                    console.log(`Distinguished comment on target ${targetId} due to rule "${comment.ruleName}"`);
+                }
             }
         }
     }

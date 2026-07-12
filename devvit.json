@@ -38,6 +38,12 @@
                 "helpText": "Paste or enter YAML rules here. Most existing AutoModerator rules will work without modification.",
                 "validationEndpoint": "/internal/validators/validate-automod-setting"
             },
+            "combineComments": {
+                "type": "boolean",
+                "label": "Combine Comments",
+                "helpText": "If enabled, multiple comments by Automod Neo on the same post or comment will be combined together into a single comment separated by horizontal rules.",
+                "defaultValue": true
+            },
             "discordWebhookUrl": {
                 "type": "string",
                 "label": "Discord Webhook URL",

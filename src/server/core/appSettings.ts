@@ -1,10 +1,6 @@
 export enum AppSetting {
     // Subreddit-scoped settings
     Rules = "rules",
+    CombineComments = "combineComments",
     DiscordWebhookUrl = "discordWebhookUrl",
-}
-
-export interface SubredditSettings {
-    [AppSetting.Rules]: string;
-    [AppSetting.DiscordWebhookUrl]?: string;
 }
