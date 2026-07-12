@@ -22,6 +22,10 @@ These can be searched just like the title or body e.g. `bio_text (includes): 'sn
 
 All actions (such as remove, set flair and so on) are now supported at the parent submission and parent submission author levels
 
+### Ability to choose whether to stop processing rules or not
+
+By default, OG AutoModerator stops processing rules after any rule with a `remove`, `spam` or `filter` action. Automod Neo preserves this behaviour by default but allows fine-grained control using the optional `stop_on_match` directive. E.g. `stop_on_match: false` will continue checking rules even if the matched rule has a `remove` action, and `stop_on_match: true` will abort checking even on a rule that doesn't remove or filter content.
+
 ### Crowd control checks on comments
 
 Automod Neo supports a `comment_crowd_control_collapsed` attribute when checking comments, taking either `true` or `false` as a parameter. This used to be a supported but undocumented feature in AutoModerator but was removed some time ago.
