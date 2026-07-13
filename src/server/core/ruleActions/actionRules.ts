@@ -69,8 +69,8 @@ export class ActionRules {
     }
 
     public valueWithPlaceholdersReplaced (input: string | undefined, target: Post | Comment, automodMatch: AutomodMatch): string | undefined {
-        if (!input) {
-            return;
+        if (!input?.includes("{{")) {
+            return input;
         }
 
         const body = target.body ?? "";
