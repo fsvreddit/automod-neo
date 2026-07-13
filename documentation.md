@@ -81,17 +81,17 @@ title#2: "cat"
 
 The following checks/actions are only available in the top level of a rule, and cannot be included inside sub-groups:
 
-* type - defines the type of item this rule should be checked against. Valid values are `comment`, `submission` (any post), `text submission` (a post without a link), `link submission`, `crosspost submission` (a post crossposted from elsewhere on Reddit), `poll submission`, `gallery submission` or any (this is the default if `type` is not specified).
-* priority - must be set to a number. Can be used to define the order that rules should be checked in (though they will still always be checked in two separate groups - rules that might cause any sort of removal first - ones with action of `remove`, `spam` or `filter`, and then all others). Rules with higher numeric priority values will be checked first (i.e. a rule with priority 10 will run before priority 5). If a rule does not have a priority defined, it is treated as `priority: 0`. Negative priority values can be used as well to specify that certain rules should be checked after ones with no defined priority value.
-* moderators_exempt - true/false - Defines whether the rule should be skipped when the author of the item is a moderator of the subreddit. Mods are exempt from rules that can result in a removal or report by default, so set this to false to override that behavior, or set it to true to make them exempt from any other rules.
-* comment - Text of a comment to post in response to an item that satisfies the rule's conditions. Supports placeholders.
-* comment_locked - true/false - if set to true, the comment Automod Neo posts in response to an item will be locked from further comment replies.
-* comment_stickied - true/false - if set to true, the comment Automod Neo posts in response to an item will be stickied to the top of the submission (will have no effect on non-submissions, as the comment must be top-level)
-* modmail - Text of a modmail to send to the moderators when an item satisfies the rule's conditions. Supports placeholders.
-* modmail_subject - If a modmail is sent, the subject of that modmail. Defaults to "Automod Neo notification" if not set. Supports placeholders.
-* message - Text of a message to send to the author of an item that satisfies the rule's conditions. Supports placeholders.
-* message_subject - If a message is sent, the subject of that message. Defaults to "Automod Neo notification" if not set. Supports placeholders.
-* discord_alert - Text of a message to send to a pre-configured Discord webhook. Supports placeholders.
+* `type` - defines the type of item this rule should be checked against. Valid values are `comment`, `submission` (any post), `text submission` (a post without a link), `link submission`, `crosspost submission` (a post crossposted from elsewhere on Reddit), `poll submission`, `gallery submission` or any (this is the default if `type` is not specified).
+* `priority` - must be set to a number. Can be used to define the order that rules should be checked in (though they will still always be checked in two separate groups - rules that might cause any sort of removal first - ones with action of `remove`, `spam` or `filter`, and then all others). Rules with higher numeric priority values will be checked first (i.e. a rule with priority 10 will run before priority 5). If a rule does not have a priority defined, it is treated as `priority: 0`. Negative priority values can be used as well to specify that certain rules should be checked after ones with no defined priority value.
+* `moderators_exempt` - true/false - Defines whether the rule should be skipped when the author of the item is a moderator of the subreddit. Mods are exempt from rules that can result in a removal or report by default, so set this to false to override that behavior, or set it to true to make them exempt from any other rules.
+* `comment` - Text of a comment to post in response to an item that satisfies the rule's conditions. Supports placeholders.
+* `comment_locked` - true/false - if set to true, the comment Automod Neo posts in response to an item will be locked from further comment replies.
+* `comment_stickied` - true/false - if set to true, the comment Automod Neo posts in response to an item will be stickied to the top of the submission (will have no effect on non-submissions, as the comment must be top-level)
+* `modmail` - Text of a modmail to send to the moderators when an item satisfies the rule's conditions. Supports placeholders.
+* `modmail_subject` - If a modmail is sent, the subject of that modmail. Defaults to "Automod Neo notification" if not set. Supports placeholders.
+* `message` - Text of a message to send to the author of an item that satisfies the rule's conditions. Supports placeholders.
+* `message_subject` - If a message is sent, the subject of that message. Defaults to "Automod Neo notification" if not set. Supports placeholders.
+* `discord_alert` - Text of a message to send to a pre-configured Discord webhook. Supports placeholders.
 
 ## Sub-groups
 
@@ -273,7 +273,7 @@ The supported threshold checks are:
 #### Other user checks
 
 * `has_verified_email`- true/false - if true, will only match if the author has a verified email address or a phone number. If false, will only match if the author does not have neither a verified email address nor a phone number.
-* `is_gold` - true/false - If true, will only match if the author has reddit gold. If false, will only match if they do not have gold.
+* `is_gold` - true/false - If true, will only match if the author has Reddit Premium. If false, will only match if they do not have Reddit Premium.
 * `is_submitter` - true/false - (only relevant when checking comments) If true, will only match if the author was also the submitter of the post being commented inside. If false, will only match if they were not.
 * `is_contributor` - true/false - if true, will only match if the author is a contributor/"approved submitter" in the subreddit. If false, will only match if they are not.
 * `is_moderator` - true/false - if true, will only match if the author is a moderator of the subreddit. If false, will only match if the author is NOT a moderator of the subreddit.
@@ -338,12 +338,12 @@ title: ["red", "green", "blue"]
 set_flair: ["", "{{match}}"]
 ```
 
-In the case of multiple search checks, you must specify which check to take the match from, or you may end up with unexpected behavior. For example, if the same rule also includes a search on domain, you should specify that you want the match from the title search with `{{match-title}}`:
+In the case of multiple search checks, you must specify which check to take the match from, or you may end up with unexpected behavior. For example, if the same rule also includes a search on title, you should specify that you want the match from the title search with `{{match-title}}`:
 
 ```yaml
 title: ["red", "green", "blue"]
 domain: [youtube.com, youtu.be]
-set_flair: ["", "{{match-title}}"]
+set_flair: ["", "{{match-title}}"] # Set flair CSS class to the match
 ```
 
 And finally, it is also possible to use the match placeholder to specify individual capture groups from a regular expression search check. This is done by adding the number of the capture group at the end of the placeholder, but be aware that `{{match}}` is the same as `{{match-1}}`, and will be replaced with the entire matched word/phrase. Capture groups defined inside your regex with parentheses start at `{{match-2}}`. You can also specify the specific search match along with this, such as `{{match-title-2}}`.

@@ -94,7 +94,7 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 ## Future developments
 
-* An Automod configuration UI that includes syntax highlighting
+* An Automod configuration UI that includes syntax highlighting. This will require future Dev Platform capabilities that don't exist yet.
 * More detections and actions (Ask me what you'd find useful!)
 
 ## About this app
