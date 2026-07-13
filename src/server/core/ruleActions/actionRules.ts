@@ -157,7 +157,7 @@ export class ActionRules {
                 break;
             }
             case "report": {
-                const reportReason = this.valueWithPlaceholdersReplaced(action.report_reason ?? action.action_reason, target, automodMatch);
+                const reportReason = this.valueWithPlaceholdersReplaced(action.report_reason ?? action.action_reason, target, automodMatch)?.substring(0, 99);
                 await reddit.report(target, { reason: reportReason ?? "Reported by Automod Neo" });
                 console.log(`Reported target ${target.id} due to rule "${automodMatch.rule.friendly_name ?? "Unnamed rule"}" with reason "${reportReason ?? "Reported by Automod Neo"}"`);
                 break;
