@@ -56,7 +56,7 @@ body#1 (includes-word): "anonymized"
 body#2 (includes-word): "Redact"
 ```
 
-This would match content that hasa both the term "anonymized" and "Redact" in the name, unlike `body (includes-word): ["anonymized", "Redact"]` that would match any content that includes either of those terms. Note that the part after the # does not need to be a number, it can be any string of letters, numbers, hyphens or underscores.
+This would match content that has both the term "anonymized" and "Redact" in the name, unlike `body (includes-word): ["anonymized", "Redact"]` that would match any content that includes either of those terms. Note that the part after the # does not need to be a number, it can be any string of letters, numbers, hyphens or underscores.
 
 ## Limitations
 
