@@ -12,6 +12,8 @@ Due to limitations of the Dev Platform, `action_reason` and `filter_reason` do n
 
 Rules run on a short delay of up to a few seconds in most situations.
 
+Because of these two factors, I recommend only using Automod Neo at this stage for use cases that AutoModerator does not support, such as the additional user properties, Discord alerts, or similar.
+
 ## New features
 
 ### Author checks
