@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings, User } from "@devvit/web/server";
 import { isT1, isT3, T1, T3 } from "@devvit/web/shared";
-import { AutomodMatch, CommentAction, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
+import { AutomodMatch, AutomodRule, CommentAction, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../helpers";
 import { AppSetting } from "../appSettings";
@@ -364,6 +364,30 @@ export class ActionRules {
         }
     }
 
+    private anyPlaceholdersFound (ruleMatch: AutomodMatch, placeholdersToFind: string[]): boolean {
+        const locationsToCheck = [
+            "action_reason",
+            "report_reason",
+            "comment",
+            "message",
+            "message_subject",
+            "modmail",
+            "modmail_subject",
+            "discord_alert",
+        ];
+
+        const { rule } = ruleMatch;
+
+        for (const location of locationsToCheck) {
+            const value = rule[location as keyof AutomodRule];
+            if (typeof value === "string" && placeholdersToFind.some(placeholder => value.includes(`{{${placeholder}}}`))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public async actionRules () {
         const target = await getPostOrCommentById(this.targetId);
         if (isT3(target.id)) {
@@ -379,16 +403,18 @@ export class ActionRules {
             };
         }
 
-        try {
-            const targetAuthor = await this.getUserByUsername(target.authorName);
-            const targetAuthorFlair = await targetAuthor?.getUserFlairBySubreddit(context.subredditName);
-            if (targetAuthorFlair) {
-                this.additionalPlaceholders.author_flair_text = targetAuthorFlair.flairText;
-                this.additionalPlaceholders.author_flair_css_class = targetAuthorFlair.flairCssClass;
+        if (this.matchedRules.some(ruleMatch => this.anyPlaceholdersFound(ruleMatch, ["author_flair_text", "author_flair_css_class"]))) {
+            try {
+                const targetAuthor = await this.getUserByUsername(target.authorName);
+                const targetAuthorFlair = await targetAuthor?.getUserFlairBySubreddit(context.subredditName);
+                if (targetAuthorFlair) {
+                    this.additionalPlaceholders.author_flair_text = targetAuthorFlair.flairText;
+                    this.additionalPlaceholders.author_flair_css_class = targetAuthorFlair.flairCssClass;
+                }
+            } catch {
+                // Ignore errors when fetching author flair, as it is not critical to the action execution.
+                console.error(`Failed to fetch author flair for ${target.authorName}`);
             }
-        } catch {
-            // Ignore errors when fetching author flair, as it is not critical to the action execution.
-            console.error(`Failed to fetch author flair for ${target.authorName}`);
         }
 
         for (const matchedRule of this.matchedRules) {
