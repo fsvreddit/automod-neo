@@ -8,6 +8,10 @@ All regular expressions use Javascript regex syntax. This can be different to Py
 
 All regular expressions are evaluated with the Unicode flag on, allowing for constructs such as the [\p metacharacter](https://www.w3schools.com/Jsref/jsref_regexp_meta_p.asp) for more advanced searches without having to identify specific UNICODE code points.
 
+Due to limitations of the Dev Platform, `action_reason` and `filter_reason` do not display in the mod log. This will be fixed in a future release once the capability is available.
+
+Rules run on a short delay of up to a few seconds in most situations.
+
 ## New features
 
 ### Author checks
@@ -94,4 +98,3 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 ## About this app
 
 Automod Neo is open source. [You can find the source code on GitHub here](https://github.com/fsvreddit/automod-neo).
-

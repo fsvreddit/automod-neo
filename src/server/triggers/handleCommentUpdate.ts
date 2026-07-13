@@ -5,8 +5,10 @@ import { fixCommentTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-de
 import { AutomodRuleChecker, getRulesForSubreddit } from "../core/ruleExecution";
 import { addMinutes } from "date-fns";
 import { isUserIgnoredForTriggers } from "../core";
+import pluralize from "pluralize";
 
 export const handleCommentUpdate = async (c: Context) => {
+    const now = Date.now();
     const request = await fixCommentTriggerEvent(await c.req.json<OnCommentUpdateRequest>());
     if (!request.comment) {
         return c.json<TriggerResponse>({ message: "comment update handled, no comment in request" }, 200);
@@ -39,6 +41,8 @@ export const handleCommentUpdate = async (c: Context) => {
 
     const actionRules = new ActionRules({ targetId: request.comment.id as T1, matchedRules: results });
     await actionRules.actionRules();
+
+    console.log(`Comment update handled in ${Date.now() - now}ms for comment ${request.comment.id} with ${results.length} ${pluralize("rule", results.length)} matched.`);
 
     return c.json<TriggerResponse>({ message: "comment update handled" }, 200);
 };

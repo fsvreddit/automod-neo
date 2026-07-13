@@ -4,8 +4,10 @@ import { ActionRules } from "../core/ruleActions";
 import { fixPostTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import { AutomodRuleChecker, getRulesForSubreddit } from "../core/ruleExecution";
 import { isUserIgnoredForTriggers } from "../core";
+import pluralize from "pluralize";
 
 export const handlePostSubmit = async (c: Context) => {
+    const now = Date.now();
     const request = await fixPostTriggerEvent(await c.req.json<OnPostCreateRequest>());
     if (!request.post) {
         return c.json<TriggerResponse>({ message: "post submit handled, no post in request" }, 200);
@@ -38,6 +40,8 @@ export const handlePostSubmit = async (c: Context) => {
 
     const actionRules = new ActionRules({ targetId: request.post.id as T3, matchedRules: results });
     await actionRules.actionRules();
+
+    console.log(`Post submit handled in ${Date.now() - now}ms for post ${request.post.id} with ${results.length} ${pluralize("rule", results.length)} matched.`);
 
     return c.json<TriggerResponse>({ message: "post submit handled" }, 200);
 };

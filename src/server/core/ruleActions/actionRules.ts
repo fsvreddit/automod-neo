@@ -185,7 +185,7 @@ export class ActionRules {
     }
 
     private async actionRule (target: Post | Comment, matchedRule: AutomodMatch, doMessages = true): Promise<void> {
-        console.log(`Applying actions on target ${target.id}`);
+        console.log(`Applying actions on ${isT3(target.id) ? "post" : "comment"} ${target.id}`);
 
         await this.doTopLevelAction(target, matchedRule.rule, matchedRule);
 

@@ -5,8 +5,10 @@ import { fixPostTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvi
 import { AutomodRuleChecker, getRulesForSubreddit } from "../core/ruleExecution";
 import { addMinutes } from "date-fns";
 import { isUserIgnoredForTriggers } from "../core";
+import pluralize from "pluralize";
 
 export const handlePostUpdate = async (c: Context) => {
+    const now = Date.now();
     const request = await fixPostTriggerEvent(await c.req.json<OnPostUpdateRequest>());
     if (!request.post) {
         return c.json<TriggerResponse>({ message: "post update handled, no post in request" }, 200);
@@ -39,6 +41,8 @@ export const handlePostUpdate = async (c: Context) => {
 
     const actionRules = new ActionRules({ targetId: request.post.id as T3, matchedRules: results });
     await actionRules.actionRules();
+
+    console.log(`Post update handled in ${Date.now() - now}ms for post ${request.post.id} with ${results.length} ${pluralize("rule", results.length)} matched.`);
 
     return c.json<TriggerResponse>({ message: "post update handled" }, 200);
 };

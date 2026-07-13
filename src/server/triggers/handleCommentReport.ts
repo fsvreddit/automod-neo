@@ -4,8 +4,10 @@ import { ActionRules } from "../core/ruleActions";
 import { fixCommentReportTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import { AutomodRuleChecker, getRulesForSubreddit } from "../core/ruleExecution";
 import { reddit } from "@devvit/web/server";
+import pluralize from "pluralize";
 
 export const handleCommentReport = async (c: Context) => {
+    const now = Date.now();
     const request = await fixCommentReportTriggerEvent(await c.req.json<OnCommentReportRequest>());
     if (!request.comment) {
         return c.json<TriggerResponse>({ message: "comment report handled, no comment in request" }, 200);
@@ -35,6 +37,8 @@ export const handleCommentReport = async (c: Context) => {
 
     const actionRules = new ActionRules({ targetId: request.comment.id as T1, matchedRules: results });
     await actionRules.actionRules();
+
+    console.log(`Comment report handled in ${Date.now() - now}ms for comment ${request.comment.id} with ${results.length} ${pluralize("rule", results.length)} matched.`);
 
     return c.json<TriggerResponse>({ message: "comment report handled" }, 200);
 };
