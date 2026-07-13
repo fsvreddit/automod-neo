@@ -1,15 +1,12 @@
+import { redis, settings } from "@devvit/web/server";
 import { AutomodRule } from "../types";
 import { AppSetting } from "../appSettings";
 import { parseRules } from "../ruleParser";
-import { redis, settings } from "@devvit/web/server";
+import { isRemovalRule } from "../helpers";
 import { addHours } from "date-fns";
 
 const CACHED_UNPARSED_RULES_KEY = "cachedUnparsedRules";
 const CACHED_RULES_KEY = "cachedRules";
-
-function isRemovalRule (rule: AutomodRule): boolean {
-    return rule.action === "remove" || rule.action === "spam" || rule.action === "filter";
-}
 
 export function sortRulesForExecution (rules: AutomodRule[]): AutomodRule[] {
     // First, add all the removal rules in priority order (highest priority first)

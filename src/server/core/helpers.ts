@@ -1,5 +1,6 @@
 import { context, reddit, redis } from "@devvit/web/server";
 import { addWeeks } from "date-fns";
+import { AutomodRule } from "./types";
 
 export function getBotCommentFooter (): string {
     return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/${context.subredditName}) if you have any questions or concerns.*`;
@@ -119,4 +120,8 @@ export function isUserIgnoredForTriggers (username: string): boolean {
     ]);
 
     return ignoredUsernames.has(username);
+}
+
+export function isRemovalRule (rule: AutomodRule): boolean {
+    return rule.action === "remove" || rule.action === "spam" || rule.action === "filter";
 }

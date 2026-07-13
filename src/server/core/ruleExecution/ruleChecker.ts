@@ -2,7 +2,7 @@
 import { Comment, context, Post, reddit, User, UserFlair, UserSocialLink } from "@devvit/web/server";
 import { CommentV2, isT3, T1, T3 } from "@devvit/web/shared";
 import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, SearchableText } from "../types";
-import { getDomainFromUrl, isApprovedUser, isModerator, isSubredditNSFW } from "../helpers";
+import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW } from "../helpers";
 import { meetsDateThreshold, meetsNumericThreshold } from "./thresholdChecks";
 import { subMonths } from "date-fns";
 import { anySearchConditionMatchesInput, postMatchesStandardCondition, searchConditionsMatchInput } from ".";
@@ -156,11 +156,7 @@ export class AutomodRuleChecker {
             return rule.stop_on_match;
         }
 
-        if (!rule.action) {
-            return false;
-        }
-
-        return rule.action === "remove" || rule.action === "spam" || rule.action === "filter";
+        return isRemovalRule(rule);
     }
 
     private getDistinctSearchFields (textSearchConditions: SearchableText[]): Set<string> {
