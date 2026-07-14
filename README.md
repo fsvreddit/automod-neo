@@ -99,11 +99,12 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 ## Change log
 
-### v0.2.1
+### v0.2.2
 
 * Fixed a bug checking comments where `type:` was not specified
 * Add Slack webhook support via the `discord_alert` action
 * Send notifications when Automod Neo is upgraded (enabled by default)
+* Add `is_nsfw` attribute to post and author checks
 
 ## About this app
 

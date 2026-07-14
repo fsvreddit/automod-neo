@@ -226,6 +226,7 @@ Other checks that can be used that are not search checks, so do not take a value
 
 ### For submissions only (base item or parent_submission sub-group)
 
+* `is_nsfw` - true/false - triggers only if the post's NSFW flag matches
 * `is_poll` - true/false - if set to true, submissions will only trigger the rule if they are of the poll submission type.
 * `is_gallery` - true/false - if set to true, submissions will only trigger the rule if they are of the gallery submission type.
 discussion_type - chat/null - if set to chat, then it will apply to chat posts. if set to null it will apply to comment posts. if this is not specified it will apply to both
@@ -273,6 +274,7 @@ The supported threshold checks are:
 #### Other user checks
 
 * `has_verified_email`- true/false - if true, will only match if the author has a verified email address or a phone number. If false, will only match if the author does not have neither a verified email address nor a phone number.
+* `is_nsfw` - true/false - If true, will only match if the author is NSFW. If false, will only match if they are not NSFW.
 * `is_gold` - true/false - If true, will only match if the author has Reddit Premium. If false, will only match if they do not have Reddit Premium.
 * `is_submitter` - true/false - (only relevant when checking comments) If true, will only match if the author was also the submitter of the post being commented inside. If false, will only match if they were not.
 * `is_contributor` - true/false - if true, will only match if the author is a contributor/"approved submitter" in the subreddit. If false, will only match if they are not.

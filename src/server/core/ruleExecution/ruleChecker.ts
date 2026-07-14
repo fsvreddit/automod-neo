@@ -191,6 +191,13 @@ export class AutomodRuleChecker {
         }
 
         // Simple checks for author conditions
+        if (authorCondition.is_nsfw !== undefined) {
+            if (user.nsfw !== authorCondition.is_nsfw) {
+                this.log(`${username} does not match is_nsfw condition (${authorCondition.is_nsfw}).`, checkContext);
+                return;
+            }
+        }
+
         if (authorCondition.has_verified_email !== undefined) {
             if (user.hasVerifiedEmail !== authorCondition.has_verified_email) {
                 this.log(`${username} does not match has_verified_email condition (${authorCondition.has_verified_email}).`, checkContext);
@@ -346,6 +353,13 @@ export class AutomodRuleChecker {
         if (rule.standard !== undefined) {
             if (!postMatchesStandardCondition(post, rule.standard)) {
                 this.log(`Post ${post.id} does not match standard condition (${rule.standard}).`, checkContext);
+                return;
+            }
+        }
+
+        if (rule.is_nsfw !== undefined) {
+            if (post.nsfw !== rule.is_nsfw) {
+                this.log(`Post ${post.id} does not match is_nsfw condition (${rule.is_nsfw}).`, checkContext);
                 return;
             }
         }

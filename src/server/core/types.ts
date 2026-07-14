@@ -36,6 +36,7 @@ export interface Author {
     account_age?: string;
     satisfy_any_threshold?: boolean;
     has_verified_email?: boolean;
+    is_nsfw?: boolean;
     is_gold?: boolean;
     is_submitter?: boolean;
     is_contributor?: boolean;
@@ -68,6 +69,7 @@ export interface PostOrCommentCondition {
     reports?: number;
     body_longer_than?: number;
     body_shorter_than?: number;
+    is_nsfw?: boolean; // Posts only
     is_edited?: boolean;
     is_poll?: boolean; // Posts only
     is_gallery?: boolean; // Posts only
