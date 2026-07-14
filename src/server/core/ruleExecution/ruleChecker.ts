@@ -569,7 +569,7 @@ export class AutomodRuleChecker {
         for (const rule of this.rules) {
             const matches: Matches[] = [];
 
-            if (rule.type !== "any" && rule.type !== "comment") {
+            if (rule.type !== undefined && rule.type !== "any" && rule.type !== "comment") {
                 continue;
             }
 

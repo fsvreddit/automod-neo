@@ -128,6 +128,17 @@ export function searchTextMatches (input: string, textToMatch: string, options: 
 }
 
 export function searchConditionMatchesInput (input: string, condition: SearchableText): string[] | undefined {
+    if (condition.options.negate) {
+        const positiveOptions = { ...condition.options, negate: false };
+        for (const text of condition.text) {
+            if (searchTextMatches(input, text, positiveOptions)) {
+                return;
+            }
+        }
+
+        return [];
+    }
+
     for (const text of condition.text) {
         const result = searchTextMatches(input, text, condition.options);
         if (result) {
@@ -152,26 +163,37 @@ export function searchConditionsMatchInput (input: Record<string, string | strin
     const matchesFound: Matches[] = [];
 
     for (const condition of conditions) {
+        let fieldValueFound = false;
         let anyMatch = false;
+
         for (const fieldName of condition.searchField) {
             const fieldValues = input[fieldName];
+            let values: string[] = [];
             if (Array.isArray(fieldValues)) {
-                for (const fieldValue of fieldValues) {
-                    const result = searchConditionMatchesInput(fieldValue, condition);
-                    if (result) {
-                        matchesFound.push({ category: fieldName, matches: result });
-                        anyMatch = true;
-                    }
-                }
+                values = fieldValues;
             } else if (typeof fieldValues === "string") {
-                const result = searchConditionMatchesInput(fieldValues, condition);
+                values = [fieldValues];
+            }
+
+            for (const fieldValue of values) {
+                fieldValueFound = true;
+                const result = searchConditionMatchesInput(fieldValue, condition);
+
+                if (condition.options.negate) {
+                    if (!result) {
+                        return;
+                    }
+                    continue;
+                }
+
                 if (result) {
                     matchesFound.push({ category: fieldName, matches: result });
                     anyMatch = true;
                 }
             }
         }
-        if (!anyMatch) {
+
+        if (!fieldValueFound || (!condition.options.negate && !anyMatch)) {
             return;
         }
     }
