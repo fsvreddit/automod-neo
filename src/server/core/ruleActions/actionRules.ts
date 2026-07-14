@@ -251,7 +251,7 @@ export class ActionRules {
 
         if (doMessages && matchedRule.rule.discord_alert) {
             const discordAlertBody = this.valueWithPlaceholdersReplaced(matchedRule.rule.discord_alert, target, matchedRule);
-            this.webhookUrl ??= await settings.get<string>(AppSetting.DiscordWebhookUrl);
+            this.webhookUrl ??= await settings.get<string>(AppSetting.DiscordOrSlackWebhookUrl);
             if (discordAlertBody) {
                 if (this.webhookUrl) {
                     await sendMessageToWebhook(this.webhookUrl, discordAlertBody);

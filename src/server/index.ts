@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { createServer, getServerPort } from "@devvit/web/server";
 import { getRequestListener } from "@hono/node-server";
 import { handleAppInstall, handleAppUpgrade, handleCommentReport, handleCommentSubmit, handleCommentUpdate, handleModAction, handlePostReport, handlePostSubmit, handlePostUpdate } from "./triggers";
-import { validateAutomodSetting, validateDiscordWebhook } from "./validators";
+import { validateAutomodSetting, validateDiscordOrSlackWebhook } from "./validators";
 
 const application = new Hono();
 
@@ -19,7 +19,7 @@ application.post("/internal/triggers/on-mod-action", handleModAction);
 
 // Settings validators
 application.post("/internal/validators/validate-automod-setting", validateAutomodSetting);
-application.post("/internal/validators/validate-discord-webhook", validateDiscordWebhook);
+application.post("/internal/validators/validate-discord-or-slack-webhook", validateDiscordOrSlackWebhook);
 
 const server = createServer(getRequestListener(application.fetch));
 server.on("error", (err) => {

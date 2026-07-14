@@ -1,2 +1,2 @@
 export * from "./validateAutomod.js";
-export * from "./validateDiscordWebhook.js";
+export * from "./validateDiscordOrSlackWebhook.js";

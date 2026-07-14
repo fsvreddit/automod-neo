@@ -46,9 +46,9 @@
             },
             "discordWebhookUrl": {
                 "type": "string",
-                "label": "Discord Webhook URL",
+                "label": "Discord or Slack Webhook URL",
                 "helpText": "Optional. Used when rules have a 'discord_alert' action",
-                "validationEndpoint": "/internal/validators/validate-discord-webhook"
+                "validationEndpoint": "/internal/validators/validate-discord-or-slack-webhook"
             }
         }
     },

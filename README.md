@@ -96,6 +96,13 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 * An Automod configuration UI that includes syntax highlighting. This will require future Dev Platform capabilities that don't exist yet.
 * More detections and actions (Ask me what you'd find useful!)
 
+## Change log
+
+### v1.1.1
+
+* Fixed a bug checking comments where `type:` was not specified
+* Add Slack webhook support via the `discord_alert` action
+
 ## About this app
 
 Automod Neo is open source. [You can find the source code on GitHub here](https://github.com/fsvreddit/automod-neo).

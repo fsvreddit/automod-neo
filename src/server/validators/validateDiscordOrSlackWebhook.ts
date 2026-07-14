@@ -1,7 +1,7 @@
 import { SettingsValidationRequest, SettingsValidationResponse } from "@devvit/web/shared";
 import { Context } from "hono";
 
-export const validateDiscordWebhook = async (c: Context) => {
+export const validateDiscordOrSlackWebhook = async (c: Context) => {
     const validationRequest = await c.req.json<SettingsValidationRequest<string>>();
 
     if (!validationRequest.value) {
@@ -10,11 +10,11 @@ export const validateDiscordWebhook = async (c: Context) => {
         });
     }
 
-    const discordWebhookRegex = /^https:\/\/discord(app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/;
-    if (!discordWebhookRegex.test(validationRequest.value)) {
+    const discordOrSlackWebhookRegex = /^https:\/\/(?:discord(app)?\.com\/api\/webhooks\/\d+\/[\w-]+|hooks\.slack\.com\/services\/[\w-]+)$/;
+    if (!discordOrSlackWebhookRegex.test(validationRequest.value)) {
         return c.json<SettingsValidationResponse>({
             success: false,
-            error: "Invalid Discord webhook URL format.",
+            error: "Invalid Discord or Slack webhook URL format.",
         });
     }
 

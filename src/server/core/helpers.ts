@@ -84,9 +84,16 @@ export function getTextWithoutBlockquotes (input: string): string {
 }
 
 export async function sendMessageToWebhook (webhookUrl: string, message: string) {
-    const params = {
-        content: message,
-    };
+    let params;
+    if (webhookUrl.includes("discord.com")) {
+        params = {
+            content: message,
+        };
+    } else {
+        params = {
+            text: message,
+        };
+    }
 
     try {
         const result = await fetch(
