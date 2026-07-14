@@ -18,11 +18,12 @@ Because of these two factors, I recommend only using Automod Neo at this stage f
 
 ### Author checks
 
-These can be searched just like the title or body e.g. `bio_text (includes): 'snapchat'`.
+New checks for `bio_text`, `display_name` and `social_links` are now supported for authors and can be searched just like the title or body e.g.
 
-* bio_text
-* display_name
-* social_links
+```yaml
+author:
+  bio_text+social_links (includes): 'onlyfans.com'`.
+```
 
 ### Parent submission and parent author actions
 
