@@ -98,7 +98,7 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 ## Change log
 
-### v1.2.0
+### v0.2.0
 
 * Fixed a bug checking comments where `type:` was not specified
 * Add Slack webhook support via the `discord_alert` action
