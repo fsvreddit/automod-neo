@@ -3,4 +3,5 @@ export enum AppSetting {
     Rules = "rules",
     CombineComments = "combineComments",
     DiscordOrSlackWebhookUrl = "discordWebhookUrl",
+    NotifyOnUpdates = "notifyOnUpdates",
 }

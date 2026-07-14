@@ -22,6 +22,8 @@
         "entry": "index.cjs"
     },
     "triggers": {
+        "onAppInstall": "/internal/triggers/on-app-install",
+        "onAppUpgrade": "/internal/triggers/on-app-upgrade",
         "onCommentSubmit": "/internal/triggers/on-comment-submit",
         "onCommentUpdate": "/internal/triggers/on-comment-update",
         "onCommentReport": "/internal/triggers/on-comment-report",
@@ -29,6 +31,13 @@
         "onPostUpdate": "/internal/triggers/on-post-update",
         "onPostReport": "/internal/triggers/on-post-report",
         "onModAction": "/internal/triggers/on-mod-action"
+    },
+    "scheduler": {
+        "tasks": {
+            "checkForUpdates": {
+                "endpoint": "/internal/tasks/check-for-updates"
+            }
+        }
     },
     "settings": {
         "subreddit": {
@@ -49,6 +58,12 @@
                 "label": "Discord or Slack Webhook URL",
                 "helpText": "Optional. Used when rules have a 'discord_alert' action",
                 "validationEndpoint": "/internal/validators/validate-discord-or-slack-webhook"
+            },
+            "notifyOnUpdates": {
+                "type": "boolean",
+                "label": "Notify on Updates",
+                "helpText": "If enabled, Automod Neo will send a Modmail notification to the subreddit when a new version is available.",
+                "defaultValue": true
             }
         }
     },
