@@ -392,6 +392,78 @@ parent_submission:
         ]);
     });
 
+    it("normalizes negated author shorthand values to negated name search conditions at any level", () => {
+        const rules = `
+---
+~author: ['AutoModerator', 'RuleBot']
+~crosspost_author: 'CrosspostBot'
+parent_submission:
+  ~author: 'ParentAutoMod'
+  ~crosspost_author: ['ParentCrosspostBotA', 'ParentCrosspostBotB']
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                author: {
+                    search_conditions: [
+                        {
+                            searchField: ["name"],
+                            text: ["AutoModerator", "RuleBot"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: true,
+                            },
+                        },
+                    ],
+                },
+                crosspost_author: {
+                    search_conditions: [
+                        {
+                            searchField: ["name"],
+                            text: ["CrosspostBot"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: true,
+                            },
+                        },
+                    ],
+                },
+                parent_submission: {
+                    author: {
+                        search_conditions: [
+                            {
+                                searchField: ["name"],
+                                text: ["ParentAutoMod"],
+                                options: {
+                                    search_method: "includes-word",
+                                    case_sensitive: false,
+                                    negate: true,
+                                },
+                            },
+                        ],
+                    },
+                    crosspost_author: {
+                        search_conditions: [
+                            {
+                                searchField: ["name"],
+                                text: ["ParentCrosspostBotA", "ParentCrosspostBotB"],
+                                options: {
+                                    search_method: "includes-word",
+                                    case_sensitive: false,
+                                    negate: true,
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        ]);
+    });
+
     it("normalizes media searchable fields", () => {
         const rules = `
 ---

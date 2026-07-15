@@ -309,19 +309,61 @@ function preprocessSubredditNode (node: MutableNode, containerPath: string): voi
 }
 
 function normalizeAuthorShorthandField (node: MutableNode, fieldName: "author" | "crosspost_author"): void {
-    const rawValue = node[fieldName];
-    if (isObjectRecord(rawValue) || rawValue == null) {
-        return;
+    const directValue = node[fieldName];
+    if (!isObjectRecord(directValue) && directValue != null) {
+        const nameValues = toStringArray(directValue);
+        if (nameValues) {
+            node[fieldName] = {
+                name: nameValues,
+            };
+        }
     }
 
-    const nameValues = toStringArray(rawValue);
-    if (!nameValues) {
-        return;
-    }
+    for (const rawKey of Object.keys(node)) {
+        const parsedKey = parseSearchableKey(rawKey);
+        if (!parsedKey) {
+            continue;
+        }
 
-    node[fieldName] = {
-        name: nameValues,
-    };
+        if (!parsedKey.negate || parsedKey.primaryField !== fieldName || parsedKey.fieldNames.length !== 1) {
+            continue;
+        }
+
+        const nameValues = toStringArray(node[rawKey]);
+        if (!nameValues) {
+            continue;
+        }
+
+        const currentAuthorValue = node[fieldName];
+        if (!isObjectRecord(currentAuthorValue)) {
+            if (currentAuthorValue == null) {
+                node[fieldName] = {};
+            } else {
+                const currentNameValues = toStringArray(currentAuthorValue);
+                if (!currentNameValues) {
+                    continue;
+                }
+
+                node[fieldName] = {
+                    name: currentNameValues,
+                };
+            }
+        }
+
+        const authorNode = node[fieldName];
+        if (!isObjectRecord(authorNode)) {
+            continue;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete node[rawKey];
+
+        const negatedNameKey = parsedKey.qualifierText ? `~name (${parsedKey.qualifierText})` : "~name";
+        const existingNegatedNameValues = toStringArray(authorNode[negatedNameKey]);
+        authorNode[negatedNameKey] = existingNegatedNameValues
+            ? [...existingNegatedNameValues, ...nameValues]
+            : [...nameValues];
+    }
 }
 
 function normalizeSetFlairField (node: MutableNode): void {
