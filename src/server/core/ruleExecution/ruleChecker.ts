@@ -438,6 +438,14 @@ export class AutomodRuleChecker {
             }
         }
 
+        if (rule.age !== undefined) {
+            const meetsThreshold = meetsDateThreshold(post.createdAt, rule.age);
+            if (!meetsThreshold) {
+                this.log(`Post ${post.id} does not match age condition (${rule.age}).`, checkContext);
+                return;
+            }
+        }
+
         const matches: Matches[] = [];
 
         const searchFields: Record<string, string | string[]> = {
@@ -632,6 +640,14 @@ export class AutomodRuleChecker {
             if (rule.comment_crowd_control_collapsed !== undefined) {
                 if (comment.collapsedBecauseCrowdControl !== rule.comment_crowd_control_collapsed) {
                     this.log(`Comment ${comment.id} does not match comment_crowd_control_collapsed condition (${rule.comment_crowd_control_collapsed}).`);
+                    continue;
+                }
+            }
+
+            if (rule.age !== undefined) {
+                const meetsThreshold = meetsDateThreshold(comment.createdAt, rule.age);
+                if (!meetsThreshold) {
+                    this.log(`Post ${comment.id} does not match age condition (${rule.age}).`);
                     continue;
                 }
             }

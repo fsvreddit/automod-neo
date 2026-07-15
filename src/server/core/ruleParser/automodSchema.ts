@@ -141,6 +141,7 @@ const postConditionSchema = {
         is_poll: { type: "boolean", nullable: true },
         is_gallery: { type: "boolean", nullable: true },
         poll_option_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        age: { type: "string", nullable: true, pattern: dateComparatorPattern },
         past_archive_date: { type: "boolean", nullable: true },
         author: {
             ...authorSchema,

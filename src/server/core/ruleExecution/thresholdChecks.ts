@@ -40,6 +40,18 @@ export function meetsNumericThreshold (input: number, threshold: string): boolea
     }
 }
 
+function normaliseDateInput (input: Date | number): Date {
+    if (input instanceof Date) {
+        return input;
+    }
+
+    if (input < 1119481200000) {
+        // If the input is a number less than the timestamp for 2005-06-01, treat it as a Unix timestamp in seconds
+        return new Date(input * 1000);
+    }
+    return new Date(input);
+}
+
 /**
  * A function to compare a date to a text input
  * @param input The date input
@@ -47,7 +59,7 @@ export function meetsNumericThreshold (input: number, threshold: string): boolea
  * @param defaultOperator The operator to use if none is specified
  * @returns True or false
  */
-export function meetsDateThreshold (input: Date, threshold: string, defaultOperator?: string): boolean {
+export function meetsDateThreshold (input: Date | number, threshold: string, defaultOperator?: string): boolean {
     const regex = new RegExp(dateComparatorPattern);
     const matches = regex.exec(threshold);
     if (matches?.length !== 4) {
@@ -93,13 +105,13 @@ export function meetsDateThreshold (input: Date, threshold: string, defaultOpera
 
     switch (operator) {
         case "<":
-            return comparisonDate < input;
+            return comparisonDate < normaliseDateInput(input);
         case "<=":
-            return comparisonDate <= input;
+            return comparisonDate <= normaliseDateInput(input);
         case ">":
-            return comparisonDate > input;
+            return comparisonDate > normaliseDateInput(input);
         case ">=":
-            return comparisonDate >= input;
+            return comparisonDate >= normaliseDateInput(input);
         default:
             return false;
     }

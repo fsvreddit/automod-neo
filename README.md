@@ -29,6 +29,17 @@ author:
 
 All actions (such as remove, set flair and so on) are now supported at the parent submission and parent submission author levels
 
+### Additional post, comment and parent submission check
+
+`age` is now supported for posts, comments and parent submissions e.g.
+
+```yaml
+parent_submission:
+  age: '> 2 weeks'
+```
+
+This could be useful for rules that act on comments on old posts, or edits to older posts or comments.
+
 ### Ability to choose whether to stop processing rules or not
 
 By default, OG AutoModerator stops processing rules after any rule with a `remove`, `spam` or `filter` action. Automod Neo preserves this behaviour by default but allows fine-grained control using the optional `stop_on_match` directive. E.g. `stop_on_match: false` will continue checking rules even if the matched rule has a `remove` action, and `stop_on_match: true` will abort checking even on a rule that doesn't remove or filter content.
@@ -106,6 +117,7 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 * Support alternate `author` name shorthand supported by OG AutoModerator e.g. `author: ['user1', 'user2']`
 * Fixed bug with `account_age` checks which prevented values without units from working correctly
 * Fixed bug with `set_flair` actions that used dictionaries from not working
+* Added `age` check on parent submissions
 
 ### v0.2.2
 

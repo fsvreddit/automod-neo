@@ -74,6 +74,7 @@ export interface PostOrCommentCondition {
     is_poll?: boolean; // Posts only
     is_gallery?: boolean; // Posts only
     poll_option_count?: string; // Posts only
+    age?: string;
     past_archive_date?: boolean;
     is_top_level?: boolean; // Comments only
     comment_crowd_control_collapsed?: boolean; // Comments only
