@@ -2,6 +2,7 @@ import { SettingsValidationRequest, SettingsValidationResponse } from "@devvit/w
 import { Context } from "hono";
 import { parseRules } from "../core/ruleParser";
 import { clearCachedRules, saveUnparsedRules } from "../core/ruleExecution";
+import pluralize from "pluralize";
 
 export const validateAutomodSetting = async (c: Context) => {
     const validationRequest = await c.req.json<SettingsValidationRequest<string>>();
@@ -14,7 +15,8 @@ export const validateAutomodSetting = async (c: Context) => {
     }
 
     try {
-        parseRules(validationRequest.value);
+        const rules = parseRules(validationRequest.value);
+        console.log(`Parsed ${rules.length} ${pluralize("rule", rules.length)} successfully.`);
     } catch (e) {
         return c.json<SettingsValidationResponse>({
             success: false,
