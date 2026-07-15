@@ -4,7 +4,7 @@ This app replicates nearly all features of AutoModerator and adds some new featu
 
 ## Behaviour differences
 
-All regular expressions use Javascript regex syntax. This can be different to Python regex (that used by AutoModerator) but most regular expressions that worked in OG Automod will work here too. Unlike OG AutoMod, full lookahead/lookbehind support is available. Some regexes that use Unicode code points may need to be reworked.
+All regular expressions use Javascript regex syntax. This can be different to Python regex (that used by AutoModerator) but most regular expressions that worked in OG Automod will work here too. Unlike OG AutoMod, full lookahead/lookbehind support is available. Some regexes that use Unicode code points or other Python-specific syntax may need to be reworked.
 
 All regular expressions are evaluated with the Unicode flag on, allowing for constructs such as the [\p metacharacter](https://www.w3schools.com/Jsref/jsref_regexp_meta_p.asp) for more advanced searches without having to identify specific UNICODE code points.
 
@@ -108,25 +108,20 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 * An Automod configuration UI that includes syntax highlighting. This will require future Dev Platform capabilities that don't exist yet.
 * More detections and actions (Ask me what you'd find useful!)
 
-## Change log
+## Recent changes
+
+For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
 ### v0.3.0
 
 * Correct behaviour of `set_locked`
 * Prevent duplicate actions on posts
-* Support alternate `author` name shorthand supported by OG AutoModerator e.g. `author: ['user1', 'user2']`
+* Support alternate `author` name shorthand supported by OG AutoModerator e.g. `author: ['user1', 'user2']` and the corresponding `~author` check
 * Fixed bug with `account_age` checks which prevented values without units from working correctly
 * Fixed bug with `set_flair` actions that used dictionaries from not working
-* Added `age` check on parent submissions
+* Added `age` check on posts, comments and parent submissions
 * Permit attributes to be in mixed-case
 * Treat whitespace between keys and modifiers as optional (e.g. `title(regex)` now works)
-
-### v0.2.2
-
-* Fixed a bug checking comments where `type:` was not specified
-* Add Slack webhook support via the `discord_alert` action
-* Send notifications when Automod Neo is upgraded (enabled by default)
-* Add `is_nsfw` attribute to post and author checks
 
 ## About this app
 
