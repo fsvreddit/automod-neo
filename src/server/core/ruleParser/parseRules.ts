@@ -297,9 +297,28 @@ function preprocessSubredditNode (node: MutableNode, containerPath: string): voi
     preprocessSearchableFields(node, subredditSearchableFields, "search_conditions", containerPath);
 }
 
+function normalizeAuthorShorthandField (node: MutableNode, fieldName: "author" | "crosspost_author"): void {
+    const rawValue = node[fieldName];
+    if (isObjectRecord(rawValue) || rawValue == null) {
+        return;
+    }
+
+    const nameValues = toStringArray(rawValue);
+    if (!nameValues) {
+        return;
+    }
+
+    node[fieldName] = {
+        name: nameValues,
+    };
+}
+
 function preprocessPostConditionLikeNode (node: MutableNode, containerPath: string): void {
     preprocessStringArrayField(node, "crosspost_id");
     preprocessSearchableFields(node, topLevelSearchableFields, "search_conditions", containerPath);
+
+    normalizeAuthorShorthandField(node, "author");
+    normalizeAuthorShorthandField(node, "crosspost_author");
 
     if (isObjectRecord(node.author)) {
         preprocessAuthorNode(node.author, containerPath ? `${containerPath}.author` : "author");

@@ -320,6 +320,78 @@ body: ['first', 'second']
         ]);
     });
 
+    it("normalizes author shorthand values to name search conditions at any level", () => {
+        const rules = `
+---
+author: ['user1', 'user2']
+crosspost_author: 'user3'
+parent_submission:
+  author: 'user4'
+  crosspost_author: ['user5', 'user6']
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                author: {
+                    search_conditions: [
+                        {
+                            searchField: ["name"],
+                            text: ["user1", "user2"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+                crosspost_author: {
+                    search_conditions: [
+                        {
+                            searchField: ["name"],
+                            text: ["user3"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+                parent_submission: {
+                    author: {
+                        search_conditions: [
+                            {
+                                searchField: ["name"],
+                                text: ["user4"],
+                                options: {
+                                    search_method: "includes-word",
+                                    case_sensitive: false,
+                                    negate: false,
+                                },
+                            },
+                        ],
+                    },
+                    crosspost_author: {
+                        search_conditions: [
+                            {
+                                searchField: ["name"],
+                                text: ["user5", "user6"],
+                                options: {
+                                    search_method: "includes-word",
+                                    case_sensitive: false,
+                                    negate: false,
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        ]);
+    });
+
     it("normalizes media searchable fields", () => {
         const rules = `
 ---

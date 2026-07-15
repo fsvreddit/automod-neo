@@ -169,6 +169,12 @@ On submissions, it is also possible to do some checks against the "media object"
 * `display_name` - the user's display name
 * `social_links` - the user's social URLs
 
+An alternate, simpler construction is supported for users where only the name needs to be checked:
+
+```yaml
+author: ['user1', 'user2']
+```
+
 ### For subreddits (inside subreddit or crosspost_subreddit)
 
 * `name` - the name of the subreddit where the original submission was posted
