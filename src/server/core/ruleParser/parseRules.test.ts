@@ -586,6 +586,56 @@ media_title: ['first title', 'second title']
         ]);
     });
 
+    it("accepts parent_submission action fields", () => {
+        const rules = `
+---
+type: comment
+author:
+  is_moderator: true
+moderators_exempt: false
+is_top_level: true
+is_edited: False
+body (starts-with):
+  - "!rule"
+action: remove
+parent_submission:
+  action: remove
+  set_locked: true
+  action_reason: "AutoMod 027 - Bot Removal: {{body}} by {{author}}"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                author: {
+                    is_moderator: true,
+                },
+                moderators_exempt: false,
+                is_top_level: true,
+                is_edited: false,
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["!rule"],
+                        options: {
+                            search_method: "starts-with",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                action: "remove",
+                parent_submission: {
+                    action: "remove",
+                    set_locked: true,
+                    action_reason: "AutoMod 027 - Bot Removal: {{body}} by {{author}}",
+                },
+            },
+        ]);
+    });
+
     it("throws when a regex searchable text contains an invalid regular expression", () => {
         const rules = `
 ---

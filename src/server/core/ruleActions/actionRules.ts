@@ -217,10 +217,10 @@ export class ActionRules {
 
         if (matchedRule.rule.parent_submission && "postId" in target) {
             const parentSubmissionRules = matchedRule.rule.parent_submission;
-            if (parentSubmissionRules.action || parentSubmissionRules.set_flair || parentSubmissionRules.set_sticky || parentSubmissionRules.set_nsfw || parentSubmissionRules.set_spoiler || parentSubmissionRules.set_suggested_sort || parentSubmissionRules.set_post_crowd_control_level) {
+            if (parentSubmissionRules.action || parentSubmissionRules.set_flair || parentSubmissionRules.set_sticky || parentSubmissionRules.set_nsfw || parentSubmissionRules.set_spoiler || parentSubmissionRules.set_suggested_sort || parentSubmissionRules.set_post_crowd_control_level || parentSubmissionRules.set_locked !== undefined) {
                 const parentPost = await this.getPostById(target.postId);
                 await this.doTopLevelAction(parentPost, parentSubmissionRules, matchedRule);
-                await this.actionRulesForPost(parentPost, matchedRule.rule.parent_submission, matchedRule);
+                await this.actionRulesForPost(parentPost, matchedRule.rule.parent_submission, matchedRule, true);
             }
         }
 
@@ -277,10 +277,20 @@ export class ActionRules {
         }
 
         // Post only actions from this point.
-        await this.actionRulesForPost(target, matchedRule.rule, matchedRule);
+        await this.actionRulesForPost(target, matchedRule.rule, matchedRule, false);
     }
 
-    private async actionRulesForPost (post: Post, actions: PostOrCommentCondition, automodMatch: AutomodMatch): Promise<void> {
+    private async actionRulesForPost (post: Post, actions: PostOrCommentCondition, automodMatch: AutomodMatch, includeLockAction: boolean): Promise<void> {
+        if (includeLockAction && actions.set_locked !== undefined) {
+            if (actions.set_locked) {
+                await post.lock();
+                console.log(`Set lock for post ${post.id} due to rule "${automodMatch.rule.friendly_name ?? "Unnamed rule"}"`);
+            } else {
+                await post.unlock();
+                console.log(`Unset lock for post ${post.id} due to rule "${automodMatch.rule.friendly_name ?? "Unnamed rule"}"`);
+            }
+        }
+
         if (actions.set_flair) {
             if (!post.flair || actions.overwrite_flair) {
                 const flairOptions = this.getFlairOptions(actions.set_flair, post, automodMatch);

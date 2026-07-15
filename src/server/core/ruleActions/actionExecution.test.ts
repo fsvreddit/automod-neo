@@ -134,6 +134,28 @@ describe("ActionRules action execution", () => {
         assert.equal(mocks.report.mock.calls[0]?.[0], parentPost);
     });
 
+    it("applies parent_submission set_locked on the parent post", async () => {
+        const comment = makeComment();
+        const lock = vi.fn();
+        const unlock = vi.fn();
+        const parentPost = makePost({ id: "t3_parent", lock, unlock });
+        mocks.getPostOrCommentById.mockResolvedValue(comment);
+        mocks.getPostById.mockResolvedValue(parentPost);
+
+        const actionRules = new ActionRules({
+            targetId: comment.id,
+            matchedRules: [match({
+                parent_submission: {
+                    set_locked: true,
+                },
+            })],
+        });
+        await actionRules.actionRules();
+
+        assert.equal(lock.mock.calls.length, 1);
+        assert.equal(unlock.mock.calls.length, 0);
+    });
+
     it("sets author flair when no existing flair is present", async () => {
         const post = makePost();
         const getUserFlairBySubreddit = vi.fn().mockResolvedValue(undefined);
