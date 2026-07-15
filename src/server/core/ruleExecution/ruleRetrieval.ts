@@ -3,7 +3,7 @@ import { AutomodRule } from "../types";
 import { AppSetting } from "../appSettings";
 import { parseRules } from "../ruleParser";
 import { isRemovalRule } from "../helpers";
-import { addHours } from "date-fns";
+import { addWeeks } from "date-fns";
 
 const CACHED_UNPARSED_RULES_KEY = "cachedUnparsedRules";
 const CACHED_RULES_KEY = "cachedRules";
@@ -34,7 +34,7 @@ export async function getRulesForSubreddit (): Promise<AutomodRule[]> {
     }
 
     const rules = sortRulesForExecution(parseRules(rulesYaml));
-    await redis.set(CACHED_RULES_KEY, JSON.stringify(rules), { expiration: addHours(new Date(), 1) });
+    await redis.set(CACHED_RULES_KEY, JSON.stringify(rules), { expiration: addWeeks(new Date(), 1) });
     return rules;
 }
 
