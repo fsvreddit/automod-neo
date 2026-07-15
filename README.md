@@ -118,6 +118,7 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 * Fixed bug with `account_age` checks which prevented values without units from working correctly
 * Fixed bug with `set_flair` actions that used dictionaries from not working
 * Added `age` check on parent submissions
+* Permit attributes to be in mixed-case
 
 ### v0.2.2
 

@@ -464,6 +464,83 @@ parent_submission:
         ]);
     });
 
+    it("normalizes mixed-case attributes to lowercase at all levels", () => {
+        const rules = `
+---
+Comment: 'Add a comment'
+Type: comment
+AUTHOR:
+  Name (Includes): ['UserA']
+SubReddit:
+  Name: 'MySub'
+PARENT_SUBMISSION:
+  TITLE (Regex): '^Hello'
+  AUTHOR:
+    NAME: 'ParentUser'
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                comment: "Add a comment",
+                type: "comment",
+                author: {
+                    search_conditions: [
+                        {
+                            searchField: ["name"],
+                            text: ["UserA"],
+                            options: {
+                                search_method: "includes",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+                subreddit: {
+                    search_conditions: [
+                        {
+                            searchField: ["name"],
+                            text: ["MySub"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+                parent_submission: {
+                    search_conditions: [
+                        {
+                            searchField: ["title"],
+                            text: ["^Hello"],
+                            options: {
+                                search_method: "regex",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                    author: {
+                        search_conditions: [
+                            {
+                                searchField: ["name"],
+                                text: ["ParentUser"],
+                                options: {
+                                    search_method: "includes-word",
+                                    case_sensitive: false,
+                                    negate: false,
+                                },
+                            },
+                        ],
+                    },
+                },
+            },
+        ]);
+    });
+
     it("normalizes media searchable fields", () => {
         const rules = `
 ---

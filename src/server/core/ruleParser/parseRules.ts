@@ -39,6 +39,38 @@ function isObjectRecord (value: unknown): value is MutableNode {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function normalizeNodeKeysToLowerCase (node: MutableNode): void {
+    const originalKeys = Object.keys(node);
+    for (const originalKey of originalKeys) {
+        const normalizedKey = originalKey.toLowerCase();
+        if (normalizedKey === originalKey) {
+            continue;
+        }
+
+        if (!(normalizedKey in node)) {
+            node[normalizedKey] = node[originalKey];
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete node[originalKey];
+    }
+
+    for (const value of Object.values(node)) {
+        if (isObjectRecord(value)) {
+            normalizeNodeKeysToLowerCase(value);
+            continue;
+        }
+
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                if (isObjectRecord(item)) {
+                    normalizeNodeKeysToLowerCase(item);
+                }
+            }
+        }
+    }
+}
+
 function toStringArray (value: unknown): string[] | undefined {
     if (typeof value === "string") {
         return [value];
@@ -559,6 +591,7 @@ export function validateRuleRegexPatterns (rule: MutableNode, ruleReference: str
 }
 
 export function preprocessRule (rule: MutableNode): void {
+    normalizeNodeKeysToLowerCase(rule);
     preprocessPostConditionLikeNode(rule, "");
 
     if (isObjectRecord(rule.parent_submission)) {
