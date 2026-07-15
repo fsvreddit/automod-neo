@@ -290,6 +290,7 @@ function preprocessStringArrayField (node: MutableNode, fieldName: "crosspost_id
 }
 
 function preprocessAuthorNode (node: MutableNode, containerPath: string): void {
+    normalizeSetFlairField(node);
     preprocessSearchableFields(node, authorSearchableFields, "search_conditions", containerPath);
 }
 
@@ -313,7 +314,32 @@ function normalizeAuthorShorthandField (node: MutableNode, fieldName: "author" |
     };
 }
 
+function normalizeSetFlairField (node: MutableNode): void {
+    if (!isObjectRecord(node.set_flair)) {
+        return;
+    }
+
+    const setFlair = node.set_flair;
+    const keyAliases: [keyof typeof setFlair, string][] = [
+        ["template id", "template_id"],
+        ["template-id", "template_id"],
+        ["css class", "css_class"],
+        ["css-class", "css_class"],
+    ];
+
+    for (const [aliasKey, canonicalKey] of keyAliases) {
+        if (!(aliasKey in setFlair) || canonicalKey in setFlair) {
+            continue;
+        }
+
+        setFlair[canonicalKey] = setFlair[aliasKey];
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete setFlair[aliasKey];
+    }
+}
+
 function preprocessPostConditionLikeNode (node: MutableNode, containerPath: string): void {
+    normalizeSetFlairField(node);
     preprocessStringArrayField(node, "crosspost_id");
     preprocessSearchableFields(node, topLevelSearchableFields, "search_conditions", containerPath);
 

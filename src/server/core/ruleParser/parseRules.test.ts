@@ -523,6 +523,36 @@ author:
         ]);
     });
 
+    it("normalizes set_flair dictionary alias keys", () => {
+        const rules = `
+---
+set_flair:
+  text: 'flair text'
+  template id: '2b09deac-9403-11ed-993a-a2db1fe5dec7'
+author:
+  set_flair:
+    template id: '2b09deac-9403-11ed-993a-a2db1fe5dec8'
+    css class: helper
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                set_flair: {
+                    text: "flair text",
+                    template_id: "2b09deac-9403-11ed-993a-a2db1fe5dec7",
+                },
+                author: {
+                    set_flair: {
+                        template_id: "2b09deac-9403-11ed-993a-a2db1fe5dec8",
+                        css_class: "helper",
+                    },
+                },
+            },
+        ]);
+    });
+
     it("throws when set_flair has more than two elements", () => {
         const rules = `
 ---
