@@ -49,7 +49,6 @@ vi.mock("../helpers", () => ({
 }));
 
 import type { Comment, Post } from "@devvit/web/server";
-import type { T1, T3 } from "@devvit/web/shared";
 import type { AutomodMatch, AutomodRule } from "../types";
 import { ActionRules } from "./actionRules";
 
@@ -106,7 +105,7 @@ describe("ActionRules action execution", () => {
         mocks.getPostOrCommentById.mockResolvedValue(post);
 
         const actionRules = new ActionRules({
-            targetId: post.id as T3,
+            targetId: post.id,
             matchedRules: [match({ action: "report", report_reason: "test" })],
         });
         await actionRules.actionRules();
@@ -121,7 +120,7 @@ describe("ActionRules action execution", () => {
         mocks.getPostById.mockResolvedValue(parentPost);
 
         const actionRules = new ActionRules({
-            targetId: comment.id as T1,
+            targetId: comment.id,
             matchedRules: [match({
                 parent_submission: {
                     action: "report",
@@ -142,7 +141,7 @@ describe("ActionRules action execution", () => {
         mocks.getUserByUsername.mockResolvedValue({ getUserFlairBySubreddit });
 
         const actionRules = new ActionRules({
-            targetId: post.id as T3,
+            targetId: post.id,
             matchedRules: [match({
                 author: {
                     set_flair: "New flair",
@@ -153,6 +152,7 @@ describe("ActionRules action execution", () => {
 
         assert.equal(getUserFlairBySubreddit.mock.calls.length, 1);
         assert.equal(mocks.setUserFlair.mock.calls.length, 1);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         assert.equal(mocks.setUserFlair.mock.calls[0]?.[0].username, "post_author");
     });
 
@@ -163,7 +163,7 @@ describe("ActionRules action execution", () => {
         mocks.getUserByUsername.mockResolvedValue({ getUserFlairBySubreddit });
 
         const actionRules = new ActionRules({
-            targetId: post.id as T3,
+            targetId: post.id,
             matchedRules: [match({
                 author: {
                     set_flair: "New flair",
@@ -185,7 +185,7 @@ describe("ActionRules action execution", () => {
         });
 
         const actionRules = new ActionRules({
-            targetId: post.id as T3,
+            targetId: post.id,
             matchedRules: [match({
                 comment: "Moderator notice",
                 comment_stickied: true,
@@ -203,7 +203,7 @@ describe("ActionRules action execution", () => {
         mocks.getPostOrCommentById.mockResolvedValue(post);
 
         const actionRules = new ActionRules({
-            targetId: post.id as T3,
+            targetId: post.id,
             matchedRules: [match({ set_locked: true })],
         });
         await actionRules.actionRules();
@@ -219,7 +219,7 @@ describe("ActionRules action execution", () => {
         mocks.getPostOrCommentById.mockResolvedValue(post);
 
         const actionRules = new ActionRules({
-            targetId: post.id as T3,
+            targetId: post.id,
             matchedRules: [match({ set_locked: false })],
         });
         await actionRules.actionRules();

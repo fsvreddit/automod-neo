@@ -99,6 +99,11 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 ## Change log
 
+### v0.3.0
+
+* Correct behaviour of `set_locked`
+* Prevent duplicate actions on posts
+
 ### v0.2.2
 
 * Fixed a bug checking comments where `type:` was not specified
