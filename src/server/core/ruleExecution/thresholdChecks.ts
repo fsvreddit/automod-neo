@@ -1,7 +1,7 @@
 import { subDays, subHours, subMinutes, subMonths, subWeeks, subYears } from "date-fns";
 
 export const numericComparatorPattern = "^(<|>|<=|>=|=)?\\s?(-?\\d+)$";
-export const dateComparatorPattern = "^(<|>|<=|>=)?\\s?(\\d+)\\s(minute|hour|day|week|month|year)s?$";
+export const dateComparatorPattern = "^(<|>|<=|>=)?\\s?(\\d+)(?:\\s(minute|hour|day|week|month|year)s?)?$";
 
 /**
  * A function to compare a number to a text input
@@ -63,7 +63,7 @@ export function meetsDateThreshold (input: Date, threshold: string, defaultOpera
     }
 
     const value = parseInt(matches[2]);
-    const interval = matches[3];
+    const interval = matches[3] ?? "day";
 
     let comparisonDate: Date | undefined;
     switch (interval) {

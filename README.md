@@ -104,6 +104,7 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 * Correct behaviour of `set_locked`
 * Prevent duplicate actions on posts
 * Support alternate `author` name shorthand supported by OG AutoModerator e.g. `author: ['user1', 'user2']`
+* Fixed bug with `account_age` checks which prevented values without units from working correctly
 
 ### v0.2.2
 
