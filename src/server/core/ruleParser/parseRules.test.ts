@@ -235,6 +235,41 @@ parent_submission:
         ]);
     });
 
+    it("parses qualifier keys with optional and repeated whitespace before parentheses", () => {
+        const rules = `
+---
+title+body(regex): '^foo'
+url   (includes): 'example.com/path'
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                search_conditions: [
+                    {
+                        searchField: ["title", "body"],
+                        text: ["^foo"],
+                        options: {
+                            search_method: "regex",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                    {
+                        searchField: ["url"],
+                        text: ["example.com/path"],
+                        options: {
+                            search_method: "includes",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
     it("normalizes searchable fields with named key suffixes", () => {
         const rules = `
 ---

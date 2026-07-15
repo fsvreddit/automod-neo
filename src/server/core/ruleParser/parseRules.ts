@@ -229,7 +229,7 @@ function buildSearchOptions (fieldName: SearchField, qualifierText: string | und
 }
 
 function parseSearchableKey (rawKey: string): { fieldNames: string[]; primaryField: string; qualifierText: string | undefined; negate: boolean } | undefined {
-    const keyMatch = /^(~?[a-z_+]+)(?:#\w+)?(?: \(([\w\s,-]+)\))?$/.exec(rawKey);
+    const keyMatch = /^(~?[a-z_+]+)(?:#\w+)?(?:\s*\(([\w\s,-]+)\))?$/.exec(rawKey);
     if (!keyMatch) {
         return undefined;
     }
@@ -298,7 +298,7 @@ function preprocessSearchableFields (node: MutableNode, searchableFields: Set<st
 
 function preprocessStringArrayField (node: MutableNode, fieldName: "crosspost_id"): void {
     for (const rawKey of Object.keys(node)) {
-        const keyMatch = /^(~?[a-z_+]+)(?:#\w+)?(?: \(([\w\s,-]+)\))?$/.exec(rawKey);
+        const keyMatch = /^(~?[a-z_+]+)(?:#\w+)?(?:\s*\(([\w\s,-]+)\))?$/.exec(rawKey);
         if (!keyMatch) {
             continue;
         }
