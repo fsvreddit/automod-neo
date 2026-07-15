@@ -55,9 +55,8 @@ const setFlairActionDictionarySchema = {
     properties: {
         text: { type: "string", nullable: true },
         css_class: { type: "string", nullable: true },
-        template_id: { type: "string" },
+        template_id: { type: "string", nullable: true },
     },
-    required: ["template_id"],
     additionalProperties: false,
 } as const;
 

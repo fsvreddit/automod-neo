@@ -22,7 +22,7 @@ export interface SearchableText {
 export interface SetFlairActionDictionary {
     text?: string;
     css_class?: string;
-    template_id: string;
+    template_id?: string;
 }
 
 export interface Author {
