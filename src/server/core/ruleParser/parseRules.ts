@@ -44,8 +44,18 @@ function toStringArray (value: unknown): string[] | undefined {
         return [value];
     }
 
-    if (Array.isArray(value) && value.every(item => typeof item === "string")) {
-        return value;
+    if (Array.isArray(value)) {
+        const result: string[] = [];
+        for (const item of value) {
+            if (typeof item === "string") {
+                result.push(item);
+            } else if (typeof item === "number" || typeof item === "boolean") {
+                result.push(String(item));
+            } else {
+                return undefined;
+            }
+        }
+        return result;
     }
 
     return undefined;
