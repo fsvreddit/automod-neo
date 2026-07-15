@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings, User } from "@devvit/web/server";
-import { isT1, isT3, T1, T3 } from "@devvit/web/shared";
+import { isT3, T1, T3 } from "@devvit/web/shared";
 import { AutomodMatch, AutomodRule, CommentAction, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../helpers";
@@ -195,13 +195,13 @@ export class ActionRules {
                 ruleName: matchedRule.rule.friendly_name ?? "Unnamed rule",
                 text: commentBody ?? "",
                 shouldLock: matchedRule.rule.comment_locked ?? false,
-                shouldSticky: (matchedRule.rule.comment_stickied && isT1(target.id)) ?? false,
+                shouldSticky: (matchedRule.rule.comment_stickied && isT3(target.id)) ?? false,
             });
         }
 
         if (matchedRule.rule.author?.set_flair) {
             const user = await this.getUserByUsername(target.authorName);
-            const existingUserFlair = user?.getUserFlairBySubreddit(context.subredditName);
+            const existingUserFlair = await user?.getUserFlairBySubreddit(context.subredditName);
             if (matchedRule.rule.author.overwrite_flair || !existingUserFlair) {
                 const flairOptions = this.getFlairOptions(matchedRule.rule.author.set_flair, target, matchedRule);
                 await reddit.setUserFlair({
@@ -219,6 +219,7 @@ export class ActionRules {
             const parentSubmissionRules = matchedRule.rule.parent_submission;
             if (parentSubmissionRules.action || parentSubmissionRules.set_flair || parentSubmissionRules.set_sticky || parentSubmissionRules.set_nsfw || parentSubmissionRules.set_spoiler || parentSubmissionRules.set_suggested_sort || parentSubmissionRules.set_post_crowd_control_level) {
                 const parentPost = await this.getPostById(target.postId);
+                await this.doTopLevelAction(parentPost, parentSubmissionRules, matchedRule);
                 await this.actionRulesForPost(parentPost, matchedRule.rule.parent_submission, matchedRule);
             }
         }
@@ -262,8 +263,12 @@ export class ActionRules {
             }
         }
 
-        if (matchedRule.rule.set_locked) {
-            await target.lock();
+        if (matchedRule.rule.set_locked !== undefined) {
+            if (matchedRule.rule.set_locked) {
+                await target.lock();
+            } else {
+                await target.unlock();
+            }
             console.log(`Set lock state for target ${target.id} to ${matchedRule.rule.set_locked} due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}"`);
         }
 
@@ -276,8 +281,6 @@ export class ActionRules {
     }
 
     private async actionRulesForPost (post: Post, actions: PostOrCommentCondition, automodMatch: AutomodMatch): Promise<void> {
-        await this.doTopLevelAction(post, actions, automodMatch);
-
         if (actions.set_flair) {
             if (!post.flair || actions.overwrite_flair) {
                 const flairOptions = this.getFlairOptions(actions.set_flair, post, automodMatch);
