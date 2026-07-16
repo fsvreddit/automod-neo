@@ -80,7 +80,7 @@ title+body+url (includes, case_sensitive): "abcde"
 ~body#2: attack
 body#redact: wolf
 author:
-  name (regex): ['^foo.*']
+    name (regex): ['^foo.*']
     display_name (includes): DisplayName
     bio_text (regex): '^bio_.*$'
     social_links#1: 'example.com/a'
