@@ -8,7 +8,7 @@ export interface SearchOption {
 
 type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "poll_option_text" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "media_author" | "media_author_url" | "media_title";
 type CommentSearchField = "id" | "body";
-type AuthorSearchField = "id" | "name" | "flair_text" | "flair_css_class" | "display_name" | "bio_text" | "social_links";
+type AuthorSearchField = "id" | "name" | "flair_text" | "flair_css_class" | "flair_template_id" | "display_name" | "bio_text" | "social_links";
 type SubredditSearchField = "name";
 
 export type SearchField = PostSearchField | CommentSearchField | AuthorSearchField | SubredditSearchField;

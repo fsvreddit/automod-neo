@@ -165,6 +165,7 @@ On submissions, it is also possible to do some checks against the "media object"
 * `name` - the user's username
 * `flair_text` - the text of the user's flair in the subreddit
 * `flair_css_class` - the css class of the user's flair in the subreddit
+* `flair_template_id` - the template ID for the user's flair in the subreddit (only for the base item's author)
 * `bio_text` - the user's "About description"
 * `display_name` - the user's display name
 * `social_links` - the user's social URLs

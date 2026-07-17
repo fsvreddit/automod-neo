@@ -26,7 +26,19 @@ export const handleCommentSubmit = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "comment submit handled, no rules found" }, 200);
     }
 
-    const ruleChecker = new AutomodRuleChecker({ rules });
+    const opts: AutomodRuleCheckerOpts = { rules };
+
+    if (request.author.flair) {
+        opts.userFlair = {
+            [request.author.name]: {
+                flairText: request.author.flair.text,
+                flairCssClass: request.author.flair.cssClass,
+                flairTemplateId: request.author.flair.templateId,
+            }
+        };
+    }
+
+    const ruleChecker = new AutomodRuleChecker(opts);
 
     const results = await ruleChecker.checkComment(request.comment, request.author.name);
 

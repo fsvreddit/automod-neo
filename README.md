@@ -89,7 +89,7 @@ Both of these limitations require Reddit to make a change on either the Dev Plat
 The following existing AutoModerator features are not supported due to Devvit limitations, however if it becomes possible to include them in the future, they will be implemented:
 
 * All CQS checks
-* Author flair template ID
+* Author flair template ID checks for parent submissions
 * is_original_content on post checks
 * Set Contest Mode
 * Set Original Content
@@ -111,6 +111,10 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 ## Recent changes
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
+
+### Next version
+
+* Reinstate support for `flair_template_id` checks on the base item author
 
 ### v0.3.0
 

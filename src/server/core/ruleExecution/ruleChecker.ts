@@ -1,11 +1,24 @@
 /* eslint-disable camelcase */
-import { Comment, context, Post, reddit, User, UserFlair, UserSocialLink } from "@devvit/web/server";
+import { Comment, context, Post, reddit, User, UserSocialLink } from "@devvit/web/server";
 import { CommentV2, isT3, T1, T3 } from "@devvit/web/shared";
 import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, SearchableText } from "../types";
 import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW } from "../helpers";
 import { meetsDateThreshold, meetsNumericThreshold } from "./thresholdChecks";
 import { subMonths } from "date-fns";
 import { anySearchConditionMatchesInput, postMatchesStandardCondition, searchConditionsMatchInput } from ".";
+
+interface UserFlair {
+    flairText?: string;
+    flairCssClass?: string;
+    flairTemplateId?: string;
+}
+
+export interface AutomodRuleCheckerOpts {
+    rules: AutomodRule[];
+    post?: Post;
+    comment?: Comment;
+    userFlair?: Record<string, UserFlair>;
+}
 
 export class AutomodRuleChecker {
     private rules: AutomodRule[];
@@ -21,11 +34,7 @@ export class AutomodRuleChecker {
 
     private verboseLogs = false;
 
-    constructor (opts: {
-        rules: AutomodRule[];
-        post?: Post;
-        comment?: Comment;
-    }) {
+    constructor (opts: AutomodRuleCheckerOpts) {
         this.rules = opts.rules;
 
         if (opts.post) {
@@ -34,6 +43,10 @@ export class AutomodRuleChecker {
 
         if (opts.comment) {
             this.comments[opts.comment.id] = opts.comment;
+        }
+
+        if (opts.userFlair) {
+            this.userFlair = opts.userFlair;
         }
     }
 
@@ -338,6 +351,9 @@ export class AutomodRuleChecker {
             }
             if (userFlair?.flairCssClass) {
                 searchFields.flair_css_class = userFlair.flairCssClass;
+            }
+            if (userFlair?.flairTemplateId) {
+                searchFields.flair_template_id = userFlair.flairTemplateId;
             }
         }
 
