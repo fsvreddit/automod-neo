@@ -229,7 +229,7 @@ function buildSearchOptions (fieldName: SearchField, qualifierText: string | und
 }
 
 function parseSearchableKey (rawKey: string): { fieldNames: string[]; primaryField: string; qualifierText: string | undefined; negate: boolean } | undefined {
-    const keyMatch = /^(~?[a-z_+]+)(?:#\w+)?(?:\s*\(([\w\s,-]+)\))?$/.exec(rawKey);
+    const keyMatch = /^(~?[a-z_+]+)(?:#[\w+_-]+)?(?:\s*\(([\w\s,-]+)\))?$/.exec(rawKey);
     if (!keyMatch) {
         return undefined;
     }

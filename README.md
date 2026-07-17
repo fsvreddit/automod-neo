@@ -115,6 +115,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 ### Next version
 
 * Reinstate support for `flair_template_id` checks on the base item author
+* Add support for non-alphanumeric characters +, - and _ after # differentiators on search checks
 
 ### v0.3.0
 

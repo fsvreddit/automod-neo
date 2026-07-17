@@ -79,6 +79,7 @@ title+body+url (includes, case_sensitive): "abcde"
 ~body#1: dog
 ~body#2: attack
 body#redact: wolf
+body#check+2: hyena
 author:
     name (regex): ['^foo.*']
     display_name (includes): DisplayName
@@ -144,6 +145,15 @@ parent_submission:
                     {
                         searchField: ["body"],
                         text: ["wolf"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                    {
+                        searchField: ["body"],
+                        text: ["hyena"],
                         options: {
                             search_method: "includes-word",
                             case_sensitive: false,
