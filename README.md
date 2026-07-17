@@ -63,6 +63,19 @@ discord_alert: |
 
 Rules can have an `friendly_name` attribute, useful for debugging. This can save using comments to accomplish the same thing. {{friendly-name}} is also a supported placeholder on all output (comments, modmail, Discord alerts).
 
+### Day of week rules
+
+Rules can have a `day_of_week` check on them e.g.
+
+```yaml
+type: submission
+day_of_week: wednesday
+```
+
+or:
+
+You can configure the time zone you want to apply rules using in the app settings, by default rules will be checked using UTC.
+
 ## Documentation Clarification
 
 ### Multiple matches on the same attribute
@@ -117,6 +130,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 * Reinstate support for `flair_template_id` checks on the base item author
 * Add support for non-alphanumeric characters +, - and _ after # differentiators on search checks
 * Add `social_link_title` search check on authors
+* Add `day_of_week` directive to the base item
 
 ### v0.3.0
 

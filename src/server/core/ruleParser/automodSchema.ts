@@ -212,6 +212,14 @@ export const automodSchema: Record<string, unknown> = {
             nullable: true,
         },
         priority: { type: "number", nullable: true },
+        day_of_week: {
+            type: "array",
+            items: {
+                type: "string",
+                enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "weekday", "weekend"],
+            },
+            nullable: true,
+        },
         moderators_exempt: { type: "boolean", nullable: true },
         comment: { type: "string", nullable: true },
         comment_locked: { type: "boolean", nullable: true },

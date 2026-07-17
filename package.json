@@ -18,6 +18,7 @@
     "node": ">=22.2.0"
   },
   "dependencies": {
+    "@date-fns/tz": "^1.5.0",
     "@devvit/start": "0.13.8",
     "@devvit/web": "0.13.8",
     "@fsvreddit/fsv-devvit-web-helpers": "github:fsvreddit/fsv-devvit-web-helpers",

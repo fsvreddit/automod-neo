@@ -59,6 +59,13 @@
                 "helpText": "Optional. Used when rules have a 'discord_alert' action",
                 "validationEndpoint": "/internal/validators/validate-discord-or-slack-webhook"
             },
+            "timeZone": {
+                "type": "string",
+                "label": "Time Zone",
+                "helpText": "The time zone to use for date/time-based rules. Specify an IANA time zone (e.g. Europe/London, America/New_York), or a numeric offset from UTC (e.g. +02:00, -08:00).",
+                "defaultValue": "UTC",
+                "validationEndpoint": "/internal/validators/validate-time-zone"
+            },
             "notifyOnUpdates": {
                 "type": "boolean",
                 "label": "Notify on Updates",

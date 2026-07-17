@@ -3,5 +3,6 @@ export enum AppSetting {
     Rules = "rules",
     CombineComments = "combineComments",
     DiscordOrSlackWebhookUrl = "discordWebhookUrl",
+    TimeZone = "timeZone",
     NotifyOnUpdates = "notifyOnUpdates",
 }

@@ -594,6 +594,14 @@ export function preprocessRule (rule: MutableNode): void {
     normalizeNodeKeysToLowerCase(rule);
     preprocessPostConditionLikeNode(rule, "");
 
+    if (rule.day_of_week) {
+        rule.day_of_week = toStringArray(rule.day_of_week);
+
+        if (rule.day_of_week && Array.isArray(rule.day_of_week) && rule.day_of_week.every(day => typeof day === "string")) {
+            rule.day_of_week = rule.day_of_week.map(day => day.toLowerCase());
+        }
+    }
+
     if (isObjectRecord(rule.parent_submission)) {
         preprocessPostConditionLikeNode(rule.parent_submission, "parent_submission");
     }

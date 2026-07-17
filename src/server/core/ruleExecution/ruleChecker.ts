@@ -1,11 +1,13 @@
 /* eslint-disable camelcase */
-import { Comment, context, Post, reddit, User, UserSocialLink } from "@devvit/web/server";
+import { Comment, context, Post, reddit, settings, User, UserSocialLink } from "@devvit/web/server";
 import { CommentV2, isT3, T1, T3 } from "@devvit/web/shared";
 import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, SearchableText } from "../types";
 import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW } from "../helpers";
 import { meetsDateThreshold, meetsNumericThreshold } from "./thresholdChecks";
 import { subMonths } from "date-fns";
 import { anySearchConditionMatchesInput, postMatchesStandardCondition, searchConditionsMatchInput } from ".";
+import { AppSetting } from "../appSettings";
+import { TZDate } from "@date-fns/tz/date";
 
 interface UserFlair {
     flairText?: string;
@@ -180,6 +182,32 @@ export class AutomodRuleChecker {
             }
         }
         return conditions;
+    }
+
+    private configuredTimeZone: string | undefined;
+
+    private async isMatchingDayOfWeek (rule: AutomodRule): Promise<boolean> {
+        if (!rule.day_of_week) {
+            return true;
+        }
+
+        this.configuredTimeZone ??= await settings.get<string>(AppSetting.TimeZone).then((value) => {
+            const trimmed = value?.trim();
+            if (!trimmed) {
+                return "UTC";
+            }
+
+            return trimmed;
+        });
+
+        const currentDayOfWeek = TZDate.tz(this.configuredTimeZone ?? "UTC").toLocaleString("en-US", { weekday: "long" }).toLowerCase();
+
+        const weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday"];
+        const weekends = ["saturday", "sunday"];
+
+        return (rule.day_of_week as string[]).includes(currentDayOfWeek)
+            || (rule.day_of_week.includes("weekday") && weekdays.includes(currentDayOfWeek))
+            || (rule.day_of_week.includes("weekend") && weekends.includes(currentDayOfWeek));
     }
 
     private async authorMatchesCondition (username: string, authorCondition: Author, checkContext?: string): Promise<Matches[] | undefined> {
@@ -614,6 +642,11 @@ export class AutomodRuleChecker {
 
             this.verboseLogs = rule.verbose_logs ?? false;
 
+            if (!await this.isMatchingDayOfWeek(rule)) {
+                this.log(`Skipping rule ${rule.friendly_name ?? "Unnamed rule"} because it does not match the current day of the week.`);
+                continue;
+            }
+
             const commentBody = rule.ignore_blockquotes ? this.getTextWithoutBlockquotes(comment.body) : comment.body;
 
             if (rule.reports !== undefined) {
@@ -747,6 +780,11 @@ export class AutomodRuleChecker {
             }
 
             this.verboseLogs = rule.verbose_logs ?? false;
+
+            if (!await this.isMatchingDayOfWeek(rule)) {
+                this.log(`Skipping rule ${rule.friendly_name ?? "Unnamed rule"} because it does not match the current day of the week.`);
+                continue;
+            }
 
             const post = await this.getPostById(postId);
 
