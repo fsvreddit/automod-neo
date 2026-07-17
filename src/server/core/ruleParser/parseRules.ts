@@ -24,7 +24,7 @@ const topLevelSearchableFields = new Set([
     "media_title",
 ]);
 
-const authorSearchableFields = new Set(["id", "name", "flair_text", "flair_css_class", "flair_template_id", "display_name", "bio_text", "social_links"]);
+const authorSearchableFields = new Set(["id", "name", "flair_text", "flair_css_class", "flair_template_id", "display_name", "bio_text", "social_links", "social_link_title"]);
 const subredditSearchableFields = new Set(["name"]);
 
 type MutableNode = Record<string, unknown>;

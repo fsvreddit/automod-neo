@@ -169,6 +169,7 @@ On submissions, it is also possible to do some checks against the "media object"
 * `bio_text` - the user's "About description"
 * `display_name` - the user's display name
 * `social_links` - the user's social URLs
+* `social_link_title` - the titles of the user's social links
 
 An alternate, simpler construction is supported for users where only the name needs to be checked:
 

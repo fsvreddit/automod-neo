@@ -339,9 +339,10 @@ export class AutomodRuleChecker {
         };
 
         const distinctSearchFields = this.getDistinctSearchFields(authorCondition.search_conditions ?? []);
-        if (distinctSearchFields.has("social_links")) {
+        if (distinctSearchFields.has("social_links") || distinctSearchFields.has("social_link_title")) {
             const socialLinks = await this.getUserSocialLinks(user.username);
             searchFields.social_links = socialLinks.map(link => link.outboundUrl);
+            searchFields.social_link_title = socialLinks.map(link => link.title);
         }
 
         if (distinctSearchFields.has("flair_text") || distinctSearchFields.has("flair_css_class") || distinctSearchFields.has("flair_template_id")) {
