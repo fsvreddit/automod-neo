@@ -1,6 +1,7 @@
 import { context, reddit, redis } from "@devvit/web/server";
 import { addWeeks } from "date-fns";
 import { AutomodRule } from "./types";
+import { getWebhookPayload, parseWebhookUrl } from "./webhookUtils";
 
 export function getBotCommentFooter (): string {
     return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/${context.subredditName}) if you have any questions or concerns.*`;
@@ -84,20 +85,17 @@ export function getTextWithoutBlockquotes (input: string): string {
 }
 
 export async function sendMessageToWebhook (webhookUrl: string, message: string) {
-    let params;
-    if (webhookUrl.includes("discord.com")) {
-        params = {
-            content: message,
-        };
-    } else {
-        params = {
-            text: message,
-        };
+    const parsedWebhookUrl = parseWebhookUrl(webhookUrl);
+    if (!parsedWebhookUrl) {
+        console.error("Webhook send failed because the configured URL is not a supported Discord or Slack webhook.");
+        return;
     }
+
+    const params = getWebhookPayload(parsedWebhookUrl.provider, message);
 
     try {
         const result = await fetch(
-            webhookUrl,
+            parsedWebhookUrl.url,
             {
                 method: "post",
                 headers: {
