@@ -440,6 +440,22 @@ export class AutomodRuleChecker {
             postBody = post.body && rule.ignore_blockquotes ? this.getTextWithoutBlockquotes(post.body) : post.body;
         }
 
+        const postBodyLength = postBody?.length ?? 0;
+
+        if (rule.body_shorter_than !== undefined) {
+            if (postBodyLength >= rule.body_shorter_than) {
+                this.log(`Post ${post.id} does not match body_shorter_than condition (${rule.body_shorter_than}).`, checkContext);
+                return;
+            }
+        }
+
+        if (rule.body_longer_than !== undefined) {
+            if (postBodyLength <= rule.body_longer_than) {
+                this.log(`Post ${post.id} does not match body_longer_than condition (${rule.body_longer_than}).`, checkContext);
+                return;
+            }
+        }
+
         if (rule.subreddit?.search_conditions && rule.subreddit.search_conditions.length > 0) {
             const subredditMatches = anySearchConditionMatchesInput(post.subredditName, rule.subreddit.search_conditions);
             if (!subredditMatches) {
