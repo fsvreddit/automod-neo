@@ -125,24 +125,17 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
-### Next version
+### v0.4.0
 
 * Reinstate support for `flair_template_id` checks on the base item author
 * Add support for non-alphanumeric characters +, - and _ after # differentiators on search checks
 * Add `social_link_title` search check on authors
 * Add `day_of_week` directive to the base item
-
-### v0.3.0
-
-* Correct behaviour of `set_locked`
-* Prevent duplicate actions on posts
-* Support alternate `author` name shorthand supported by OG AutoModerator e.g. `author: ['user1', 'user2']` and the corresponding `~author` check
-* Fixed bug with `account_age` checks which prevented values without units from working correctly
-* Fixed bug with `set_flair` actions that used dictionaries from not working
-* Added `age` check on posts, comments and parent submissions
-* Permit attributes to be in mixed-case
-* Treat whitespace between keys and modifiers as optional (e.g. `title(regex)` now works)
+* Fixed `body_shorter_than` and `body_longer_than` when checking posts
+* Fixed Slack webhook support
 
 ## About this app
 
 Automod Neo is open source. [You can find the source code on GitHub here](https://github.com/fsvreddit/automod-neo).
+
+Thanks to u/CR29-22-2805 for submitting several bug fixes to this project.
