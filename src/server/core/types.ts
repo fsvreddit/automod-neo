@@ -78,6 +78,7 @@ export interface PostOrCommentCondition {
     past_archive_date?: boolean;
     is_top_level?: boolean; // Comments only
     comment_crowd_control_collapsed?: boolean; // Comments only
+    comment_count?: string; // Posts only
 
     // Author checks
     author?: Author;

@@ -246,6 +246,16 @@ type: submission
 day_of_week: weekday
 ```
 
+Likewise, `~day_of_week` can be used to check that the post or comment was *not* made on a given day e.g.
+
+```yaml
+type: submission
+domain: [i.redd.it, i.imgur.com]
+~day_of_week: saturday
+action: remove
+comment: "Image posts are only allowed on Saturdays"
+```
+
 ### For submissions only (base item or parent_submission sub-group)
 
 * `is_nsfw` - true/false - triggers only if the post's NSFW flag matches
@@ -254,6 +264,7 @@ day_of_week: weekday
 discussion_type - chat/null - if set to chat, then it will apply to chat posts. if set to null it will apply to comment posts. if this is not specified it will apply to both
 * `past_archive_date` - true/false - if set to true, submissions will only trigger the rule if they are older than the archival date of 6 months. See this post for details.
 * `poll_option_count` - The number of options a poll post has in the form `poll_option_count: 3` (to match the exact number), `poll_option_count: '> 2'` (for a comparison)
+* `comment_count` - the number of comments a post has. Most useful on `parent_submission` but can also be used on the base item. E.g. `comment_count: "> 100"`
 
 ### For comments (base item only)
 

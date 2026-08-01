@@ -132,6 +132,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 * Internal modmail notifications no longer include the "I am a bot..." footer
 * DMs to users and internal modmail notifications now include the permalink of the post/comment they relate to
 * DMs to users and replies left to posts/comments now prepopulate the message body with the permalink of the post/comment they relate to in the "message the moderators of this subreddit" link
+* Add `comment_count` check for posts
 
 ### v0.4.0
 

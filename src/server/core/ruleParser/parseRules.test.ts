@@ -1048,6 +1048,125 @@ body: "weekend only"
         ]);
     });
 
+    it("preserves age and comment_count on submission rules", () => {
+        const rules = `
+---
+type: submission
+age: "> 2 weeks"
+comment_count: "> 10"
+body: "engagement check"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "submission",
+                age: "> 2 weeks",
+                comment_count: "> 10",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["engagement check"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves parent_submission age and comment_count on comment rules", () => {
+        const rules = `
+---
+type: comment
+body: "parent check"
+parent_submission:
+  age: "< 30 days"
+  comment_count: "<= 200"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["parent check"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                parent_submission: {
+                    age: "< 30 days",
+                    comment_count: "<= 200",
+                },
+            },
+        ]);
+    });
+
+    it("throws when age has an invalid format on submission rules", () => {
+        const rules = `
+---
+type: submission
+age: "sometime soon"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 1: Invalid date threshold format for attribute 'age'/,
+        );
+    });
+
+    it("throws when comment_count has an invalid format on submission rules", () => {
+        const rules = `
+---
+type: submission
+comment_count: "ten"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 1: Invalid numeric threshold format for attribute 'comment_count'/,
+        );
+    });
+
+    it("throws when parent_submission.age has an invalid format on comment rules", () => {
+        const rules = `
+---
+type: comment
+parent_submission:
+  age: "yesterdayish"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 1: Invalid date threshold format for attribute 'age'/,
+        );
+    });
+
+    it("throws when parent_submission.comment_count has an invalid format on comment rules", () => {
+        const rules = `
+---
+type: comment
+parent_submission:
+  comment_count: "many"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 1: Invalid numeric threshold format for attribute 'comment_count'/,
+        );
+    });
+
     it("preserves poll_option_count when provided as a number", () => {
         const rules = `
 ---

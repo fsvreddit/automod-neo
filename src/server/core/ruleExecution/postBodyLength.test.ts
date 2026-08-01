@@ -23,13 +23,14 @@ import type { Post } from "@devvit/web/server";
 import type { CommentV2 } from "@devvit/web/shared";
 import { AutomodRuleChecker } from "./ruleChecker.js";
 
-function makePost (body: string | undefined): Post {
+function makePost (body: string | undefined, numberOfComments = 0): Post {
     return {
         id: "t3_parent",
         authorName: "example_author",
         body,
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
         gallery: [],
+        numberOfComments,
         numberOfReports: 0,
         permalink: "/r/test/comments/parent/example/",
         subredditName: "test",
@@ -110,6 +111,44 @@ describe("AutomodRuleChecker post body length checks", () => {
         const checker = new AutomodRuleChecker({
             rules: [matchingRule, failingRule],
             post: makePost("12345"),
+        });
+
+        const results = await checker.checkComment(comment, "example_author");
+
+        assert.equal(results.length, 1);
+        assert.equal(results[0]?.rule, matchingRule);
+    });
+
+    it("enforces comment_count for base post checks", async () => {
+        const checker = new AutomodRuleChecker({ rules: [] });
+        const post = makePost("body", 12);
+
+        assert.notEqual(
+            await checker.checkPostAgainstCondition(post, { comment_count: "> 10" }),
+            undefined,
+        );
+        assert.equal(
+            await checker.checkPostAgainstCondition(post, { comment_count: "> 12" }),
+            undefined,
+        );
+    });
+
+    it("enforces parent_submission.comment_count", async () => {
+        const matchingRule = {
+            type: "comment" as const,
+            moderators_exempt: false,
+            parent_submission: { comment_count: ">= 5" },
+        };
+        const failingRule = {
+            type: "comment" as const,
+            moderators_exempt: false,
+            parent_submission: { comment_count: "> 5" },
+        };
+        const parentPost = makePost("12345", 5);
+
+        const checker = new AutomodRuleChecker({
+            rules: [matchingRule, failingRule],
+            post: parentPost,
         });
 
         const results = await checker.checkComment(comment, "example_author");

@@ -514,6 +514,14 @@ export class AutomodRuleChecker {
             }
         }
 
+        if (rule.comment_count !== undefined) {
+            const meetsThreshold = meetsNumericThreshold(post.numberOfComments, rule.comment_count);
+            if (!meetsThreshold) {
+                this.log(`Post ${post.id} does not match comment_count condition (${rule.comment_count}).`, checkContext);
+                return;
+            }
+        }
+
         const matches: Matches[] = [];
 
         const searchFields: Record<string, string | string[]> = {
