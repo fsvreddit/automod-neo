@@ -228,11 +228,30 @@ export class ActionRules {
             const messageBody = this.valueWithPlaceholdersReplaced(matchedRule.rule.message, target, matchedRule);
             const messageSubject = this.valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule) ?? "Automod Neo Notification";
             if (messageBody) {
-                await reddit.sendPrivateMessage({
-                    to: target.authorName,
-                    subject: messageSubject,
-                    text: messageBody + "\n\n" + getBotCommentFooter(),
-                });
+                const messageText = target.permalink + "\n\n" + messageBody + "\n\n" + getBotCommentFooter();
+                try {
+                    await reddit.sendPrivateMessage({
+                        to: target.authorName,
+                        subject: messageSubject,
+                        text: messageText + "\n\n" + "*This is an unmonitored inbox, please do not reply to this message.*",
+                    });
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : String(error);
+                    console.error(`Failed to send private message to ${target.authorName} due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}":`, message);
+
+                    // Fall back to modmail for users with chats disabled.
+                    const modmail = await reddit.modMail.createConversation({
+                        subredditName: context.subredditName,
+                        subject: messageSubject,
+                        body: messageText,
+                        to: target.authorName,
+                        isAuthorHidden: true,
+                    });
+
+                    if (modmail.conversation.id) {
+                        await reddit.modMail.archiveConversation(modmail.conversation.id);
+                    }
+                }
                 console.log(`Sent private message to ${target.authorName} due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}"`);
             }
         }
