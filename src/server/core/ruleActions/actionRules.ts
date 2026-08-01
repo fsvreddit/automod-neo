@@ -228,7 +228,7 @@ export class ActionRules {
             const messageBody = this.valueWithPlaceholdersReplaced(matchedRule.rule.message, target, matchedRule);
             const messageSubject = this.valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule) ?? "Automod Neo Notification";
             if (messageBody) {
-                const messageText = target.permalink + "\n\n" + messageBody + "\n\n" + getBotCommentFooter();
+                const messageText = target.permalink + "\n\n" + messageBody + "\n\n" + getBotCommentFooter(target);
                 try {
                     await reddit.sendPrivateMessage({
                         to: target.authorName,
@@ -474,7 +474,7 @@ export class ActionRules {
                 const shouldLock = comments.some(comment => comment.shouldLock);
                 const shouldSticky = comments.some(comment => comment.shouldSticky) && isT3(targetId);
 
-                const combinedCommentText = _.compact(comments.map(comment => comment.text.trim())).join("\n\n---\n\n") + "\n\n" + getBotCommentFooter();
+                const combinedCommentText = _.compact(comments.map(comment => comment.text.trim())).join("\n\n---\n\n") + "\n\n" + getBotCommentFooter(target);
 
                 const newComment = await reddit.submitComment({
                     id: targetId,
@@ -494,7 +494,7 @@ export class ActionRules {
                 for (const comment of comments) {
                     const newComment = await reddit.submitComment({
                         id: targetId,
-                        text: comment.text + "\n\n" + getBotCommentFooter(),
+                        text: comment.text + "\n\n" + getBotCommentFooter(target),
                     });
 
                     console.log(`Added comment to target ${targetId} due to rule "${comment.ruleName}"`);
