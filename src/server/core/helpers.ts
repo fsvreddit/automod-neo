@@ -4,7 +4,7 @@ import { AutomodRule } from "./types";
 import { getWebhookPayload, parseWebhookUrl } from "./webhookUtils";
 
 export function getBotCommentFooter (target: Post | Comment): string {
-    return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/${context.subredditName}&message=Regarding${encodeURIComponent(target.permalink)}) if you have any questions or concerns.*`;
+    return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/${context.subredditName}&message=Regarding%20${encodeURIComponent(target.permalink)}) if you have any questions or concerns.*`;
 }
 
 function getApprovedUserCacheKey (username: string): string {
