@@ -125,6 +125,13 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
+### v0.5.0
+
+* Fall back to outgoing modmail if users have chats disabled when using `message` directive
+* Internal modmail notifications no longer include the "I am a bot..." footer
+* DMs to users and internal modmail notifications now include the permalink of the post/comment they relate to
+* DMs to users and replies left to posts/comments now prepopulate the message body with the permalink of the post/comment they relate to in the "message the moderators of this subreddit" link
+
 ### v0.4.0
 
 * Reinstate support for `flair_template_id` checks on the base item author
