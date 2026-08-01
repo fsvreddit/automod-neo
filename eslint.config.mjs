@@ -1,3 +1,11 @@
 import fsvconfig from "@fsvreddit/eslint-config";
 
-export default fsvconfig;
+export default [
+    ...fsvconfig,
+    {
+        rules: {
+            "@stylistic/quote-props": "off",
+            "camelcase": "off",
+        },
+    },
+];

@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings, User } from "@devvit/web/server";
 import { isT3, T1, T3 } from "@devvit/web/shared";
 import { AutomodMatch, AutomodRule, CommentAction, PostOrCommentCondition, SetFlairActionDictionary } from "../types";

@@ -127,6 +127,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 
 ### v0.5.0
 
+* Add `~day_of_week` directive to the base item
 * Fall back to outgoing modmail if users have chats disabled when using `message` directive
 * Internal modmail notifications no longer include the "I am a bot..." footer
 * DMs to users and internal modmail notifications now include the permalink of the post/comment they relate to

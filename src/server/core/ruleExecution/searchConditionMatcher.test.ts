@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { SearchMethod, SearchOption, SearchableText } from "../types.js";

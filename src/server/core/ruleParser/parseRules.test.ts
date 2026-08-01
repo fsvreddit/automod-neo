@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { parseRules } from "./parseRules";
@@ -984,6 +983,60 @@ body: "log this"
                     {
                         searchField: ["body"],
                         text: ["log this"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("passes through ~day_of_week when provided as a single value", () => {
+        const rules = `
+---
+~day_of_week: WeekDay
+body: "quiet hours"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                "~day_of_week": ["weekday"],
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["quiet hours"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("passes through ~day_of_week when provided as an array", () => {
+        const rules = `
+---
+~day_of_week: [Saturday, SuNday]
+body: "weekend only"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                "~day_of_week": ["saturday", "sunday"],
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["weekend only"],
                         options: {
                             search_method: "includes-word",
                             case_sensitive: false,

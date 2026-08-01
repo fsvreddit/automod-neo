@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { Comment, context, Post, reddit, settings, User, UserSocialLink } from "@devvit/web/server";
 import { CommentV2, isT3, T1, T3 } from "@devvit/web/shared";
 import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, SearchableText } from "../types";
@@ -187,7 +186,7 @@ export class AutomodRuleChecker {
     private configuredTimeZone: string | undefined;
 
     private async isMatchingDayOfWeek (rule: AutomodRule): Promise<boolean> {
-        if (!rule.day_of_week) {
+        if (!rule.day_of_week && !rule["~day_of_week"]) {
             return true;
         }
 
@@ -205,9 +204,17 @@ export class AutomodRuleChecker {
         const weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday"];
         const weekends = ["saturday", "sunday"];
 
-        return (rule.day_of_week as string[]).includes(currentDayOfWeek)
-            || (rule.day_of_week.includes("weekday") && weekdays.includes(currentDayOfWeek))
-            || (rule.day_of_week.includes("weekend") && weekends.includes(currentDayOfWeek));
+        if (rule.day_of_week) {
+            const dayOfWeekCheck = rule.day_of_week as string[];
+            return dayOfWeekCheck.includes(currentDayOfWeek)
+                || (dayOfWeekCheck.includes("weekday") && weekdays.includes(currentDayOfWeek))
+                || (dayOfWeekCheck.includes("weekend") && weekends.includes(currentDayOfWeek));
+        } else {
+            const notDayOfWeekCheck = rule["~day_of_week"] as string[];
+            return !notDayOfWeekCheck.includes(currentDayOfWeek)
+                && !(notDayOfWeekCheck.includes("weekday") && weekdays.includes(currentDayOfWeek))
+                && !(notDayOfWeekCheck.includes("weekend") && weekends.includes(currentDayOfWeek));
+        }
     }
 
     private async authorMatchesCondition (username: string, authorCondition: Author, checkContext?: string): Promise<Matches[] | undefined> {

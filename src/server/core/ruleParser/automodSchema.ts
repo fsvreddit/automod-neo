@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { JSONSchemaType } from "ajv";
 import { SearchMethod, SearchOption } from "../types";
 import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecution";
@@ -213,6 +212,14 @@ export const automodSchema: Record<string, unknown> = {
         },
         priority: { type: "number", nullable: true },
         day_of_week: {
+            type: "array",
+            items: {
+                type: "string",
+                enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "weekday", "weekend"],
+            },
+            nullable: true,
+        },
+        "~day_of_week": {
             type: "array",
             items: {
                 type: "string",

@@ -117,6 +117,7 @@ export type AutomodRule = PostOrCommentCondition & CommentAction & {
     type?: "comment" | "submission" | "text submission" | "link submission" | "crosspost submission" | "poll submission" | "gallery submission" | "any";
     priority?: number;
     day_of_week?: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | "weekday" | "weekend")[];
+    "~day_of_week"?: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | "weekday" | "weekend")[];
     moderators_exempt?: boolean;
     comment?: string;
     comment_locked?: boolean;
