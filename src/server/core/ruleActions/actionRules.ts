@@ -263,7 +263,7 @@ export class ActionRules {
                 await reddit.modMail.createModInboxConversation({
                     subredditId: context.subredditId,
                     subject: modmailSubject,
-                    bodyMarkdown: modmailBody + "\n\n" + getBotCommentFooter(),
+                    bodyMarkdown: target.permalink + "\n\n" + modmailBody,
                 });
                 console.log(`Sent modmail to subreddit ${context.subredditName} due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}"`);
             }
