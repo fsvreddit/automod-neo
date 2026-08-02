@@ -1,4 +1,4 @@
-import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings, User } from "@devvit/web/server";
+import { Comment, context, Post, PostSuggestedCommentSort, reddit, redis, settings, User } from "@devvit/web/server";
 import { isT3, T1, T3 } from "@devvit/web/shared";
 import { AutomodMatch, AutomodRule, CommentAction, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
@@ -7,6 +7,7 @@ import { AppSetting } from "../appSettings";
 import markdownEscape from "markdown-escape";
 import _ from "lodash";
 import { hasAutomodActionBeenTaken } from "../automodActions";
+import { addMonths } from "date-fns";
 
 interface AdditionalPlaceholders {
     author_flair_text?: string;
@@ -73,6 +74,30 @@ export class ActionRules {
             return "submission";
         } else {
             return "comment";
+        }
+    }
+
+    private async submitComment (opts: {
+        id: T1 | T3;
+        text: string;
+    }): Promise<Comment | undefined> {
+        const commentSubmittedKey = `commentSubmitted:${opts.id}`;
+        const commentAlreadySubmitted = await redis.get(commentSubmittedKey);
+        const parsedComments = JSON.parse(commentAlreadySubmitted ?? "[]") as string[];
+        if (parsedComments.includes(opts.text)) {
+            console.log(`Skipping comment submission for target ${opts.id} because the same comment has already been submitted.`);
+            return;
+        }
+
+        try {
+            const newComment = await reddit.submitComment(opts);
+            parsedComments.push(opts.text);
+            await redis.set(commentSubmittedKey, JSON.stringify(parsedComments), { expiration: addMonths(new Date(), 1) });
+            return newComment;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.error(`Failed to submit comment for target ${opts.id}:`, message);
+            return;
         }
     }
 
@@ -501,36 +526,40 @@ export class ActionRules {
 
                 const combinedCommentText = _.compact(comments.map(comment => comment.text.trim())).join("\n\n---\n\n") + "\n\n" + getBotCommentFooter(target);
 
-                const newComment = await reddit.submitComment({
+                const newComment = await this.submitComment({
                     id: targetId,
                     text: combinedCommentText,
                 });
 
                 console.log(`Added combined comment to target ${targetId} due to rules: ${comments.map(comment => comment.ruleName).join(", ")}`);
 
-                if (shouldLock) {
+                if (newComment && shouldLock) {
                     await newComment.lock();
                     console.log(`Locked combined comment on target ${targetId}`);
                 }
 
-                await newComment.distinguish(shouldSticky);
-                console.log(`Distinguished combined comment on target ${targetId}`);
+                if (newComment) {
+                    await newComment.distinguish(shouldSticky);
+                    console.log(`Distinguished combined comment on target ${targetId}`);
+                }
             } else {
                 for (const comment of comments) {
-                    const newComment = await reddit.submitComment({
+                    const newComment = await this.submitComment({
                         id: targetId,
                         text: comment.text + "\n\n" + getBotCommentFooter(target),
                     });
 
                     console.log(`Added comment to target ${targetId} due to rule "${comment.ruleName}"`);
 
-                    if (comment.shouldLock) {
+                    if (newComment && comment.shouldLock) {
                         await newComment.lock();
                         console.log(`Locked comment on target ${targetId} due to rule "${comment.ruleName}"`);
                     }
 
-                    await newComment.distinguish(comment.shouldSticky);
-                    console.log(`Distinguished comment on target ${targetId} due to rule "${comment.ruleName}"`);
+                    if (newComment) {
+                        await newComment.distinguish(comment.shouldSticky);
+                        console.log(`Distinguished comment on target ${targetId} due to rule "${comment.ruleName}"`);
+                    }
                 }
             }
         }

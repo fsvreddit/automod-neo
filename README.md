@@ -137,6 +137,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 * {{title}} placeholder now works consistently with AutoModerator even for rules that react to comments
 * Add {{parent_submission_author}} placeholder for rules that act on comments
 * Add option to skip processing rules on posts or comments that AutoModerator has already acted on
+* Prevent duplicate comments from being added if a rule runs more than once on a post or comment
 
 ### v0.4.0
 
