@@ -135,6 +135,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 * Add `comment_count` check for posts
 * Better message/modmail subject defaults
 * {{title}} placeholder now works consistently with AutoModerator even for rules that react to comments
+* Add {{parent_submission_author}} placeholder for rules that act on comments
 
 ### v0.4.0
 

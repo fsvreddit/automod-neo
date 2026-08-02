@@ -355,6 +355,7 @@ When used inside a string that supports placeholders, these will be replaced wit
 * `{{subreddit}}` - the subreddit's name (do /r/{{subreddit}} for a link to the subreddit)
 * `{{kind}}` - replaced with "submission" for submissions or "comment" for comments
 * `{{title}}` - the submission's title
+* `{{parent_submission_author}}` - the author of the parent submission (for rules that act on comments)
 * `{{domain}}` - the submission's domain
 * `{{url}}` - the submission's full url
 

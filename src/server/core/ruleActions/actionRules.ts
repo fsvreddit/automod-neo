@@ -88,10 +88,14 @@ export class ActionRules {
                     .join("\n")
             : "";
 
+        const parentSubmissionAuthor = "postId" in target ? this.posts[target.postId]?.authorName ?? "" : target.authorName;
+
         let result = input
             .replace(/(^|\n)>\s*{{body}}(?=\n|$)/g, (_, prefix: string) => `${prefix}${blockquotedBody}`)
             .replaceAll("u/{{author}}", `u/${target.authorName}`)
             .replaceAll("{{author}}", markdownEscape(target.authorName))
+            .replaceAll("u/{{parent_submission_author}}", `u/${parentSubmissionAuthor}`)
+            .replaceAll("{{parent_submission_author}}", markdownEscape(parentSubmissionAuthor))
             .replaceAll("{{body}}", markdownEscape(body))
             .replaceAll("{{permalink}}", `https://www.reddit.com${target.permalink}`)
             .replaceAll("{{title}}", "title" in target ? markdownEscape(target.title) : this.posts[target.postId]?.title ?? "")
@@ -459,7 +463,7 @@ export class ActionRules {
             }
         }
 
-        if ("postId" in target && this.matchedRules.some(ruleMatch => this.anyPlaceholdersFound(ruleMatch, ["title"]))) {
+        if ("postId" in target && this.matchedRules.some(ruleMatch => this.anyPlaceholdersFound(ruleMatch, ["title", "parent_submission_author"]))) {
             await this.getPostById(target.postId);
         }
 
