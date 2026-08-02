@@ -6,6 +6,7 @@ import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../
 import { AppSetting } from "../appSettings";
 import markdownEscape from "markdown-escape";
 import _ from "lodash";
+import { hasAutomodActionBeenTaken } from "../automodActions";
 
 interface AdditionalPlaceholders {
     author_flair_text?: string;
@@ -435,6 +436,12 @@ export class ActionRules {
     }
 
     public async actionRules () {
+        const skipRulesThatAutomodHasActedOn = await settings.get<boolean>(AppSetting.SkipRulesThatAutomodHasActedOn);
+        if (skipRulesThatAutomodHasActedOn && await hasAutomodActionBeenTaken(this.targetId)) {
+            console.log(`Skipping action rules for target ${this.targetId} because Automod has already acted on it.`);
+            return;
+        }
+
         const target = await getPostOrCommentById(this.targetId);
         if (isT3(target.id)) {
             this.posts[target.id] = target as Post;
