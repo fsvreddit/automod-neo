@@ -88,9 +88,9 @@ The following checks/actions are only available in the top level of a rule, and 
 * `comment_locked` - true/false - if set to true, the comment Automod Neo posts in response to an item will be locked from further comment replies.
 * `comment_stickied` - true/false - if set to true, the comment Automod Neo posts in response to an item will be stickied to the top of the submission (will have no effect on non-submissions, as the comment must be top-level)
 * `modmail` - Text of a modmail to send to the moderators when an item satisfies the rule's conditions. Supports placeholders.
-* `modmail_subject` - If a modmail is sent, the subject of that modmail. Defaults to "Automod Neo notification" if not set. Supports placeholders.
+* `modmail_subject` - If a modmail is sent, the subject of that modmail. Defaults to "Notification about a {{kind}} for u/{{author}}" if not set. Supports placeholders.
 * `message` - Text of a message to send to the author of an item that satisfies the rule's conditions. Supports placeholders.
-* `message_subject` - If a message is sent, the subject of that message. Defaults to "Automod Neo notification" if not set. Supports placeholders.
+* `message_subject` - If a message is sent, the subject of that message. Defaults to "A message about your {{kind}} on {{subreddit}}" if not set. Supports placeholders.
 * `discord_alert` - Text of a message to send to a pre-configured Discord or Slack webhook. Supports placeholders.
 
 ## Sub-groups

@@ -67,6 +67,14 @@ export class ActionRules {
         }
     }
 
+    private targetToKindText (target: Post | Comment): string {
+        if (isT3(target.id)) {
+            return "submission";
+        } else {
+            return "comment";
+        }
+    }
+
     public valueWithPlaceholdersReplaced (input: string | undefined, target: Post | Comment, automodMatch: AutomodMatch): string | undefined {
         if (!input?.includes("{{")) {
             return input;
@@ -89,7 +97,7 @@ export class ActionRules {
             .replaceAll("{{title}}", "title" in target ? markdownEscape(target.title) : "")
             .replaceAll("r/{{subreddit}}", `r/${target.subredditName}`)
             .replaceAll("{{subreddit}}", markdownEscape(target.subredditName))
-            .replaceAll("{{kind}}", isT3(target.id) ? "submission" : "comment")
+            .replaceAll("{{kind}}", this.targetToKindText(target))
             .replaceAll("{{domain}}", getDomainFromUrl(target.url) ?? "")
             .replaceAll("{{url}}", target.url)
             .replaceAll("{{media_author}}", this.additionalPlaceholders.media_author ?? "")
@@ -225,7 +233,8 @@ export class ActionRules {
 
         if (doMessages && matchedRule.rule.message) {
             const messageBody = this.valueWithPlaceholdersReplaced(matchedRule.rule.message, target, matchedRule);
-            const messageSubject = this.valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule) ?? "Automod Neo Notification";
+            const messageSubject = this.valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule)
+                ?? `A message about your ${this.targetToKindText(target)} on r/${target.subredditName}`;
             if (messageBody) {
                 const messageText = target.permalink + "\n\n" + messageBody + "\n\n" + getBotCommentFooter(target);
                 try {
@@ -257,7 +266,9 @@ export class ActionRules {
 
         if (doMessages && matchedRule.rule.modmail) {
             const modmailBody = this.valueWithPlaceholdersReplaced(matchedRule.rule.modmail, target, matchedRule);
-            const modmailSubject = this.valueWithPlaceholdersReplaced(matchedRule.rule.modmail_subject, target, matchedRule) ?? "Automod Neo Notification";
+            const modmailSubject = this.valueWithPlaceholdersReplaced(matchedRule.rule.modmail_subject, target, matchedRule)
+                ?? `Notification about a ${this.targetToKindText(target)} for u/${target.authorName}`;
+
             if (modmailBody) {
                 await reddit.modMail.createModInboxConversation({
                     subredditId: context.subredditId,
