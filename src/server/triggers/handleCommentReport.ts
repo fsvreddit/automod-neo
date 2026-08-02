@@ -1,8 +1,7 @@
 import { OnCommentReportRequest, T1, T2, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { ActionRules } from "../core/ruleActions";
+import { ActionRules, AutomodRuleChecker, getRulesForSubreddit } from "../core";
 import { fixCommentReportTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
-import { AutomodRuleChecker, getRulesForSubreddit } from "../core/ruleExecution";
 import { reddit } from "@devvit/web/server";
 import pluralize from "pluralize";
 

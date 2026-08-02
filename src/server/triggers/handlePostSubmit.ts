@@ -1,9 +1,7 @@
 import { OnPostCreateRequest, T3, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { ActionRules } from "../core/ruleActions";
+import { ActionRules, AutomodRuleChecker, AutomodRuleCheckerOpts, getRulesForSubreddit, isUserIgnoredForTriggers } from "../core";
 import { fixPostTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
-import { AutomodRuleChecker, AutomodRuleCheckerOpts, getRulesForSubreddit } from "../core/ruleExecution";
-import { isUserIgnoredForTriggers } from "../core";
 import pluralize from "pluralize";
 
 export const handlePostSubmit = async (c: Context) => {

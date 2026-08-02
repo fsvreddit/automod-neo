@@ -1,9 +1,7 @@
 import { OnCommentCreateRequest, T1, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { ActionRules } from "../core/ruleActions";
+import { ActionRules, AutomodRuleChecker, AutomodRuleCheckerOpts, getRulesForSubreddit, isUserIgnoredForTriggers } from "../core";
 import { fixCommentTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
-import { AutomodRuleChecker, AutomodRuleCheckerOpts, getRulesForSubreddit } from "../core/ruleExecution";
-import { isUserIgnoredForTriggers } from "../core";
 import pluralize from "pluralize";
 
 export const handleCommentSubmit = async (c: Context) => {

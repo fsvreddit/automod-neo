@@ -1,6 +1,6 @@
 import { SettingsValidationRequest, SettingsValidationResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { parseWebhookUrl } from "../core/webhookUtils";
+import { parseWebhookUrl } from "../core";
 
 export const validateDiscordOrSlackWebhook = async (c: Context) => {
     const validationRequest = await c.req.json<SettingsValidationRequest<string>>();

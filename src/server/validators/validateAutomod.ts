@@ -1,7 +1,6 @@
 import { SettingsValidationRequest, SettingsValidationResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { parseRules } from "../core/ruleParser";
-import { clearCachedRules, saveUnparsedRules } from "../core/ruleExecution";
+import { clearCachedRules, parseRules, saveUnparsedRules } from "../core";
 import pluralize from "pluralize";
 
 export const validateAutomodSetting = async (c: Context) => {
