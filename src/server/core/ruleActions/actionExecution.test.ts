@@ -27,6 +27,10 @@ vi.mock("@devvit/web/server", () => ({
             createModInboxConversation: vi.fn(),
         },
     },
+    redis: {
+        get: vi.fn(),
+        set: vi.fn(),
+    },
     settings: {
         get: mocks.settingsGet,
     },
