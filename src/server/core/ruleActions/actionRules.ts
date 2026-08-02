@@ -94,7 +94,7 @@ export class ActionRules {
             .replaceAll("{{author}}", markdownEscape(target.authorName))
             .replaceAll("{{body}}", markdownEscape(body))
             .replaceAll("{{permalink}}", `https://www.reddit.com${target.permalink}`)
-            .replaceAll("{{title}}", "title" in target ? markdownEscape(target.title) : "")
+            .replaceAll("{{title}}", "title" in target ? markdownEscape(target.title) : this.posts[target.postId]?.title ?? "")
             .replaceAll("r/{{subreddit}}", `r/${target.subredditName}`)
             .replaceAll("{{subreddit}}", markdownEscape(target.subredditName))
             .replaceAll("{{kind}}", this.targetToKindText(target))
@@ -457,6 +457,10 @@ export class ActionRules {
                 // Ignore errors when fetching author flair, as it is not critical to the action execution.
                 console.error(`Failed to fetch author flair for ${target.authorName}`);
             }
+        }
+
+        if ("postId" in target && this.matchedRules.some(ruleMatch => this.anyPlaceholdersFound(ruleMatch, ["title"]))) {
+            await this.getPostById(target.postId);
         }
 
         for (const matchedRule of this.matchedRules) {
