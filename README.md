@@ -138,6 +138,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 * Add {{parent_submission_author}} placeholder for rules that act on comments
 * Add option to skip processing rules on posts or comments that AutoModerator has already acted on
 * Prevent duplicate comments from being added if a rule runs more than once on a post or comment
+* Add `is_banned` check on all `author` nodes
 
 ### v0.4.0
 

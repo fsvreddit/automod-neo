@@ -636,6 +636,7 @@ media_title: ['first title', 'second title']
 type: comment
 author:
   is_moderator: true
+  is_banned: false
 moderators_exempt: false
 is_top_level: true
 is_edited: False
@@ -655,6 +656,7 @@ parent_submission:
                 type: "comment",
                 author: {
                     is_moderator: true,
+                    is_banned: false,
                 },
                 moderators_exempt: false,
                 is_top_level: true,

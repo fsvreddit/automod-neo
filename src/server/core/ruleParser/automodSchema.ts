@@ -94,6 +94,7 @@ const authorSchema = {
         is_submitter: { type: "boolean", nullable: true },
         is_contributor: { type: "boolean", nullable: true },
         is_moderator: { type: "boolean", nullable: true },
+        is_banned: { type: "boolean", nullable: true },
         set_flair: {
             ...setFlairSchema,
         },

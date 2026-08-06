@@ -1,6 +1,6 @@
 import { OnModActionRequest, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { clearUserRoleCache, storeRecordOfAutomodAction } from "../core";
+import { clearUserBanCache, clearUserRoleCache, storeRecordOfAutomodAction } from "../core";
 
 export const handleModAction = async (c: Context) => {
     const request = await c.req.json<OnModActionRequest>();
@@ -20,6 +20,11 @@ export const handleModAction = async (c: Context) => {
         if (targetId) {
             await storeRecordOfAutomodAction(targetId);
         }
+    }
+
+    const banActions = ["banuser", "unbanuser"];
+    if (request.action && banActions.includes(request.action) && request.targetUser?.id) {
+        await clearUserBanCache(request.targetUser.name);
     }
 
     return c.json<TriggerResponse>({ message: "mod action handled" }, 200);

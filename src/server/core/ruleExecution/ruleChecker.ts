@@ -1,7 +1,7 @@
 import { Comment, context, Post, reddit, settings, User, UserSocialLink } from "@devvit/web/server";
 import { CommentV2, isT3, T1, T3 } from "@devvit/web/shared";
 import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, SearchableText } from "../types";
-import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW } from "../helpers";
+import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW, isUserBanned } from "../helpers";
 import { meetsDateThreshold, meetsNumericThreshold } from "./thresholdChecks";
 import { subMonths } from "date-fns";
 import { anySearchConditionMatchesInput, postMatchesStandardCondition, searchConditionsMatchInput } from ".";
@@ -31,6 +31,7 @@ export class AutomodRuleChecker {
     private userSocialLinks: Record<string, UserSocialLink[]> = {};
     private userIsApprovedUser: Record<string, boolean> = {};
     private userIsModerator: Record<string, boolean> = {};
+    private userIsBanned: Record<string, boolean> = {};
     private userSubredditKarma: Record<string, { fromComments: number; fromPosts: number }> = {};
 
     private verboseLogs = false;
@@ -108,6 +109,17 @@ export class AutomodRuleChecker {
         isMod = await isModerator(username);
         this.userIsModerator[username] = isMod;
         return isMod;
+    }
+
+    private async getIsUserBanned (username: string): Promise<boolean> {
+        let isBanned = this.userIsBanned[username];
+        if (isBanned !== undefined) {
+            return isBanned;
+        }
+
+        isBanned = await isUserBanned(username);
+        this.userIsBanned[username] = isBanned;
+        return isBanned;
     }
 
     private async getUserSubredditKarma (user: User): Promise<{ fromComments: number; fromPosts: number }> {
@@ -228,6 +240,13 @@ export class AutomodRuleChecker {
         if (authorCondition.is_moderator !== undefined) {
             if (await this.getIsUserModerator(username) !== authorCondition.is_moderator) {
                 this.log(`${username} does not match is_moderator condition (${authorCondition.is_moderator}).`, checkContext);
+                return;
+            }
+        }
+
+        if (authorCondition.is_banned !== undefined) {
+            if (await this.getIsUserBanned(username) !== authorCondition.is_banned) {
+                this.log(`${username} does not match is_banned condition (${authorCondition.is_banned}).`, checkContext);
                 return;
             }
         }

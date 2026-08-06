@@ -313,6 +313,7 @@ The supported threshold checks are:
 * `is_submitter` - true/false - (only relevant when checking comments) If true, will only match if the author was also the submitter of the post being commented inside. If false, will only match if they were not.
 * `is_contributor` - true/false - if true, will only match if the author is a contributor/"approved submitter" in the subreddit. If false, will only match if they are not.
 * `is_moderator` - true/false - if true, will only match if the author is a moderator of the subreddit. If false, will only match if the author is NOT a moderator of the subreddit.
+* `is_banned` - true/false - if true, this will only match if the user is banned on the subreddit. If false, will only match if the author is not banned on the subreddit.
 
 ## Actions
 

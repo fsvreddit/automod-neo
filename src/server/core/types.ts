@@ -41,6 +41,7 @@ export interface Author {
     is_submitter?: boolean;
     is_contributor?: boolean;
     is_moderator?: boolean;
+    is_banned?: boolean;
 
     set_flair?: string | string[] | SetFlairActionDictionary;
     overwrite_flair?: boolean;
