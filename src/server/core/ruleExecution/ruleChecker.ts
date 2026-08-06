@@ -1,8 +1,7 @@
-/* eslint-disable camelcase */
 import { Comment, context, Post, reddit, settings, User, UserSocialLink } from "@devvit/web/server";
 import { CommentV2, isT3, T1, T3 } from "@devvit/web/shared";
 import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, SearchableText } from "../types";
-import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW } from "../helpers";
+import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW, isUserBanned } from "../helpers";
 import { meetsDateThreshold, meetsNumericThreshold } from "./thresholdChecks";
 import { subMonths } from "date-fns";
 import { anySearchConditionMatchesInput, postMatchesStandardCondition, searchConditionsMatchInput } from ".";
@@ -32,6 +31,7 @@ export class AutomodRuleChecker {
     private userSocialLinks: Record<string, UserSocialLink[]> = {};
     private userIsApprovedUser: Record<string, boolean> = {};
     private userIsModerator: Record<string, boolean> = {};
+    private userIsBanned: Record<string, boolean> = {};
     private userSubredditKarma: Record<string, { fromComments: number; fromPosts: number }> = {};
 
     private verboseLogs = false;
@@ -111,6 +111,17 @@ export class AutomodRuleChecker {
         return isMod;
     }
 
+    private async getIsUserBanned (username: string): Promise<boolean> {
+        let isBanned = this.userIsBanned[username];
+        if (isBanned !== undefined) {
+            return isBanned;
+        }
+
+        isBanned = await isUserBanned(username);
+        this.userIsBanned[username] = isBanned;
+        return isBanned;
+    }
+
     private async getUserSubredditKarma (user: User): Promise<{ fromComments: number; fromPosts: number }> {
         let karma = this.userSubredditKarma[user.username];
         if (karma !== undefined) {
@@ -187,7 +198,7 @@ export class AutomodRuleChecker {
     private configuredTimeZone: string | undefined;
 
     private async isMatchingDayOfWeek (rule: AutomodRule): Promise<boolean> {
-        if (!rule.day_of_week) {
+        if (!rule.day_of_week && !rule["~day_of_week"]) {
             return true;
         }
 
@@ -205,9 +216,17 @@ export class AutomodRuleChecker {
         const weekdays = ["monday", "tuesday", "wednesday", "thursday", "friday"];
         const weekends = ["saturday", "sunday"];
 
-        return (rule.day_of_week as string[]).includes(currentDayOfWeek)
-            || (rule.day_of_week.includes("weekday") && weekdays.includes(currentDayOfWeek))
-            || (rule.day_of_week.includes("weekend") && weekends.includes(currentDayOfWeek));
+        if (rule.day_of_week) {
+            const dayOfWeekCheck = rule.day_of_week as string[];
+            return dayOfWeekCheck.includes(currentDayOfWeek)
+                || (dayOfWeekCheck.includes("weekday") && weekdays.includes(currentDayOfWeek))
+                || (dayOfWeekCheck.includes("weekend") && weekends.includes(currentDayOfWeek));
+        } else {
+            const notDayOfWeekCheck = rule["~day_of_week"] as string[];
+            return !notDayOfWeekCheck.includes(currentDayOfWeek)
+                && !(notDayOfWeekCheck.includes("weekday") && weekdays.includes(currentDayOfWeek))
+                && !(notDayOfWeekCheck.includes("weekend") && weekends.includes(currentDayOfWeek));
+        }
     }
 
     private async authorMatchesCondition (username: string, authorCondition: Author, checkContext?: string): Promise<Matches[] | undefined> {
@@ -221,6 +240,13 @@ export class AutomodRuleChecker {
         if (authorCondition.is_moderator !== undefined) {
             if (await this.getIsUserModerator(username) !== authorCondition.is_moderator) {
                 this.log(`${username} does not match is_moderator condition (${authorCondition.is_moderator}).`, checkContext);
+                return;
+            }
+        }
+
+        if (authorCondition.is_banned !== undefined) {
+            if (await this.getIsUserBanned(username) !== authorCondition.is_banned) {
+                this.log(`${username} does not match is_banned condition (${authorCondition.is_banned}).`, checkContext);
                 return;
             }
         }
@@ -503,6 +529,14 @@ export class AutomodRuleChecker {
             const meetsThreshold = meetsDateThreshold(post.createdAt, rule.age);
             if (!meetsThreshold) {
                 this.log(`Post ${post.id} does not match age condition (${rule.age}).`, checkContext);
+                return;
+            }
+        }
+
+        if (rule.comment_count !== undefined) {
+            const meetsThreshold = meetsNumericThreshold(post.numberOfComments, rule.comment_count);
+            if (!meetsThreshold) {
+                this.log(`Post ${post.id} does not match comment_count condition (${rule.comment_count}).`, checkContext);
                 return;
             }
         }

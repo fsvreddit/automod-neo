@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import assert from "node:assert/strict";
 import { beforeEach, describe, it, vi } from "vitest";
 
@@ -27,6 +26,10 @@ vi.mock("@devvit/web/server", () => ({
         modMail: {
             createModInboxConversation: vi.fn(),
         },
+    },
+    redis: {
+        get: vi.fn(),
+        set: vi.fn(),
     },
     settings: {
         get: mocks.settingsGet,

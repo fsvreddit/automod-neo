@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { JSONSchemaType } from "ajv";
 import { SearchMethod, SearchOption } from "../types";
 import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecution";
@@ -95,6 +94,7 @@ const authorSchema = {
         is_submitter: { type: "boolean", nullable: true },
         is_contributor: { type: "boolean", nullable: true },
         is_moderator: { type: "boolean", nullable: true },
+        is_banned: { type: "boolean", nullable: true },
         set_flair: {
             ...setFlairSchema,
         },
@@ -142,6 +142,7 @@ const postConditionSchema = {
         poll_option_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
         age: { type: "string", nullable: true, pattern: dateComparatorPattern },
         past_archive_date: { type: "boolean", nullable: true },
+        comment_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
         author: {
             ...authorSchema,
             nullable: true,
@@ -220,6 +221,14 @@ export const automodSchema: Record<string, unknown> = {
             },
             nullable: true,
         },
+        "~day_of_week": {
+            type: "array",
+            items: {
+                type: "string",
+                enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", "weekday", "weekend"],
+            },
+            nullable: true,
+        },
         moderators_exempt: { type: "boolean", nullable: true },
         comment: { type: "string", nullable: true },
         comment_locked: { type: "boolean", nullable: true },
@@ -248,7 +257,9 @@ export const automodSchema: Record<string, unknown> = {
         is_poll: { type: "boolean", nullable: true },
         is_gallery: { type: "boolean", nullable: true },
         poll_option_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        age: { type: "string", nullable: true, pattern: dateComparatorPattern },
         past_archive_date: { type: "boolean", nullable: true },
+        comment_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
         is_top_level: { type: "boolean", nullable: true },
         comment_crowd_control_collapsed: { type: "boolean", nullable: true },
         action: {

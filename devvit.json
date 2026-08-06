@@ -54,6 +54,12 @@
                 "helpText": "If enabled, multiple comments by Automod Neo in reply to the same post or comment will be combined together into a single comment separated by horizontal rules.",
                 "defaultValue": true
             },
+            "skipRulesThatAutomodHasActedOn": {
+                "type": "boolean",
+                "label": "Skip rules that AutoModerator has removed or filtered",
+                "helpText": "If enabled, Automod Neo will skip rules that have already been acted on by AutoModerator. This can help prevent duplicate actions and reduce noise in moderation.",
+                "defaultValue": false
+            },
             "discordWebhookUrl": {
                 "type": "string",
                 "label": "Discord or Slack Webhook URL",

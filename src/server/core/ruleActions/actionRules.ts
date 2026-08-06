@@ -1,5 +1,4 @@
-/* eslint-disable camelcase */
-import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings, User } from "@devvit/web/server";
+import { Comment, context, Post, PostSuggestedCommentSort, reddit, redis, settings, User } from "@devvit/web/server";
 import { isT3, T1, T3 } from "@devvit/web/shared";
 import { AutomodMatch, AutomodRule, CommentAction, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
@@ -7,6 +6,8 @@ import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../
 import { AppSetting } from "../appSettings";
 import markdownEscape from "markdown-escape";
 import _ from "lodash";
+import { hasAutomodActionBeenTaken } from "../automodActions";
+import { addMonths } from "date-fns";
 
 interface AdditionalPlaceholders {
     author_flair_text?: string;
@@ -68,6 +69,38 @@ export class ActionRules {
         }
     }
 
+    private targetToKindText (target: Post | Comment): string {
+        if (isT3(target.id)) {
+            return "submission";
+        } else {
+            return "comment";
+        }
+    }
+
+    private async submitComment (opts: {
+        id: T1 | T3;
+        text: string;
+    }): Promise<Comment | undefined> {
+        const commentSubmittedKey = `commentSubmitted:${opts.id}`;
+        const commentAlreadySubmitted = await redis.get(commentSubmittedKey);
+        const parsedComments = JSON.parse(commentAlreadySubmitted ?? "[]") as string[];
+        if (parsedComments.includes(opts.text)) {
+            console.log(`Skipping comment submission for target ${opts.id} because the same comment has already been submitted.`);
+            return;
+        }
+
+        try {
+            const newComment = await reddit.submitComment(opts);
+            parsedComments.push(opts.text);
+            await redis.set(commentSubmittedKey, JSON.stringify(parsedComments), { expiration: addMonths(new Date(), 1) });
+            return newComment;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.error(`Failed to submit comment for target ${opts.id}:`, message);
+            return;
+        }
+    }
+
     public valueWithPlaceholdersReplaced (input: string | undefined, target: Post | Comment, automodMatch: AutomodMatch): string | undefined {
         if (!input?.includes("{{")) {
             return input;
@@ -81,16 +114,20 @@ export class ActionRules {
                     .join("\n")
             : "";
 
+        const parentSubmissionAuthor = "postId" in target ? this.posts[target.postId]?.authorName ?? "" : target.authorName;
+
         let result = input
             .replace(/(^|\n)>\s*{{body}}(?=\n|$)/g, (_, prefix: string) => `${prefix}${blockquotedBody}`)
             .replaceAll("u/{{author}}", `u/${target.authorName}`)
             .replaceAll("{{author}}", markdownEscape(target.authorName))
+            .replaceAll("u/{{parent_submission_author}}", `u/${parentSubmissionAuthor}`)
+            .replaceAll("{{parent_submission_author}}", markdownEscape(parentSubmissionAuthor))
             .replaceAll("{{body}}", markdownEscape(body))
             .replaceAll("{{permalink}}", `https://www.reddit.com${target.permalink}`)
-            .replaceAll("{{title}}", "title" in target ? markdownEscape(target.title) : "")
+            .replaceAll("{{title}}", "title" in target ? markdownEscape(target.title) : this.posts[target.postId]?.title ?? "")
             .replaceAll("r/{{subreddit}}", `r/${target.subredditName}`)
             .replaceAll("{{subreddit}}", markdownEscape(target.subredditName))
-            .replaceAll("{{kind}}", isT3(target.id) ? "submission" : "comment")
+            .replaceAll("{{kind}}", this.targetToKindText(target))
             .replaceAll("{{domain}}", getDomainFromUrl(target.url) ?? "")
             .replaceAll("{{url}}", target.url)
             .replaceAll("{{media_author}}", this.additionalPlaceholders.media_author ?? "")
@@ -226,25 +263,47 @@ export class ActionRules {
 
         if (doMessages && matchedRule.rule.message) {
             const messageBody = this.valueWithPlaceholdersReplaced(matchedRule.rule.message, target, matchedRule);
-            const messageSubject = this.valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule) ?? "Automod Neo Notification";
+            const messageSubject = this.valueWithPlaceholdersReplaced(matchedRule.rule.message_subject, target, matchedRule)
+                ?? `A message about your ${this.targetToKindText(target)} on r/${target.subredditName}`;
             if (messageBody) {
-                await reddit.sendPrivateMessage({
-                    to: target.authorName,
-                    subject: messageSubject,
-                    text: messageBody + "\n\n" + getBotCommentFooter(),
-                });
+                const messageText = target.permalink + "\n\n" + messageBody + "\n\n" + getBotCommentFooter(target);
+                try {
+                    await reddit.sendPrivateMessage({
+                        to: target.authorName,
+                        subject: messageSubject,
+                        text: messageText + "\n\n" + "*This is an unmonitored inbox, please do not reply to this message.*",
+                    });
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : String(error);
+                    console.error(`Failed to send private message to ${target.authorName} due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}":`, message);
+
+                    // Fall back to modmail for users with chats disabled.
+                    const modmail = await reddit.modMail.createConversation({
+                        subredditName: context.subredditName,
+                        subject: messageSubject,
+                        body: messageText,
+                        to: target.authorName,
+                        isAuthorHidden: true,
+                    });
+
+                    if (modmail.conversation.id) {
+                        await reddit.modMail.archiveConversation(modmail.conversation.id);
+                    }
+                }
                 console.log(`Sent private message to ${target.authorName} due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}"`);
             }
         }
 
         if (doMessages && matchedRule.rule.modmail) {
             const modmailBody = this.valueWithPlaceholdersReplaced(matchedRule.rule.modmail, target, matchedRule);
-            const modmailSubject = this.valueWithPlaceholdersReplaced(matchedRule.rule.modmail_subject, target, matchedRule) ?? "Automod Neo Notification";
+            const modmailSubject = this.valueWithPlaceholdersReplaced(matchedRule.rule.modmail_subject, target, matchedRule)
+                ?? `Notification about a ${this.targetToKindText(target)} for u/${target.authorName}`;
+
             if (modmailBody) {
                 await reddit.modMail.createModInboxConversation({
                     subredditId: context.subredditId,
                     subject: modmailSubject,
-                    bodyMarkdown: modmailBody + "\n\n" + getBotCommentFooter(),
+                    bodyMarkdown: target.permalink + "\n\n" + modmailBody,
                 });
                 console.log(`Sent modmail to subreddit ${context.subredditName} due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}"`);
             }
@@ -402,6 +461,12 @@ export class ActionRules {
     }
 
     public async actionRules () {
+        const skipRulesThatAutomodHasActedOn = await settings.get<boolean>(AppSetting.SkipRulesThatAutomodHasActedOn);
+        if (skipRulesThatAutomodHasActedOn && await hasAutomodActionBeenTaken(this.targetId)) {
+            console.log(`Skipping action rules for target ${this.targetId} because Automod has already acted on it.`);
+            return;
+        }
+
         const target = await getPostOrCommentById(this.targetId);
         if (isT3(target.id)) {
             this.posts[target.id] = target as Post;
@@ -430,6 +495,10 @@ export class ActionRules {
             }
         }
 
+        if ("postId" in target && this.matchedRules.some(ruleMatch => this.anyPlaceholdersFound(ruleMatch, ["title", "parent_submission_author"]))) {
+            await this.getPostById(target.postId);
+        }
+
         for (const matchedRule of this.matchedRules) {
             try {
                 await this.actionRule(target, matchedRule);
@@ -455,38 +524,42 @@ export class ActionRules {
                 const shouldLock = comments.some(comment => comment.shouldLock);
                 const shouldSticky = comments.some(comment => comment.shouldSticky) && isT3(targetId);
 
-                const combinedCommentText = _.compact(comments.map(comment => comment.text.trim())).join("\n\n---\n\n") + "\n\n" + getBotCommentFooter();
+                const combinedCommentText = _.compact(comments.map(comment => comment.text.trim())).join("\n\n---\n\n") + "\n\n" + getBotCommentFooter(target);
 
-                const newComment = await reddit.submitComment({
+                const newComment = await this.submitComment({
                     id: targetId,
                     text: combinedCommentText,
                 });
 
                 console.log(`Added combined comment to target ${targetId} due to rules: ${comments.map(comment => comment.ruleName).join(", ")}`);
 
-                if (shouldLock) {
+                if (newComment && shouldLock) {
                     await newComment.lock();
                     console.log(`Locked combined comment on target ${targetId}`);
                 }
 
-                await newComment.distinguish(shouldSticky);
-                console.log(`Distinguished combined comment on target ${targetId}`);
+                if (newComment) {
+                    await newComment.distinguish(shouldSticky);
+                    console.log(`Distinguished combined comment on target ${targetId}`);
+                }
             } else {
                 for (const comment of comments) {
-                    const newComment = await reddit.submitComment({
+                    const newComment = await this.submitComment({
                         id: targetId,
-                        text: comment.text + "\n\n" + getBotCommentFooter(),
+                        text: comment.text + "\n\n" + getBotCommentFooter(target),
                     });
 
                     console.log(`Added comment to target ${targetId} due to rule "${comment.ruleName}"`);
 
-                    if (comment.shouldLock) {
+                    if (newComment && comment.shouldLock) {
                         await newComment.lock();
                         console.log(`Locked comment on target ${targetId} due to rule "${comment.ruleName}"`);
                     }
 
-                    await newComment.distinguish(comment.shouldSticky);
-                    console.log(`Distinguished comment on target ${targetId} due to rule "${comment.ruleName}"`);
+                    if (newComment) {
+                        await newComment.distinguish(comment.shouldSticky);
+                        console.log(`Distinguished comment on target ${targetId} due to rule "${comment.ruleName}"`);
+                    }
                 }
             }
         }

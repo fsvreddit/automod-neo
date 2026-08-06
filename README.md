@@ -125,6 +125,21 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
+### v0.5.0
+
+* Add `~day_of_week` directive to the base item
+* Fall back to outgoing modmail if users have chats disabled when using `message` directive
+* Internal modmail notifications no longer include the "I am a bot..." footer
+* DMs to users and internal modmail notifications now include the permalink of the post/comment they relate to
+* DMs to users and replies left to posts/comments now prepopulate the message body with the permalink of the post/comment they relate to in the "message the moderators of this subreddit" link
+* Add `comment_count` check for posts
+* Better message/modmail subject defaults
+* {{title}} placeholder now works consistently with AutoModerator even for rules that react to comments
+* Add {{parent_submission_author}} placeholder for rules that act on comments
+* Add option to skip processing rules on posts or comments that AutoModerator has already acted on
+* Prevent duplicate comments from being added if a rule runs more than once on a post or comment
+* Add `is_banned` check on all `author` nodes
+
 ### v0.4.0
 
 * Reinstate support for `flair_template_id` checks on the base item author

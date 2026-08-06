@@ -12,6 +12,7 @@ This page is a full specificaiton about how Automod Neo's capabilities and behav
 * By default, only one rule with an action of `remove`, `spam` or `filter` will run on a given post or comment. However multiple rules without these actions can run on a given post or comment. This can be changed using the `stop_on_match` directive.
 * By default, if two or more Automod Neo rules match against a post or comment that add comments in reply, one comment will be left containing the text defined in all matching rules.
 * AutoMod Neo will never act against posts or comments made by itself, AutoModerator, or the *subreddit*-ModTeam user, even when `moderators_exempt` is false.
+* AutoMod Neo can be configured to ignore posts or comments that AutoModerator has filtered or removed, this is disabled by default but can be configured in app settings.
 
 ## Syntax
 
@@ -88,9 +89,9 @@ The following checks/actions are only available in the top level of a rule, and 
 * `comment_locked` - true/false - if set to true, the comment Automod Neo posts in response to an item will be locked from further comment replies.
 * `comment_stickied` - true/false - if set to true, the comment Automod Neo posts in response to an item will be stickied to the top of the submission (will have no effect on non-submissions, as the comment must be top-level)
 * `modmail` - Text of a modmail to send to the moderators when an item satisfies the rule's conditions. Supports placeholders.
-* `modmail_subject` - If a modmail is sent, the subject of that modmail. Defaults to "Automod Neo notification" if not set. Supports placeholders.
+* `modmail_subject` - If a modmail is sent, the subject of that modmail. Defaults to "Notification about a {{kind}} for u/{{author}}" if not set. Supports placeholders.
 * `message` - Text of a message to send to the author of an item that satisfies the rule's conditions. Supports placeholders.
-* `message_subject` - If a message is sent, the subject of that message. Defaults to "Automod Neo notification" if not set. Supports placeholders.
+* `message_subject` - If a message is sent, the subject of that message. Defaults to "A message about your {{kind}} on {{subreddit}}" if not set. Supports placeholders.
 * `discord_alert` - Text of a message to send to a pre-configured Discord or Slack webhook. Supports placeholders.
 
 ## Sub-groups
@@ -246,6 +247,16 @@ type: submission
 day_of_week: weekday
 ```
 
+Likewise, `~day_of_week` can be used to check that the post or comment was *not* made on a given day e.g.
+
+```yaml
+type: submission
+domain: [i.redd.it, i.imgur.com]
+~day_of_week: saturday
+action: remove
+comment: "Image posts are only allowed on Saturdays"
+```
+
 ### For submissions only (base item or parent_submission sub-group)
 
 * `is_nsfw` - true/false - triggers only if the post's NSFW flag matches
@@ -254,6 +265,7 @@ day_of_week: weekday
 discussion_type - chat/null - if set to chat, then it will apply to chat posts. if set to null it will apply to comment posts. if this is not specified it will apply to both
 * `past_archive_date` - true/false - if set to true, submissions will only trigger the rule if they are older than the archival date of 6 months. See this post for details.
 * `poll_option_count` - The number of options a poll post has in the form `poll_option_count: 3` (to match the exact number), `poll_option_count: '> 2'` (for a comparison)
+* `comment_count` - the number of comments a post has. Most useful on `parent_submission` but can also be used on the base item. E.g. `comment_count: "> 100"`
 
 ### For comments (base item only)
 
@@ -301,6 +313,7 @@ The supported threshold checks are:
 * `is_submitter` - true/false - (only relevant when checking comments) If true, will only match if the author was also the submitter of the post being commented inside. If false, will only match if they were not.
 * `is_contributor` - true/false - if true, will only match if the author is a contributor/"approved submitter" in the subreddit. If false, will only match if they are not.
 * `is_moderator` - true/false - if true, will only match if the author is a moderator of the subreddit. If false, will only match if the author is NOT a moderator of the subreddit.
+* `is_banned` - true/false - if true, this will only match if the user is banned on the subreddit. If false, will only match if the author is not banned on the subreddit.
 
 ## Actions
 
@@ -344,6 +357,7 @@ When used inside a string that supports placeholders, these will be replaced wit
 * `{{subreddit}}` - the subreddit's name (do /r/{{subreddit}} for a link to the subreddit)
 * `{{kind}}` - replaced with "submission" for submissions or "comment" for comments
 * `{{title}}` - the submission's title
+* `{{parent_submission_author}}` - the author of the parent submission (for rules that act on comments)
 * `{{domain}}` - the submission's domain
 * `{{url}}` - the submission's full url
 

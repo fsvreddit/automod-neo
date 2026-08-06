@@ -1,10 +1,10 @@
-import { context, reddit, redis } from "@devvit/web/server";
+import { Comment, context, Post, reddit, redis } from "@devvit/web/server";
 import { addWeeks } from "date-fns";
 import { AutomodRule } from "./types";
 import { getWebhookPayload, parseWebhookUrl } from "./webhookUtils";
 
-export function getBotCommentFooter (): string {
-    return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/${context.subredditName}) if you have any questions or concerns.*`;
+export function getBotCommentFooter (target: Post | Comment): string {
+    return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/${context.subredditName}&message=Regarding%20${encodeURIComponent(target.permalink)}) if you have any questions or concerns.*`;
 }
 
 function getApprovedUserCacheKey (username: string): string {
@@ -129,4 +129,31 @@ export function isUserIgnoredForTriggers (username: string): boolean {
 
 export function isRemovalRule (rule: AutomodRule): boolean {
     return rule.action === "remove" || rule.action === "spam" || rule.action === "filter";
+}
+
+function getUserBannedKey (username: string): string {
+    return `isUserBanned:${username}`;
+}
+
+export async function isUserBanned (username: string): Promise<boolean> {
+    const cacheKey = getUserBannedKey(username);
+    const cachedValue = await redis.get(cacheKey);
+
+    if (cachedValue !== undefined) {
+        return JSON.parse(cachedValue) as boolean;
+    }
+
+    const bans = await reddit.getBannedUsers({
+        subredditName: context.subredditName,
+        username,
+    }).all();
+
+    const isUserBanned = bans.length > 0;
+    await redis.set(cacheKey, JSON.stringify(isUserBanned), { expiration: addWeeks(new Date(), 4) });
+
+    return isUserBanned;
+}
+
+export async function clearUserBanCache (username: string): Promise<void> {
+    await redis.del(getUserBannedKey(username));
 }

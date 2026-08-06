@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import _ from "lodash";
 import { AutomodRule, SearchField, SearchMethod, SearchOption, SearchableText } from "../types";
 import { parseAllDocuments } from "yaml";
@@ -580,6 +579,14 @@ function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleRe
     if (node.poll_option_count !== undefined) {
         validateNumericThresholdFormatInNode(node, ruleReference, ["poll_option_count"]);
     }
+
+    if (node.comment_count !== undefined) {
+        validateNumericThresholdFormatInNode(node, ruleReference, ["comment_count"]);
+    }
+
+    if (node.age !== undefined) {
+        validateDateThresholdFormatInNode(node, ruleReference, ["age"]);
+    }
 }
 
 export function validateRuleRegexPatterns (rule: MutableNode, ruleReference: string): void {
@@ -599,6 +606,14 @@ export function preprocessRule (rule: MutableNode): void {
 
         if (rule.day_of_week && Array.isArray(rule.day_of_week) && rule.day_of_week.every(day => typeof day === "string")) {
             rule.day_of_week = rule.day_of_week.map(day => day.toLowerCase());
+        }
+    }
+
+    if (rule["~day_of_week"]) {
+        rule["~day_of_week"] = toStringArray(rule["~day_of_week"]);
+
+        if (rule["~day_of_week"] && Array.isArray(rule["~day_of_week"]) && rule["~day_of_week"].every(day => typeof day === "string")) {
+            rule["~day_of_week"] = rule["~day_of_week"].map(day => day.toLowerCase());
         }
     }
 

@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { parseRules } from "./parseRules";
@@ -637,6 +636,7 @@ media_title: ['first title', 'second title']
 type: comment
 author:
   is_moderator: true
+  is_banned: false
 moderators_exempt: false
 is_top_level: true
 is_edited: False
@@ -656,6 +656,7 @@ parent_submission:
                 type: "comment",
                 author: {
                     is_moderator: true,
+                    is_banned: false,
                 },
                 moderators_exempt: false,
                 is_top_level: true,
@@ -993,6 +994,179 @@ body: "log this"
                 ],
             },
         ]);
+    });
+
+    it("passes through ~day_of_week when provided as a single value", () => {
+        const rules = `
+---
+~day_of_week: WeekDay
+body: "quiet hours"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                "~day_of_week": ["weekday"],
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["quiet hours"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("passes through ~day_of_week when provided as an array", () => {
+        const rules = `
+---
+~day_of_week: [Saturday, SuNday]
+body: "weekend only"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                "~day_of_week": ["saturday", "sunday"],
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["weekend only"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves age and comment_count on submission rules", () => {
+        const rules = `
+---
+type: submission
+age: "> 2 weeks"
+comment_count: "> 10"
+body: "engagement check"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "submission",
+                age: "> 2 weeks",
+                comment_count: "> 10",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["engagement check"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves parent_submission age and comment_count on comment rules", () => {
+        const rules = `
+---
+type: comment
+body: "parent check"
+parent_submission:
+  age: "< 30 days"
+  comment_count: "<= 200"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["parent check"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                parent_submission: {
+                    age: "< 30 days",
+                    comment_count: "<= 200",
+                },
+            },
+        ]);
+    });
+
+    it("throws when age has an invalid format on submission rules", () => {
+        const rules = `
+---
+type: submission
+age: "sometime soon"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 1: Invalid date threshold format for attribute 'age'/,
+        );
+    });
+
+    it("throws when comment_count has an invalid format on submission rules", () => {
+        const rules = `
+---
+type: submission
+comment_count: "ten"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 1: Invalid numeric threshold format for attribute 'comment_count'/,
+        );
+    });
+
+    it("throws when parent_submission.age has an invalid format on comment rules", () => {
+        const rules = `
+---
+type: comment
+parent_submission:
+  age: "yesterdayish"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 1: Invalid date threshold format for attribute 'age'/,
+        );
+    });
+
+    it("throws when parent_submission.comment_count has an invalid format on comment rules", () => {
+        const rules = `
+---
+type: comment
+parent_submission:
+  comment_count: "many"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Rule 1: Invalid numeric threshold format for attribute 'comment_count'/,
+        );
     });
 
     it("preserves poll_option_count when provided as a number", () => {

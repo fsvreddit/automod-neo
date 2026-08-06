@@ -41,6 +41,7 @@ export interface Author {
     is_submitter?: boolean;
     is_contributor?: boolean;
     is_moderator?: boolean;
+    is_banned?: boolean;
 
     set_flair?: string | string[] | SetFlairActionDictionary;
     overwrite_flair?: boolean;
@@ -78,6 +79,7 @@ export interface PostOrCommentCondition {
     past_archive_date?: boolean;
     is_top_level?: boolean; // Comments only
     comment_crowd_control_collapsed?: boolean; // Comments only
+    comment_count?: string; // Posts only
 
     // Author checks
     author?: Author;
@@ -117,6 +119,7 @@ export type AutomodRule = PostOrCommentCondition & CommentAction & {
     type?: "comment" | "submission" | "text submission" | "link submission" | "crosspost submission" | "poll submission" | "gallery submission" | "any";
     priority?: number;
     day_of_week?: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | "weekday" | "weekend")[];
+    "~day_of_week"?: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | "weekday" | "weekend")[];
     moderators_exempt?: boolean;
     comment?: string;
     comment_locked?: boolean;
