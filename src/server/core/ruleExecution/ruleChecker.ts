@@ -1,6 +1,6 @@
 import { Comment, context, Post, reddit, settings, User, UserSocialLink } from "@devvit/web/server";
 import { CommentV2, isT3, T1, T3 } from "@devvit/web/shared";
-import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, SearchableText } from "../types";
+import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, RedditData, SearchableText } from "../types";
 import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW, isUserBanned } from "../helpers";
 import { meetsDateThreshold, meetsNumericThreshold } from "./thresholdChecks";
 import { subMonths } from "date-fns";
@@ -154,6 +154,14 @@ export class AutomodRuleChecker {
         }
 
         return this.comments[commentId];
+    }
+
+    public getRedditData (): RedditData {
+        return {
+            posts: this.posts,
+            comments: this.comments,
+            users: this.users,
+        };
     }
 
     private log (message: string, checkContext?: string): void {

@@ -48,7 +48,12 @@ export const handleCommentSubmit = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "comment submit handled, trigger already handled" }, 200);
     }
 
-    const actionRules = new ActionRules({ targetId: request.comment.id as T1, matchedRules: results });
+    const actionRules = new ActionRules({
+        targetId: request.comment.id as T1,
+        matchedRules: results,
+        redditData: ruleChecker.getRedditData(),
+    });
+
     await actionRules.actionRules();
 
     console.log(`Comment submit handled in ${Date.now() - now}ms for comment ${request.comment.id} with ${results.length} ${pluralize("rule", results.length)} matched.`);

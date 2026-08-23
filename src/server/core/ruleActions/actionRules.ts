@@ -1,6 +1,6 @@
 import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings, User } from "@devvit/web/server";
 import { isT1, isT3, T1, T3 } from "@devvit/web/shared";
-import { AutomodMatch, AutomodRule, CommentToAdd, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
+import { AutomodMatch, AutomodRule, CommentToAdd, PostOrCommentCondition, RedditData, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../helpers";
 import { AppSetting } from "../appSettings";
@@ -59,12 +59,14 @@ export class ActionRules {
     constructor (opts: {
         targetId: T1 | T3;
         matchedRules: AutomodMatch[];
-        user?: User;
+        redditData?: RedditData;
     }) {
         this.targetId = opts.targetId;
         this.matchedRules = opts.matchedRules;
-        if (opts.user) {
-            this.users[opts.user.username] = opts.user;
+        if (opts.redditData) {
+            this.posts = opts.redditData.posts;
+            this.users = opts.redditData.users;
+            this.comments = opts.redditData.comments;
         }
     }
 

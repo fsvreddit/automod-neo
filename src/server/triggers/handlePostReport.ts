@@ -34,10 +34,13 @@ export const handlePostReport = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "post report handled, trigger already handled" }, 200);
     }
 
+    const redditData = ruleChecker.getRedditData();
+    redditData.users[postAuthor.username] ??= postAuthor;
+
     const actionRules = new ActionRules({
         targetId: request.post.id as T3,
         matchedRules: results,
-        user: postAuthor,
+        redditData,
     });
 
     await actionRules.actionRules();

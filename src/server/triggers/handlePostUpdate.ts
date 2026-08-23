@@ -49,7 +49,12 @@ export const handlePostUpdate = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "post update handled, trigger already handled" }, 200);
     }
 
-    const actionRules = new ActionRules({ targetId: request.post.id as T3, matchedRules: results });
+    const actionRules = new ActionRules({
+        targetId: request.post.id as T3,
+        matchedRules: results,
+        redditData: ruleChecker.getRedditData(),
+    });
+
     await actionRules.actionRules();
 
     console.log(`Post update handled in ${Date.now() - now}ms for post ${request.post.id} with ${results.length} ${pluralize("rule", results.length)} matched.`);

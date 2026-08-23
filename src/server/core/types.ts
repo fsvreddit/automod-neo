@@ -1,3 +1,5 @@
+import { Comment, Post, User } from "@devvit/web/server";
+
 export type SearchMethod = "includes-word" | "includes" | "starts-with" | "ends-with" | "domain" | "full-exact" | "full-text" | "regex";
 
 export interface SearchOption {
@@ -147,4 +149,10 @@ export interface CommentToAdd {
     text: string;
     shouldLock: boolean;
     shouldSticky: boolean;
+}
+
+export interface RedditData {
+    posts: Record<string, Post>;
+    comments: Record<string, Comment>;
+    users: Record<string, User>;
 }
