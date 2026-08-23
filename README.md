@@ -125,6 +125,10 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
+### v0.6.0
+
+* Add `is_approved` check on posts, comments and parent submissions
+
 ### v0.5.0
 
 * Add `~day_of_week` directive to the base item

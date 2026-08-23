@@ -229,6 +229,7 @@ Other checks that can be used that are not search checks, so do not take a value
 ### For all submissions and comments
 
 * `reports` - must be set to a number. The minimum number of reports the submission must have to trigger the rule.
+* `is_approved` - `true` or `false`. Whether the post or comment has been approved or not.
 * `body_longer_than` - must be set to a number. The submission's body must be longer than this number of characters to trigger the rule (spacing and punctuation characters on either end are not counted). This will always be checked for text posts, and checked for other post types only when text is present.
 * `body_shorter_than` - must be set to a number. The submission's body must be shorter than this number of characters to trigger the rule (spacing and punctuation characters on either end are not counted). This will always be checked for text posts, and checked for other post types only when text is present.
 * `is_edited` - true/false - if set to true, submissions will only trigger the rule if they have been edited. if set to false, submissions will only trigger the rule if they have NOT been edited (so new submissions will be checked against the rule, but they will not be re-checked on edit).
