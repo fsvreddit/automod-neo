@@ -139,6 +139,13 @@ describe("searchTextMatches", () => {
             );
         });
 
+        it("matches whole words with punctuation", () => {
+            assert.deepEqual(
+                searchTextMatches("You've broken a rule.\n\n!lock", "!lock", makeOptions("includes-word")),
+                ["!lock"],
+            );
+        });
+
         it("does not match partial words", () => {
             assert.equal(
                 searchTextMatches("The quick brown fox", "qui", makeOptions("includes-word")),

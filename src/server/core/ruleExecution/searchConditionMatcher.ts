@@ -79,7 +79,7 @@ export function searchTextMatches (input: string, textToMatch: string, options: 
     }
 
     if (options.search_method === "includes-word") {
-        const regex = new RegExp("\\b" + escapeStringRegexp(textToMatch) + "\\b", options.case_sensitive ? "" : "i");
+        const regex = new RegExp("(?:^|[^A-Za-z0-9_])" + escapeStringRegexp(textToMatch) + "(?:$|[^A-Za-z0-9_])", options.case_sensitive ? "" : "i");
         if (regex.test(input)) {
             return [textToMatch];
         } else {
