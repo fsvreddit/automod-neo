@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { SearchMethod, SearchOption, SearchableText } from "../types.js";
+import { SearchMethod, SearchOption, SearchableText } from "..";
 import { searchConditionsMatchInput, searchTextMatches } from "./searchConditionMatcher.js";
 
 function makeOptions (search_method: SearchMethod, overrides: Partial<Omit<SearchOption, "search_method">> = {}): SearchOption {

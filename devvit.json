@@ -40,6 +40,9 @@
             },
             "cacheRules": {
                 "endpoint": "/internal/tasks/cache-rules"
+            },
+            "processCommentQueue": {
+                "endpoint": "/internal/tasks/process-comment-queue"
             }
         }
     },

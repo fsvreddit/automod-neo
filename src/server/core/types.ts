@@ -141,3 +141,10 @@ export interface AutomodMatch {
     rule: AutomodRule;
     matches: Matches[];
 }
+
+export interface CommentToAdd {
+    ruleName: string;
+    text: string;
+    shouldLock: boolean;
+    shouldSticky: boolean;
+}

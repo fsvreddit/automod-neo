@@ -1,13 +1,12 @@
-import { Comment, context, Post, PostSuggestedCommentSort, reddit, redis, settings, User } from "@devvit/web/server";
+import { Comment, context, Post, PostSuggestedCommentSort, reddit, settings, User } from "@devvit/web/server";
 import { isT1, isT3, T1, T3 } from "@devvit/web/shared";
-import { AutomodMatch, AutomodRule, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
+import { AutomodMatch, AutomodRule, CommentToAdd, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../helpers";
 import { AppSetting } from "../appSettings";
 import markdownEscape from "markdown-escape";
-import _ from "lodash";
 import { hasAutomodActionBeenTaken } from "../automodActions";
-import { addMonths } from "date-fns";
+import { queueComments } from "..";
 
 interface AdditionalPlaceholders {
     author_flair_text?: string;
@@ -15,13 +14,6 @@ interface AdditionalPlaceholders {
     media_author?: string;
     media_author_url?: string;
     media_title?: string;
-}
-
-interface CommentToAdd {
-    ruleName: string;
-    text: string;
-    shouldLock: boolean;
-    shouldSticky: boolean;
 }
 
 export class ActionRules {
@@ -81,30 +73,6 @@ export class ActionRules {
             return "submission";
         } else {
             return "comment";
-        }
-    }
-
-    private async submitComment (opts: {
-        id: T1 | T3;
-        text: string;
-    }): Promise<Comment | undefined> {
-        const commentSubmittedKey = `commentSubmitted:${opts.id}`;
-        const commentAlreadySubmitted = await redis.get(commentSubmittedKey);
-        const parsedComments = JSON.parse(commentAlreadySubmitted ?? "[]") as string[];
-        if (parsedComments.includes(opts.text)) {
-            console.log(`Skipping comment submission for target ${opts.id} because the same comment has already been submitted.`);
-            return;
-        }
-
-        try {
-            const newComment = await reddit.submitComment(opts);
-            parsedComments.push(opts.text);
-            await redis.set(commentSubmittedKey, JSON.stringify(parsedComments), { expiration: addMonths(new Date(), 1) });
-            return newComment;
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            console.error(`Failed to submit comment for target ${opts.id}:`, message);
-            return;
         }
     }
 
@@ -531,56 +499,6 @@ export class ActionRules {
             return;
         }
 
-        const combineComments = await settings.get<boolean>(AppSetting.CombineComments);
-
-        for (const targetId of Object.keys(this.commentsToAdd) as (T1 | T3)[]) {
-            const comments = this.commentsToAdd[targetId];
-            if (!comments || comments.length === 0) {
-                continue;
-            }
-
-            if (combineComments) {
-                const shouldLock = comments.some(comment => comment.shouldLock);
-                const shouldSticky = comments.some(comment => comment.shouldSticky) && isT3(targetId);
-
-                const combinedCommentText = _.compact(comments.map(comment => comment.text.trim())).join("\n\n---\n\n") + "\n\n" + getBotCommentFooter(target);
-
-                const newComment = await this.submitComment({
-                    id: targetId,
-                    text: combinedCommentText,
-                });
-
-                console.log(`Added combined comment to target ${targetId} due to rules: ${comments.map(comment => comment.ruleName).join(", ")}`);
-
-                if (newComment && shouldLock) {
-                    await newComment.lock();
-                    console.log(`Locked combined comment on target ${targetId}`);
-                }
-
-                if (newComment) {
-                    await newComment.distinguish(shouldSticky);
-                    console.log(`Distinguished combined comment on target ${targetId}`);
-                }
-            } else {
-                for (const comment of comments) {
-                    const newComment = await this.submitComment({
-                        id: targetId,
-                        text: comment.text + "\n\n" + getBotCommentFooter(target),
-                    });
-
-                    console.log(`Added comment to target ${targetId} due to rule "${comment.ruleName}"`);
-
-                    if (newComment && comment.shouldLock) {
-                        await newComment.lock();
-                        console.log(`Locked comment on target ${targetId} due to rule "${comment.ruleName}"`);
-                    }
-
-                    if (newComment) {
-                        await newComment.distinguish(comment.shouldSticky);
-                        console.log(`Distinguished comment on target ${targetId} due to rule "${comment.ruleName}"`);
-                    }
-                }
-            }
-        }
+        await queueComments(this.commentsToAdd);
     }
 }

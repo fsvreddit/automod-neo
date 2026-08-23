@@ -4,7 +4,7 @@ import { getRequestListener } from "@hono/node-server";
 import { handleAppInstall, handleAppUpgrade, handleCommentReport, handleCommentSubmit, handleCommentUpdate, handleModAction, handlePostReport, handlePostSubmit, handlePostUpdate } from "./triggers";
 import { validateAutomodSetting, validateDiscordOrSlackWebhook, validateTimeZone } from "./validators";
 import { handleUpgradeNotifier } from "@fsvreddit/fsv-devvit-web-helpers";
-import { handleCacheRules } from "./tasks";
+import { handleCacheRules, handleProcessCommentQueue } from "./tasks";
 
 const application = new Hono();
 
@@ -27,6 +27,7 @@ application.post("/internal/validators/validate-time-zone", validateTimeZone);
 // Scheduler jobs
 application.post("/internal/tasks/check-for-updates", handleUpgradeNotifier);
 application.post("/internal/tasks/cache-rules", handleCacheRules);
+application.post("/internal/tasks/process-comment-queue", handleProcessCommentQueue);
 
 const server = createServer(getRequestListener(application.fetch));
 server.on("error", (err) => {
