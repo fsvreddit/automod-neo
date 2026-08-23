@@ -457,6 +457,13 @@ export class AutomodRuleChecker {
             }
         }
 
+        if (rule.is_approved !== undefined) {
+            if (post.approved !== rule.is_approved) {
+                this.log(`Post ${post.id} does not match is_approved condition (${rule.is_approved}).`, checkContext);
+                return;
+            }
+        }
+
         const isCrossPost = post.crosspostParentId !== undefined;
         let postBody: string | undefined;
         if (isCrossPost) {
@@ -794,6 +801,14 @@ export class AutomodRuleChecker {
                 const fullCommentObject = await this.getCommentById(comment.id as T1);
                 if (fullCommentObject.edited !== rule.is_edited) {
                     this.log(`Comment ${comment.id} does not match is_edited condition (${rule.is_edited}).`);
+                    continue;
+                }
+            }
+
+            if (rule.is_approved !== undefined) {
+                const fullCommentObject = await this.getCommentById(comment.id as T1);
+                if (fullCommentObject.approved !== rule.is_approved) {
+                    this.log(`Comment ${comment.id} does not match is_approved condition (${rule.is_approved}).`);
                     continue;
                 }
             }

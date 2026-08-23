@@ -1249,4 +1249,104 @@ body: "poll"
             },
         ]);
     });
+
+    it("preserves is_approved for post conditions when provided", () => {
+        const rules = `
+---
+is_approved: true
+body: "approved post"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                is_approved: true,
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["approved post"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves is_approved for comment conditions when provided", () => {
+        const rules = `
+---
+type: comment
+is_approved: false
+body: "unapproved comment"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                is_approved: false,
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["unapproved comment"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves is_approved for parent_submission conditions when provided", () => {
+        const rules = `
+---
+type: comment
+parent_submission:
+  is_approved: true
+  body: "approved parent"
+body: "child comment"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["child comment"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                parent_submission: {
+                    is_approved: true,
+                    search_conditions: [
+                        {
+                            searchField: ["body"],
+                            text: ["approved parent"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
+    });
 });

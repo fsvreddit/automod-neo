@@ -68,6 +68,7 @@ export interface PostOrCommentCondition {
 
     // Non-searching checks
     reports?: number;
+    is_approved?: boolean;
     body_longer_than?: number;
     body_shorter_than?: number;
     is_nsfw?: boolean; // Posts only
