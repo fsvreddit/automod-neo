@@ -1,6 +1,6 @@
 import { Comment, context, Post, PostSuggestedCommentSort, reddit, redis, settings, User } from "@devvit/web/server";
-import { isT3, T1, T3 } from "@devvit/web/shared";
-import { AutomodMatch, AutomodRule, CommentAction, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
+import { isT1, isT3, T1, T3 } from "@devvit/web/shared";
+import { AutomodMatch, AutomodRule, PostOrCommentCondition, SetFlairActionDictionary } from "../types";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../helpers";
 import { AppSetting } from "../appSettings";
@@ -50,6 +50,13 @@ export class ActionRules {
     private async getPostById (postId: T3): Promise<Post> {
         this.posts[postId] ??= await reddit.getPostById(postId);
         return this.posts[postId];
+    }
+
+    private comments: Record<string, Comment> = {};
+
+    private async getCommentById (commentId: T1): Promise<Comment> {
+        this.comments[commentId] ??= await reddit.getCommentById(commentId);
+        return this.comments[commentId];
     }
 
     private addCommentToAdd (targetId: T1 | T3, comment: CommentToAdd) {
@@ -173,7 +180,28 @@ export class ActionRules {
         }
     }
 
-    private async doTopLevelAction (target: Post | Comment, action: PostOrCommentCondition | CommentAction, automodMatch: AutomodMatch) {
+    private async doPostOrCommentAction (target: Post | Comment, automodMatch: AutomodMatch) {
+        const action = automodMatch.rule;
+
+        if (action.comment) {
+            const commentBody = this.valueWithPlaceholdersReplaced(action.comment, target, automodMatch);
+            this.addCommentToAdd(target.id, {
+                ruleName: action.friendly_name ?? "Unnamed rule",
+                text: commentBody ?? "",
+                shouldLock: action.comment_locked ?? false,
+                shouldSticky: (action.comment_stickied && isT3(target.id)) ?? false,
+            });
+        }
+
+        if (action.set_locked !== undefined) {
+            if (action.set_locked) {
+                await target.lock();
+            } else {
+                await target.unlock();
+            }
+            console.log(`Set lock state for target ${target.id} to ${action.set_locked} due to rule "${action.friendly_name ?? "Unnamed rule"}"`);
+        }
+
         if (!action.action) {
             return;
         }
@@ -224,17 +252,7 @@ export class ActionRules {
     private async actionRule (target: Post | Comment, matchedRule: AutomodMatch, doMessages = true): Promise<void> {
         console.log(`Applying actions on ${isT3(target.id) ? "post" : "comment"} ${target.id}`);
 
-        await this.doTopLevelAction(target, matchedRule.rule, matchedRule);
-
-        if (matchedRule.rule.comment) {
-            const commentBody = this.valueWithPlaceholdersReplaced(matchedRule.rule.comment, target, matchedRule);
-            this.addCommentToAdd(target.id, {
-                ruleName: matchedRule.rule.friendly_name ?? "Unnamed rule",
-                text: commentBody ?? "",
-                shouldLock: matchedRule.rule.comment_locked ?? false,
-                shouldSticky: (matchedRule.rule.comment_stickied && isT3(target.id)) ?? false,
-            });
-        }
+        await this.doPostOrCommentAction(target, matchedRule);
 
         if (matchedRule.rule.author?.set_flair) {
             const user = await this.getUserByUsername(target.authorName);
@@ -253,12 +271,32 @@ export class ActionRules {
         }
 
         if (matchedRule.rule.parent_submission && "postId" in target) {
-            const parentSubmissionRules = matchedRule.rule.parent_submission;
-            if (parentSubmissionRules.action || parentSubmissionRules.set_flair || parentSubmissionRules.set_sticky || parentSubmissionRules.set_nsfw || parentSubmissionRules.set_spoiler || parentSubmissionRules.set_suggested_sort || parentSubmissionRules.set_post_crowd_control_level || parentSubmissionRules.set_locked !== undefined) {
-                const parentPost = await this.getPostById(target.postId);
-                await this.doTopLevelAction(parentPost, parentSubmissionRules, matchedRule);
-                await this.actionRulesForPost(parentPost, matchedRule.rule.parent_submission, matchedRule, true);
-            }
+            const parentPost = await this.getPostById(target.postId);
+
+            const matchItem = {
+                rule: {
+                    ...matchedRule.rule.parent_submission,
+                    friendly_name: matchedRule.rule.friendly_name,
+                },
+                matches: matchedRule.matches,
+            } satisfies AutomodMatch;
+
+            await this.doPostOrCommentAction(parentPost, matchItem);
+            await this.actionRulesForPost(parentPost, matchedRule.rule.parent_submission, matchedRule);
+        }
+
+        if (matchedRule.rule.parent_comment && "parentId" in target && isT1(target.parentId)) {
+            const parentComment = await this.getCommentById(target.parentId);
+
+            const matchItem = {
+                rule: {
+                    ...matchedRule.rule.parent_comment,
+                    friendly_name: matchedRule.rule.friendly_name,
+                },
+                matches: matchedRule.matches,
+            } satisfies AutomodMatch;
+
+            await this.doPostOrCommentAction(parentComment, matchItem);
         }
 
         if (doMessages && matchedRule.rule.message) {
@@ -322,34 +360,15 @@ export class ActionRules {
             }
         }
 
-        if (matchedRule.rule.set_locked !== undefined) {
-            if (matchedRule.rule.set_locked) {
-                await target.lock();
-            } else {
-                await target.unlock();
-            }
-            console.log(`Set lock state for target ${target.id} to ${matchedRule.rule.set_locked} due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}"`);
-        }
-
         if (!("title" in target)) {
             return;
         }
 
         // Post only actions from this point.
-        await this.actionRulesForPost(target, matchedRule.rule, matchedRule, false);
+        await this.actionRulesForPost(target, matchedRule.rule, matchedRule);
     }
 
-    private async actionRulesForPost (post: Post, actions: PostOrCommentCondition, automodMatch: AutomodMatch, includeLockAction: boolean): Promise<void> {
-        if (includeLockAction && actions.set_locked !== undefined) {
-            if (actions.set_locked) {
-                await post.lock();
-                console.log(`Set lock for post ${post.id} due to rule "${automodMatch.rule.friendly_name ?? "Unnamed rule"}"`);
-            } else {
-                await post.unlock();
-                console.log(`Unset lock for post ${post.id} due to rule "${automodMatch.rule.friendly_name ?? "Unnamed rule"}"`);
-            }
-        }
-
+    private async actionRulesForPost (post: Post, actions: PostOrCommentCondition, automodMatch: AutomodMatch): Promise<void> {
         if (actions.set_flair) {
             if (!post.flair || actions.overwrite_flair) {
                 const flairOptions = this.getFlairOptions(actions.set_flair, post, automodMatch);

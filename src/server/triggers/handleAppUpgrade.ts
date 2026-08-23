@@ -16,5 +16,7 @@ export const handleAppUpgrade = async (c: Context) => {
         runAt: addSeconds(new Date(), 10),
     });
 
+    console.log(`Automod Neo updated to version ${context.appVersion}.`);
+
     return c.json<TriggerResponse>({ message: "app upgrade handled" }, 200);
 };

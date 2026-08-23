@@ -52,12 +52,6 @@ export interface Subreddit {
     is_nsfw?: boolean;
 }
 
-export interface CommentAction {
-    action?: "approve" | "remove" | "report" | "spam" | "filter";
-    action_reason?: string;
-    report_reason?: string;
-}
-
 export type StandardCondition = "image hosting sites" | "direct image links" | "video hosting sites" | "streaming sites" | "crowdfunding sites" | "meme generator sites" | "facebook links" | "amazon affiliate links";
 
 export interface PostOrCommentCondition {
@@ -93,13 +87,17 @@ export interface PostOrCommentCondition {
     crosspost_author?: Author;
     crosspost_subreddit?: Subreddit;
 
-    // Post-specific media checks
+    // Comment-specific checks
     parent_submission?: PostOrCommentCondition; // Comments only
+    parent_comment?: PostOrCommentCondition; // Comments only
 
     // Actions
     action?: "approve" | "remove" | "report" | "spam" | "filter";
     action_reason?: string;
     report_reason?: string;
+    comment?: string;
+    comment_locked?: boolean;
+    comment_stickied?: boolean;
     set_flair?: string | string[] | SetFlairActionDictionary;
     overwrite_flair?: boolean;
     set_sticky?: boolean | 1 | 2 | 3 | 4;
@@ -112,7 +110,7 @@ export interface PostOrCommentCondition {
     set_post_crowd_control_level?: "OFF" | "LENIENT" | "MEDIUM" | "STRICT";
 }
 
-export type AutomodRule = PostOrCommentCondition & CommentAction & {
+export type AutomodRule = PostOrCommentCondition & {
     friendly_name?: string;
     verbose_logs?: boolean;
 
@@ -122,9 +120,8 @@ export type AutomodRule = PostOrCommentCondition & CommentAction & {
     day_of_week?: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | "weekday" | "weekend")[];
     "~day_of_week"?: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | "weekday" | "weekend")[];
     moderators_exempt?: boolean;
-    comment?: string;
-    comment_locked?: boolean;
-    comment_stickied?: boolean;
+
+    // Actions
     modmail?: string;
     modmail_subject?: string;
     message?: string;

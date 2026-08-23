@@ -683,16 +683,125 @@ export class AutomodRuleChecker {
         return matches;
     }
 
-    public async checkComment (comment: CommentV2, authorName: string): Promise<AutomodMatch[]> {
+    async checkCommentAgainstCondition (comment: CommentV2 | Comment, condition: PostOrCommentCondition, authorName: string, checkContext?: string): Promise<Matches[] | undefined> {
+        const matches: Matches[] = [];
+
+        const commentBody = condition.ignore_blockquotes ? this.getTextWithoutBlockquotes(comment.body) : comment.body;
+
+        if (condition.reports !== undefined) {
+            if (comment.numReports < condition.reports) {
+                this.log(`Comment ${comment.id} does not match reports condition (${condition.reports}).`, checkContext);
+                return;
+            }
+        }
+
+        if (condition.body_shorter_than !== undefined) {
+            if (commentBody.length >= condition.body_shorter_than) {
+                this.log(`Comment ${comment.id} does not match body_shorter_than condition (${condition.body_shorter_than}).`, checkContext);
+                return;
+            }
+        }
+
+        if (condition.body_longer_than !== undefined) {
+            if (commentBody.length <= condition.body_longer_than) {
+                this.log(`Comment ${comment.id} does not match body_longer_than condition (${condition.body_longer_than}).`, checkContext);
+                return;
+            }
+        }
+
+        if (condition.is_top_level !== undefined) {
+            const isTopLevel = isT3(comment.parentId);
+            if (isTopLevel !== condition.is_top_level) {
+                this.log(`Comment ${comment.id} does not match is_top_level condition (${condition.is_top_level}).`, checkContext);
+                return;
+            }
+        }
+
+        if (condition.past_archive_date !== undefined) {
+            const parentSubmission = await this.getPostById(comment.postId as T3);
+            const isPastArchiveDate = parentSubmission.createdAt < subMonths(new Date(), 6);
+            if (isPastArchiveDate !== condition.past_archive_date) {
+                this.log(`Comment ${comment.id} does not match past_archive_date condition (${condition.past_archive_date}).`, checkContext);
+                return;
+            }
+        }
+
+        if (condition.comment_crowd_control_collapsed !== undefined) {
+            if (comment.collapsedBecauseCrowdControl !== condition.comment_crowd_control_collapsed) {
+                this.log(`Comment ${comment.id} does not match comment_crowd_control_collapsed condition (${condition.comment_crowd_control_collapsed}).`, checkContext);
+                return;
+            }
+        }
+
+        if (condition.age !== undefined) {
+            const meetsThreshold = meetsDateThreshold(comment.createdAt, condition.age);
+            if (!meetsThreshold) {
+                this.log(`Post ${comment.id} does not match age condition (${condition.age}).`, checkContext);
+                return;
+            }
+        }
+
+        // Search conditions
+        const searchFields: Record<string, string | string[]> = {
+            id: comment.id,
+            body: commentBody,
+        };
+
+        const searchMatches = searchConditionsMatchInput(searchFields, condition.search_conditions ?? []);
+        if (!searchMatches) {
+            this.log(`Comment ${comment.id} does not match search conditions.`, checkContext);
+            return;
+        }
+        matches.push(...searchMatches);
+
+        if (condition.author) {
+            const authorMatches = await this.authorMatchesCondition(authorName, condition.author);
+            if (!authorMatches) {
+                this.log(`Comment ${comment.id} does not match author condition.`, checkContext);
+                return;
+            }
+
+            if (condition.author.is_submitter !== undefined) {
+                const parentSubmission = await this.getPostById(comment.postId as T3);
+                if (condition.author.is_submitter !== (parentSubmission.authorName === authorName)) {
+                    this.log(`Comment ${comment.id} does not match is_submitter condition (${condition.author.is_submitter}).`, checkContext);
+                    return;
+                }
+            }
+        }
+
+        if (condition.is_edited !== undefined) {
+            const fullCommentObject = await this.getCommentById(comment.id as T1);
+            if (fullCommentObject.edited !== condition.is_edited) {
+                this.log(`Comment ${comment.id} does not match is_edited condition (${condition.is_edited}).`, checkContext);
+                return;
+            }
+        }
+
+        if (condition.is_approved !== undefined) {
+            const fullCommentObject = await this.getCommentById(comment.id as T1);
+            if (fullCommentObject.approved !== condition.is_approved) {
+                this.log(`Comment ${comment.id} does not match is_approved condition (${condition.is_approved}).`, checkContext);
+                return;
+            }
+        }
+
+        return matches;
+    }
+
+    public async checkComment (comment: CommentV2 | Comment, authorName: string): Promise<AutomodMatch[]> {
         if (this.rules.length === 0) {
             return [];
+        }
+
+        if ("approved" in comment) {
+            // This must be a full comment object, not a CommentV2. Cache it.
+            this.comments[comment.id] ??= comment;
         }
 
         const results: AutomodMatch[] = [];
 
         for (const rule of this.rules) {
-            const matches: Matches[] = [];
-
             if (rule.type !== undefined && rule.type !== "any" && rule.type !== "comment") {
                 continue;
             }
@@ -704,73 +813,11 @@ export class AutomodRuleChecker {
                 continue;
             }
 
-            const commentBody = rule.ignore_blockquotes ? this.getTextWithoutBlockquotes(comment.body) : comment.body;
-
-            if (rule.reports !== undefined) {
-                if (comment.numReports < rule.reports) {
-                    this.log(`Comment ${comment.id} does not match reports condition (${rule.reports}).`);
-                    continue;
-                }
-            }
-
-            if (rule.body_shorter_than !== undefined) {
-                if (commentBody.length >= rule.body_shorter_than) {
-                    this.log(`Comment ${comment.id} does not match body_shorter_than condition (${rule.body_shorter_than}).`);
-                    continue;
-                }
-            }
-
-            if (rule.body_longer_than !== undefined) {
-                if (commentBody.length <= rule.body_longer_than) {
-                    this.log(`Comment ${comment.id} does not match body_longer_than condition (${rule.body_longer_than}).`);
-                    continue;
-                }
-            }
-
-            if (rule.is_top_level !== undefined) {
-                const isTopLevel = isT3(comment.parentId);
-                if (isTopLevel !== rule.is_top_level) {
-                    this.log(`Comment ${comment.id} does not match is_top_level condition (${rule.is_top_level}).`);
-                    continue;
-                }
-            }
-
-            if (rule.past_archive_date !== undefined) {
-                const parentSubmission = await this.getPostById(comment.postId as T3);
-                const isPastArchiveDate = parentSubmission.createdAt < subMonths(new Date(), 6);
-                if (isPastArchiveDate !== rule.past_archive_date) {
-                    this.log(`Comment ${comment.id} does not match past_archive_date condition (${rule.past_archive_date}).`);
-                    continue;
-                }
-            }
-
-            if (rule.comment_crowd_control_collapsed !== undefined) {
-                if (comment.collapsedBecauseCrowdControl !== rule.comment_crowd_control_collapsed) {
-                    this.log(`Comment ${comment.id} does not match comment_crowd_control_collapsed condition (${rule.comment_crowd_control_collapsed}).`);
-                    continue;
-                }
-            }
-
-            if (rule.age !== undefined) {
-                const meetsThreshold = meetsDateThreshold(comment.createdAt, rule.age);
-                if (!meetsThreshold) {
-                    this.log(`Post ${comment.id} does not match age condition (${rule.age}).`);
-                    continue;
-                }
-            }
-
-            // Search conditions
-            const searchFields: Record<string, string | string[]> = {
-                id: comment.id,
-                body: commentBody,
-            };
-
-            const searchMatches = searchConditionsMatchInput(searchFields, rule.search_conditions ?? []);
-            if (!searchMatches) {
-                this.log(`Comment ${comment.id} does not match search conditions.`);
+            const matches = await this.checkCommentAgainstCondition(comment, rule, authorName);
+            if (!matches) {
+                this.log(`Comment ${comment.id} does not match conditions.`);
                 continue;
             }
-            matches.push(...searchMatches);
 
             // Parent submissions
             if (rule.parent_submission !== undefined) {
@@ -781,34 +828,15 @@ export class AutomodRuleChecker {
                 }
             }
 
-            if (rule.author) {
-                const authorMatches = await this.authorMatchesCondition(authorName, rule.author);
-                if (!authorMatches) {
-                    this.log(`Comment ${comment.id} does not match author condition.`);
+            if (rule.parent_comment !== undefined) {
+                if (isT3(comment.parentId)) {
+                    this.log(`Comment ${comment.id} does not match parent_comment condition because it is a top-level comment.`);
                     continue;
                 }
 
-                if (rule.author.is_submitter !== undefined) {
-                    const parentSubmission = await this.getPostById(comment.postId as T3);
-                    if (rule.author.is_submitter !== (parentSubmission.authorName === authorName)) {
-                        this.log(`Comment ${comment.id} does not match is_submitter condition (${rule.author.is_submitter}).`);
-                        continue;
-                    }
-                }
-            }
-
-            if (rule.is_edited !== undefined) {
-                const fullCommentObject = await this.getCommentById(comment.id as T1);
-                if (fullCommentObject.edited !== rule.is_edited) {
-                    this.log(`Comment ${comment.id} does not match is_edited condition (${rule.is_edited}).`);
-                    continue;
-                }
-            }
-
-            if (rule.is_approved !== undefined) {
-                const fullCommentObject = await this.getCommentById(comment.id as T1);
-                if (fullCommentObject.approved !== rule.is_approved) {
-                    this.log(`Comment ${comment.id} does not match is_approved condition (${rule.is_approved}).`);
+                const parentComment = await this.getCommentById(comment.parentId as T1);
+                if (!await this.checkCommentAgainstCondition(parentComment, rule.parent_comment, parentComment.authorName, "parentComment")) {
+                    this.log(`Comment ${comment.id} does not match parent_comment condition.`);
                     continue;
                 }
             }

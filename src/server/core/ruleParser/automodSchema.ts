@@ -172,6 +172,9 @@ const postConditionSchema = {
         },
         action_reason: { type: "string", nullable: true },
         report_reason: { type: "string", nullable: true },
+        comment: { type: "string", nullable: true },
+        comment_locked: { type: "boolean", nullable: true },
+        comment_stickied: { type: "boolean", nullable: true },
         set_flair: {
             ...setFlairSchema,
         },
@@ -319,6 +322,10 @@ export const automodSchema: Record<string, unknown> = {
             nullable: true,
         },
         parent_submission: {
+            ...postConditionSchema,
+            nullable: true,
+        },
+        parent_comment: {
             ...postConditionSchema,
             nullable: true,
         },

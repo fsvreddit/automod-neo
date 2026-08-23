@@ -85,9 +85,6 @@ The following checks/actions are only available in the top level of a rule, and 
 * `type` - defines the type of item this rule should be checked against. Valid values are `comment`, `submission` (any post), `text submission` (a post without a link), `link submission`, `crosspost submission` (a post crossposted from elsewhere on Reddit), `poll submission`, `gallery submission` or any (this is the default if `type` is not specified).
 * `priority` - must be set to a number. Can be used to define the order that rules should be checked in (though they will still always be checked in two separate groups - rules that might cause any sort of removal first - ones with action of `remove`, `spam` or `filter`, and then all others). Rules with higher numeric priority values will be checked first (i.e. a rule with priority 10 will run before priority 5). If a rule does not have a priority defined, it is treated as `priority: 0`. Negative priority values can be used as well to specify that certain rules should be checked after ones with no defined priority value.
 * `moderators_exempt` - true/false - Defines whether the rule should be skipped when the author of the item is a moderator of the subreddit. Mods are exempt from rules that can result in a removal or report by default, so set this to false to override that behavior, or set it to true to make them exempt from any other rules.
-* `comment` - Text of a comment to post in response to an item that satisfies the rule's conditions. Supports placeholders.
-* `comment_locked` - true/false - if set to true, the comment Automod Neo posts in response to an item will be locked from further comment replies.
-* `comment_stickied` - true/false - if set to true, the comment Automod Neo posts in response to an item will be stickied to the top of the submission (will have no effect on non-submissions, as the comment must be top-level)
 * `modmail` - Text of a modmail to send to the moderators when an item satisfies the rule's conditions. Supports placeholders.
 * `modmail_subject` - If a modmail is sent, the subject of that modmail. Defaults to "Notification about a {{kind}} for u/{{author}}" if not set. Supports placeholders.
 * `message` - Text of a message to send to the author of an item that satisfies the rule's conditions. Supports placeholders.
@@ -102,6 +99,7 @@ Automod Neo supports "sub-groups" of checks and actions that can apply to things
 * `crosspost_author` is the user who submitted the original post being crossposted (applies to crossposts only)
 * `crosspost_subreddit` is the subreddit that the submission was crossposted from (applies to crossposts only)
 * `parent_submission` is the post that a comment being checked was made on
+* `parent_comment` is the parent comment of a comment being checked (only applies to replies, not top-level comments)
 * `subreddit` is the subreddit that the post or comment being checked was posted to, or the subreddit of the parent_submission.
 
 ```yaml
@@ -149,7 +147,7 @@ In addition, we have the following fields that will check the original submissio
 
 ### Media checks
 
-On submissions, it is also possible to do some checks against the "media object" that gets embedded in reddit. If the submission is a crosspost, then the values of the original submission are checked. The media data that is available comes from embed.ly, so you can see what information is available for a specific link by testing it here: http://embed.ly/extract
+On submissions, it is also possible to do some checks against the "media object" that gets embedded in reddit. If the submission is a crosspost, then the values of the original submission are checked. The media data that is available comes from embed.ly, [you can see what information is available for a specific link by testing it here](http://embed.ly/extract)
 
 * `media_author` - the author name returned from embed.ly (usually the username of the uploader on the media site)
 * `media_author_url` - the author's url returned from embed.ly (usually the link to their user page on the media site)
@@ -268,7 +266,7 @@ discussion_type - chat/null - if set to chat, then it will apply to chat posts. 
 * `poll_option_count` - The number of options a poll post has in the form `poll_option_count: 3` (to match the exact number), `poll_option_count: '> 2'` (for a comparison)
 * `comment_count` - the number of comments a post has. Most useful on `parent_submission` but can also be used on the base item. E.g. `comment_count: "> 100"`
 
-### For comments (base item only)
+### For comments (base item and parent_comment)
 
 * `is_top_level` - true/false - if set to true, comments will only trigger the rule if they are top-level comments (posted in reply to the submission itself, not to another comment). If set to false, comments will only trigger the rule if they are NOT top-level comments (posted in reply to another comment).
 
@@ -318,10 +316,16 @@ The supported threshold checks are:
 
 ## Actions
 
-### For submissions (base item or parent_submission sub-group)
+### For comments, submissions, parent_submissions and parent_comments
 
 * `action` - A moderation action to perform on the item. Valid values are `approve`, `remove`, `spam`, `filter`, or `report`.
 * `action_reason` - Displays in the moderation log as a reason for why a post was approved or removed. If the action is report, displays as the report reason instead. Supports placeholders.
+* `comment` - Text of a comment to post in response to an item that satisfies the rule's conditions. Supports placeholders.
+* `comment_locked` - true/false - if set to true, the comment Automod Neo posts in response to an item will be locked from further comment replies.
+* `comment_stickied` - true/false - if set to true, the comment Automod Neo posts in response to an item will be stickied to the top of the submission (will have no effect on non-submissions, as the comment must be top-level)
+
+### For submissions (base item or parent_submission sub-group)
+
 * `set_flair` - Takes either a single string, a list of two strings or a dictionary. If given a single string, the submission's flair text will be set to the string. If given two strings, the first string will be used for the flair text, and the second string for the flair css class. If given a dictionary, the keys will be one of 'text', 'css_class', or 'template_id'. If set, the value of 'text' will be used for the flair text and the value of 'css_class' will be used for the css class. When using the dictionary syntax, 'template_id' must be set, and the value of 'template_id' will be used to set the flair template (template Ids are accessible in Post Flair and User Flair sections of Mod Tools). The flair text, flair css class and flair template id can include placeholders.
 * `overwrite_flair` - true/false - If true, a set_flair action will overwrite any previous link flair on the submission. If false (same as default behavior), any existing flair will not be overwritten.
 * `set_sticky` - true/false or a number - Sets or unsets the matched submission as a sticky in the subreddit. If you use a number (for example set_sticky: 1), the post will replace any existing sticky in that slot. Using true will work the same as clicking the "sticky this post" link on the post - it will go into the bottom sticky slot (replacing a post that's already there, if necessary).
@@ -331,9 +335,8 @@ The supported threshold checks are:
 * `set_locked` - true/false - Locks or unlocks the submission or comment.
 * `set_post_crowd_control_level` - Sets the Crowd Control level of a submission. Valid values are OFF, LENIENT, MEDIUM, and STRICT.
 
-### For comments (base item only)
+### For comments (base item and parent_comment)
 
-* `action` - A moderation action to perform on the item. Valid values are `approve`, `remove`, `spam`, `filter` or `report`
 * `report_reason` - If the action is report, sets the report reason that will be used. Supports placeholders.
 
 ### For users (inside author or crosspost_author sub-group)

@@ -1349,4 +1349,48 @@ body: "child comment"
             },
         ]);
     });
+
+    it("preserves parent_comment conditions when provided", () => {
+        const rules = `
+---
+type: comment
+parent_comment:
+  is_approved: false
+  body: "unapproved parent"
+body: "child comment"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["child comment"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                parent_comment: {
+                    is_approved: false,
+                    search_conditions: [
+                        {
+                            searchField: ["body"],
+                            text: ["unapproved parent"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
+    });
 });

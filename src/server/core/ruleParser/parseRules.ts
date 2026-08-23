@@ -595,6 +595,10 @@ export function validateRuleRegexPatterns (rule: MutableNode, ruleReference: str
     if (isObjectRecord(rule.parent_submission)) {
         validateRegexPatternsInPostConditionLikeNode(rule.parent_submission, ruleReference);
     }
+
+    if (isObjectRecord(rule.parent_comment)) {
+        validateRegexPatternsInPostConditionLikeNode(rule.parent_comment, ruleReference);
+    }
 }
 
 export function preprocessRule (rule: MutableNode): void {
@@ -619,6 +623,10 @@ export function preprocessRule (rule: MutableNode): void {
 
     if (isObjectRecord(rule.parent_submission)) {
         preprocessPostConditionLikeNode(rule.parent_submission, "parent_submission");
+    }
+
+    if (isObjectRecord(rule.parent_comment)) {
+        preprocessPostConditionLikeNode(rule.parent_comment, "parent_comment");
     }
 }
 
