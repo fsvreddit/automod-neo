@@ -5,6 +5,7 @@ import pluralize from "pluralize";
 
 export enum SchedulerJob {
     CheckForUpdates = "checkForUpdates",
+    CacheRules = "cacheRules",
 }
 
 export async function configureCronJobs () {

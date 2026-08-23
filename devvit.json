@@ -37,6 +37,9 @@
         "tasks": {
             "checkForUpdates": {
                 "endpoint": "/internal/tasks/check-for-updates"
+            },
+            "cacheRules": {
+                "endpoint": "/internal/tasks/cache-rules"
             }
         }
     },

@@ -1,9 +1,8 @@
-import { redis, settings } from "@devvit/web/server";
+import { context, redis, settings } from "@devvit/web/server";
 import { AutomodRule } from "../types";
 import { AppSetting } from "../appSettings";
 import { parseRules } from "../ruleParser";
 import { isRemovalRule } from "../helpers";
-import { addWeeks } from "date-fns";
 
 const CACHED_UNPARSED_RULES_KEY = "cachedUnparsedRules";
 const CACHED_RULES_KEY = "cachedRules";
@@ -34,12 +33,16 @@ export async function getRulesForSubreddit (): Promise<AutomodRule[]> {
     }
 
     const rules = sortRulesForExecution(parseRules(rulesYaml));
-    await redis.set(CACHED_RULES_KEY, JSON.stringify(rules), { expiration: addWeeks(new Date(), 1) });
+    await redis.set(CACHED_RULES_KEY, JSON.stringify(rules));
+    console.log(`Cached ${rules.length} ${rules.length === 1 ? "rule" : "rules"} for subreddit ${context.subredditName}.`);
     return rules;
 }
 
 export async function clearCachedRules () {
-    await redis.del(CACHED_RULES_KEY);
+    if (await redis.exists(CACHED_RULES_KEY)) {
+        await redis.del(CACHED_RULES_KEY);
+        console.log(`Cleared cached rules for subreddit ${context.subredditName}.`);
+    }
 }
 
 export async function saveUnparsedRules (rawRules: string) {
