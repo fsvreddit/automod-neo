@@ -131,6 +131,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 * Fix behaviour of `includes-word` search checks where the search term starts with punctuation
 * Add `parent_comment` checks and actions
 * Improve reliability of comment submission to work around Reddit rate limiting issues
+* Performance improvements
 
 ## About this app
 
