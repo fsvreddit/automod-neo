@@ -67,6 +67,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 
 ### v0.6.0
 
+* `comment` and `comment_stickied` now works for parent submissions
 * Add `is_approved` check on posts, comments and parent submissions
 * Fix behaviour of `includes-word` search checks where the search term starts with punctuation
 * Add `parent_comment` checks and actions
