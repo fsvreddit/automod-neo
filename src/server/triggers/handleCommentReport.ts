@@ -15,7 +15,6 @@ export const handleCommentReport = async (c: Context) => {
 
     const rules = await getReportRulesForSubreddit();
     if (rules.length === 0) {
-        console.log("No rules found for comment report handling.");
         return c.json<TriggerResponse>({ message: "comment report handled, no rules found" }, 200);
     }
 
