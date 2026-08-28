@@ -8,86 +8,26 @@ All regular expressions use Javascript regex syntax. This can be different to Py
 
 All regular expressions are evaluated with the Unicode flag on, allowing for constructs such as the [\p metacharacter](https://www.w3schools.com/Jsref/jsref_regexp_meta_p.asp) for more advanced searches without having to identify specific UNICODE code points.
 
-Due to limitations of the Dev Platform, `action_reason` and `filter_reason` do not display in the mod log. This will be fixed in a future release once the capability is available.
-
 Rules run on a short delay of up to a few seconds in most situations.
 
-Because of these two factors, I recommend only using Automod Neo at this stage for use cases that AutoModerator does not support, such as the additional user properties, Discord alerts, or similar.
+Because of these two factors, **I recommend only using Automod Neo at this stage for use cases that AutoModerator does not support**, such as the additional user properties, time-of-day checks, Discord alerts, or similar.
 
 ## New features
 
-### Author checks
+Automod Neo supports several features not supported by OG AutoModerator.
 
-New checks for `bio_text`, `display_name` and `social_links` are now supported for authors and can be searched just like the title or body e.g.
-
-```yaml
-author:
-  bio_text+social_links (includes): 'onlyfans.com'`.
-```
-
-### Parent submission and parent author actions
-
-All actions (such as remove, set flair and so on) are now supported at the parent submission and parent submission author levels
-
-### Additional post, comment and parent submission check
-
-`age` is now supported for posts, comments and parent submissions e.g.
-
-```yaml
-parent_submission:
-  age: '> 2 weeks'
-```
-
-This could be useful for rules that act on comments on old posts, or edits to older posts or comments.
-
-### Ability to choose whether to stop processing rules or not
-
-By default, OG AutoModerator stops processing rules after any rule with a `remove`, `spam` or `filter` action. Automod Neo preserves this behaviour by default but allows fine-grained control using the optional `stop_on_match` directive. E.g. `stop_on_match: false` will continue checking rules even if the matched rule has a `remove` action, and `stop_on_match: true` will abort checking even on a rule that doesn't remove or filter content.
-
-### Crowd control checks on comments
-
-Automod Neo supports a `comment_crowd_control_collapsed` attribute when checking comments, taking either `true` or `false` as a parameter. This used to be a supported but undocumented feature in AutoModerator but was removed some time ago.
-
-### Discord alerts
-
-You can use the `discord_alert` action type to send a message to a Discord webhook configured in app settings. E.g.
-
-```yaml
-discord_alert: |
-  A [{{kind}}]({{permalink}}) has been posted by {{author}} that may attract rule-breaking comments.
-
-  Please keep an eye on it!
-```
-
-### friendly_name attribute and placeholder
-
-Rules can have an `friendly_name` attribute, useful for debugging. This can save using comments to accomplish the same thing. {{friendly-name}} is also a supported placeholder on all output (comments, modmail, Discord alerts).
-
-### Day of week rules
-
-Rules can have a `day_of_week` check on them e.g.
-
-```yaml
-type: submission
-day_of_week: wednesday
-```
-
-or:
-
-You can configure the time zone you want to apply rules using in the app settings, by default rules will be checked using UTC.
-
-## Documentation Clarification
-
-### Multiple matches on the same attribute
-
-AutoModerator supports an undocumented feature to do multiple matches across the same field or fields using the # syntax. Automod Neo explicitly supports this as a documented feature, and it works at all levels (base criteria, author checks, parent submissions). Example:
-
-```yaml
-body#1 (includes-word): "anonymized"
-body#2 (includes-word): "Redact"
-```
-
-This would match content that has both the term "anonymized" and "Redact" in the name, unlike `body (includes-word): ["anonymized", "Redact"]` that would match any content that includes either of those terms. Note that the part after the # does not need to be a number, it can be any string of letters, numbers, hyphens or underscores.
+* `bio_text`, `display_name` and `social_links` for authors
+* All actions (remove, set flair, comment and so on) are supported for the parent submission and author
+* Ability to check and action `parent_comment` for non-top level comments
+* `day_of_week` checks for rules that should only run on some days, with a configurable time zone
+* `stop_on_match` directive to override the default behaviour of stopping processing after a remove/spam rule, or continuing otherwise
+* `comment_crowd_control_collapsed` check on comments
+* `user_report_reason` and `mod_report_reason` search checks (works similarly to title/body/etc. checks)
+* `image_count` checks for image/gallery submissions
+* `comment_count` checks for all submissions
+* `is_approved` checks, to allow rules to be ignored if a mod has specifically approved a post or comment
+* `discord_alert` action (also supports Slack)
+* `friendly_name` property on rules, with the corresponding `{{friendly-name}}` placeholder on all output.
 
 ## Limitations
 
@@ -125,29 +65,16 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
-### v0.5.0
+### v0.6.0
 
-* Add `~day_of_week` directive to the base item
-* Fall back to outgoing modmail if users have chats disabled when using `message` directive
-* Internal modmail notifications no longer include the "I am a bot..." footer
-* DMs to users and internal modmail notifications now include the permalink of the post/comment they relate to
-* DMs to users and replies left to posts/comments now prepopulate the message body with the permalink of the post/comment they relate to in the "message the moderators of this subreddit" link
-* Add `comment_count` check for posts
-* Better message/modmail subject defaults
-* {{title}} placeholder now works consistently with AutoModerator even for rules that react to comments
-* Add {{parent_submission_author}} placeholder for rules that act on comments
-* Add option to skip processing rules on posts or comments that AutoModerator has already acted on
-* Prevent duplicate comments from being added if a rule runs more than once on a post or comment
-* Add `is_banned` check on all `author` nodes
-
-### v0.4.0
-
-* Reinstate support for `flair_template_id` checks on the base item author
-* Add support for non-alphanumeric characters +, - and _ after # differentiators on search checks
-* Add `social_link_title` search check on authors
-* Add `day_of_week` directive to the base item
-* Fixed `body_shorter_than` and `body_longer_than` when checking posts
-* Fixed Slack webhook support
+* `comment` and `comment_stickied` now works for parent submissions
+* Add `is_approved` check on posts, comments and parent submissions
+* Fix behaviour of `includes-word` search checks where the search term starts with punctuation
+* Add `parent_comment` checks and actions
+* Add `image_count` check on post checks
+* Add `user_report_reason` and `mod_report_reason` check on posts and comments
+* Improve reliability of comment submission to work around Reddit rate limiting issues
+* Performance improvements
 
 ## About this app
 

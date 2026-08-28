@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { SearchMethod, SearchOption, SearchableText } from "../types.js";
+import { SearchMethod, SearchOption, SearchableText } from "..";
 import { searchConditionsMatchInput, searchTextMatches } from "./searchConditionMatcher.js";
 
 function makeOptions (search_method: SearchMethod, overrides: Partial<Omit<SearchOption, "search_method">> = {}): SearchOption {
@@ -136,6 +136,13 @@ describe("searchTextMatches", () => {
             assert.deepEqual(
                 searchTextMatches("The quick brown fox", "quick", makeOptions("includes-word")),
                 ["quick"],
+            );
+        });
+
+        it("matches whole words with punctuation", () => {
+            assert.deepEqual(
+                searchTextMatches("You've broken a rule.\n\n!lock", "!lock", makeOptions("includes-word")),
+                ["!lock"],
             );
         });
 

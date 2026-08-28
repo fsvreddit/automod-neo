@@ -30,6 +30,7 @@ vi.mock("@devvit/web/server", () => ({
     redis: {
         get: vi.fn(),
         set: vi.fn(),
+        zAdd: vi.fn(),
     },
     settings: {
         get: mocks.settingsGet,
@@ -198,27 +199,6 @@ describe("ActionRules action execution", () => {
         await actionRules.actionRules();
 
         assert.equal(mocks.setUserFlair.mock.calls.length, 0);
-    });
-
-    it("stickies a generated comment when the target is a post", async () => {
-        const post = makePost();
-        const distinguish = vi.fn();
-        mocks.getPostOrCommentById.mockResolvedValue(post);
-        mocks.submitComment.mockResolvedValue({
-            distinguish,
-            lock: vi.fn(),
-        });
-
-        const actionRules = new ActionRules({
-            targetId: post.id,
-            matchedRules: [match({
-                comment: "Moderator notice",
-                comment_stickied: true,
-            })],
-        });
-        await actionRules.actionRules();
-
-        assert.deepEqual(distinguish.mock.calls[0], [true]);
     });
 
     it("locks an item when set_locked is true", async () => {

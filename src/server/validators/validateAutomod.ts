@@ -1,6 +1,7 @@
+import { scheduler } from "@devvit/web/server";
 import { SettingsValidationRequest, SettingsValidationResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { clearCachedRules, parseRules, saveUnparsedRules } from "../core";
+import { clearCachedRules, parseRules, saveUnparsedRules, SchedulerJob } from "../core";
 import pluralize from "pluralize";
 
 export const validateAutomodSetting = async (c: Context) => {
@@ -16,6 +17,7 @@ export const validateAutomodSetting = async (c: Context) => {
     try {
         const rules = parseRules(validationRequest.value);
         console.log(`Parsed ${rules.length} ${pluralize("rule", rules.length)} successfully.`);
+        console.log(JSON.stringify(rules, null, 2));
     } catch (e) {
         return c.json<SettingsValidationResponse>({
             success: false,
@@ -25,6 +27,11 @@ export const validateAutomodSetting = async (c: Context) => {
 
     await clearCachedRules();
     await saveUnparsedRules(validationRequest.value);
+
+    await scheduler.runJob({
+        name: SchedulerJob.CacheRules,
+        runAt: new Date(),
+    });
 
     return c.json<SettingsValidationResponse>({ success: true }, 200);
 };

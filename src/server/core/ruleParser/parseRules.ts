@@ -21,6 +21,8 @@ const topLevelSearchableFields = new Set([
     "media_author",
     "media_author_url",
     "media_title",
+    "user_report_reason",
+    "mod_report_reason",
 ]);
 
 const authorSearchableFields = new Set(["id", "name", "flair_text", "flair_css_class", "flair_template_id", "display_name", "bio_text", "social_links", "social_link_title"]);
@@ -584,6 +586,10 @@ function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleRe
         validateNumericThresholdFormatInNode(node, ruleReference, ["comment_count"]);
     }
 
+    if (node.image_count !== undefined) {
+        validateNumericThresholdFormatInNode(node, ruleReference, ["image_count"]);
+    }
+
     if (node.age !== undefined) {
         validateDateThresholdFormatInNode(node, ruleReference, ["age"]);
     }
@@ -594,6 +600,10 @@ export function validateRuleRegexPatterns (rule: MutableNode, ruleReference: str
 
     if (isObjectRecord(rule.parent_submission)) {
         validateRegexPatternsInPostConditionLikeNode(rule.parent_submission, ruleReference);
+    }
+
+    if (isObjectRecord(rule.parent_comment)) {
+        validateRegexPatternsInPostConditionLikeNode(rule.parent_comment, ruleReference);
     }
 }
 
@@ -619,6 +629,10 @@ export function preprocessRule (rule: MutableNode): void {
 
     if (isObjectRecord(rule.parent_submission)) {
         preprocessPostConditionLikeNode(rule.parent_submission, "parent_submission");
+    }
+
+    if (isObjectRecord(rule.parent_comment)) {
+        preprocessPostConditionLikeNode(rule.parent_comment, "parent_comment");
     }
 }
 

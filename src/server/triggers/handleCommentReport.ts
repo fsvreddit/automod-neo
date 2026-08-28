@@ -1,9 +1,10 @@
 import { OnCommentReportRequest, T1, T2, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { ActionRules, AutomodRuleChecker, getRulesForSubreddit } from "../core";
+import { ActionRules, AutomodRuleChecker, getReportRulesForSubreddit } from "../core";
 import { fixCommentReportTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import { reddit } from "@devvit/web/server";
 import pluralize from "pluralize";
+import { addMinutes } from "date-fns";
 
 export const handleCommentReport = async (c: Context) => {
     const now = Date.now();
@@ -12,7 +13,7 @@ export const handleCommentReport = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "comment report handled, no comment in request" }, 200);
     }
 
-    const rules = await getRulesForSubreddit().then(rules => rules.filter(rule => rule.reports !== undefined));
+    const rules = await getReportRulesForSubreddit();
     if (rules.length === 0) {
         return c.json<TriggerResponse>({ message: "comment report handled, no rules found" }, 200);
     }
@@ -24,17 +25,23 @@ export const handleCommentReport = async (c: Context) => {
 
     const ruleChecker = new AutomodRuleChecker({ rules });
 
+    console.log(`Checking comment report for comment ${request.comment.id} against ${rules.length} ${pluralize("rule", rules.length)}.`);
     const results = await ruleChecker.checkComment(request.comment, commentAuthor.username);
 
     if (results.length === 0) {
         return c.json<TriggerResponse>({ message: "comment report handled, no matches found" }, 200);
     }
 
-    if (await hasTriggerBeenHandled(`commentReport:${request.comment.id}`)) {
+    if (await hasTriggerBeenHandled(`commentReport:${request.comment.id}`, { expiration: addMinutes(new Date(), 5) })) {
         return c.json<TriggerResponse>({ message: "comment report handled, trigger already handled" }, 200);
     }
 
-    const actionRules = new ActionRules({ targetId: request.comment.id as T1, matchedRules: results });
+    const actionRules = new ActionRules({
+        targetId: request.comment.id as T1,
+        matchedRules: results,
+        redditData: ruleChecker.getRedditData(),
+    });
+
     await actionRules.actionRules();
 
     console.log(`Comment report handled in ${Date.now() - now}ms for comment ${request.comment.id} with ${results.length} ${pluralize("rule", results.length)} matched.`);

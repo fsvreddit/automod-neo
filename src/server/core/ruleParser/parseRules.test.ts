@@ -1249,4 +1249,276 @@ body: "poll"
             },
         ]);
     });
+
+    it("preserves image_count on submission rules", () => {
+        const rules = `
+---
+type: submission
+image_count: "> 2"
+body: "gallery check"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "submission",
+                image_count: "> 2",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["gallery check"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("parses user_report_reason and mod_report_reason as searchable fields", () => {
+        const rules = `
+---
+type: comment
+user_report_reason: ['spam', 'abuse']
+mod_report_reason (includes): 'queue review'
+body: "reported"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["user_report_reason"],
+                        text: ["spam", "abuse"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                    {
+                        searchField: ["mod_report_reason"],
+                        text: ["queue review"],
+                        options: {
+                            search_method: "includes",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                    {
+                        searchField: ["body"],
+                        text: ["reported"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("parses parent_submission report-reason checks as searchable fields", () => {
+        const rules = `
+---
+type: comment
+body: "child"
+parent_submission:
+  user_report_reason: 'user reason'
+  mod_report_reason: 'mod reason'
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["child"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                parent_submission: {
+                    search_conditions: [
+                        {
+                            searchField: ["user_report_reason"],
+                            text: ["user reason"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                        {
+                            searchField: ["mod_report_reason"],
+                            text: ["mod reason"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
+    });
+
+    it("preserves is_approved for post conditions when provided", () => {
+        const rules = `
+---
+is_approved: true
+body: "approved post"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                is_approved: true,
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["approved post"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves is_approved for comment conditions when provided", () => {
+        const rules = `
+---
+type: comment
+is_approved: false
+body: "unapproved comment"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                is_approved: false,
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["unapproved comment"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves is_approved for parent_submission conditions when provided", () => {
+        const rules = `
+---
+type: comment
+parent_submission:
+  is_approved: true
+  body: "approved parent"
+body: "child comment"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["child comment"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                parent_submission: {
+                    is_approved: true,
+                    search_conditions: [
+                        {
+                            searchField: ["body"],
+                            text: ["approved parent"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
+    });
+
+    it("preserves parent_comment conditions when provided", () => {
+        const rules = `
+---
+type: comment
+parent_comment:
+  is_approved: false
+  body: "unapproved parent"
+body: "child comment"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["child comment"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                parent_comment: {
+                    is_approved: false,
+                    search_conditions: [
+                        {
+                            searchField: ["body"],
+                            text: ["unapproved parent"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
+    });
 });

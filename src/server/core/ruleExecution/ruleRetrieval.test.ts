@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 
-import { AutomodRule } from "../types.js";
+import { AutomodRule } from "..";
 import { sortRulesForExecution } from "./ruleRetrieval.js";
 
 describe("sortRulesForExecution", () => {

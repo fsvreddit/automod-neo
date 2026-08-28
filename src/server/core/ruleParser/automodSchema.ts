@@ -8,7 +8,7 @@ const actionValues = ["approve", "remove", "report", "spam", "filter"] as const;
 const submissionTypeValues = ["comment", "submission", "text submission", "link submission", "crosspost submission", "poll submission", "gallery submission", "any"] as const;
 const suggestedSortValues = ["best", "new", "qa", "top", "controversial", "hot", "old", "random", "blank"] as const;
 const crowdControlValues = ["OFF", "LENIENT", "MEDIUM", "STRICT"] as const;
-const postSearchFieldValues = ["id", "title", "body", "domain", "url", "flair_text", "flair_css_class", "flair_template_id", "crosspost_title", "media_author", "media_author_url", "media_title"] as const;
+const postSearchFieldValues = ["id", "title", "body", "domain", "url", "flair_text", "flair_css_class", "flair_template_id", "crosspost_title", "media_author", "media_author_url", "media_title", "user_report_reason", "mod_report_reason"] as const;
 const authorSearchFieldValues = ["id", "name", "flair_text", "flair_css_class", "display_name", "bio_text", "social_links"] as const;
 const subredditSearchFieldValues = ["name"] as const;
 
@@ -133,6 +133,7 @@ const postConditionSchema = {
         },
         ignore_blockquotes: { type: "boolean", nullable: true },
         reports: { type: "number", nullable: true },
+        is_approved: { type: "boolean", nullable: true },
         body_longer_than: { type: "number", nullable: true },
         body_shorter_than: { type: "number", nullable: true },
         is_nsfw: { type: "boolean", nullable: true },
@@ -143,6 +144,7 @@ const postConditionSchema = {
         age: { type: "string", nullable: true, pattern: dateComparatorPattern },
         past_archive_date: { type: "boolean", nullable: true },
         comment_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        image_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
         author: {
             ...authorSchema,
             nullable: true,
@@ -171,6 +173,9 @@ const postConditionSchema = {
         },
         action_reason: { type: "string", nullable: true },
         report_reason: { type: "string", nullable: true },
+        comment: { type: "string", nullable: true },
+        comment_locked: { type: "boolean", nullable: true },
+        comment_stickied: { type: "boolean", nullable: true },
         set_flair: {
             ...setFlairSchema,
         },
@@ -251,6 +256,7 @@ export const automodSchema: Record<string, unknown> = {
         },
         ignore_blockquotes: { type: "boolean", nullable: true },
         reports: { type: "number", nullable: true },
+        is_approved: { type: "boolean", nullable: true },
         body_longer_than: { type: "number", nullable: true },
         body_shorter_than: { type: "number", nullable: true },
         is_edited: { type: "boolean", nullable: true },
@@ -260,6 +266,7 @@ export const automodSchema: Record<string, unknown> = {
         age: { type: "string", nullable: true, pattern: dateComparatorPattern },
         past_archive_date: { type: "boolean", nullable: true },
         comment_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        image_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
         is_top_level: { type: "boolean", nullable: true },
         comment_crowd_control_collapsed: { type: "boolean", nullable: true },
         action: {
@@ -317,6 +324,10 @@ export const automodSchema: Record<string, unknown> = {
             nullable: true,
         },
         parent_submission: {
+            ...postConditionSchema,
+            nullable: true,
+        },
+        parent_comment: {
             ...postConditionSchema,
             nullable: true,
         },

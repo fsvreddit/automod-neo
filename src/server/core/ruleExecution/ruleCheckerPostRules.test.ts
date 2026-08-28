@@ -23,13 +23,13 @@ import type { Post } from "@devvit/web/server";
 import type { CommentV2 } from "@devvit/web/shared";
 import { AutomodRuleChecker } from "./ruleChecker.js";
 
-function makePost (body: string | undefined, numberOfComments = 0): Post {
+function makePost (body: string | undefined, numberOfComments = 0, numberOfImages = 0): Post {
     return {
         id: "t3_parent",
         authorName: "example_author",
         body,
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        gallery: [],
+        gallery: new Array(numberOfImages).fill(null).map((_, i) => ({ mediaId: `image_${i}` })),
         numberOfComments,
         numberOfReports: 0,
         permalink: "/r/test/comments/parent/example/",
@@ -48,7 +48,7 @@ const comment = {
     collapsedBecauseCrowdControl: false,
 } as CommentV2;
 
-describe("AutomodRuleChecker post body length checks", () => {
+describe("AutomodRuleChecker post checks", () => {
     it("enforces body_shorter_than for posts", async () => {
         const checker = new AutomodRuleChecker({ rules: [] });
 
@@ -155,5 +155,25 @@ describe("AutomodRuleChecker post body length checks", () => {
 
         assert.equal(results.length, 1);
         assert.equal(results[0]?.rule, matchingRule);
+    });
+
+    it("matches image_count for base post checks when threshold is met", async () => {
+        const checker = new AutomodRuleChecker({ rules: [] });
+        const post = makePost("body", 0, 2);
+
+        assert.notEqual(
+            await checker.checkPostAgainstCondition(post, { image_count: ">= 2" }),
+            undefined,
+        );
+    });
+
+    it("does not match image_count for base post checks when threshold is not met", async () => {
+        const checker = new AutomodRuleChecker({ rules: [] });
+        const post = makePost("body", 0, 2);
+
+        assert.equal(
+            await checker.checkPostAgainstCondition(post, { image_count: "> 2" }),
+            undefined,
+        );
     });
 });

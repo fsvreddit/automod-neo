@@ -1,3 +1,5 @@
+import { Comment, Post, User } from "@devvit/web/server";
+
 export type SearchMethod = "includes-word" | "includes" | "starts-with" | "ends-with" | "domain" | "full-exact" | "full-text" | "regex";
 
 export interface SearchOption {
@@ -6,8 +8,8 @@ export interface SearchOption {
     negate: boolean;
 }
 
-type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "poll_option_text" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "media_author" | "media_author_url" | "media_title";
-type CommentSearchField = "id" | "body";
+type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "poll_option_text" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "media_author" | "media_author_url" | "media_title" | "user_report_reason" | "mod_report_reason";
+type CommentSearchField = "id" | "body" | "user_report_reason" | "mod_report_reason";
 type AuthorSearchField = "id" | "name" | "flair_text" | "flair_css_class" | "flair_template_id" | "display_name" | "bio_text" | "social_links" | "social_link_title";
 type SubredditSearchField = "name";
 
@@ -52,12 +54,6 @@ export interface Subreddit {
     is_nsfw?: boolean;
 }
 
-export interface CommentAction {
-    action?: "approve" | "remove" | "report" | "spam" | "filter";
-    action_reason?: string;
-    report_reason?: string;
-}
-
 export type StandardCondition = "image hosting sites" | "direct image links" | "video hosting sites" | "streaming sites" | "crowdfunding sites" | "meme generator sites" | "facebook links" | "amazon affiliate links";
 
 export interface PostOrCommentCondition {
@@ -68,6 +64,7 @@ export interface PostOrCommentCondition {
 
     // Non-searching checks
     reports?: number;
+    is_approved?: boolean;
     body_longer_than?: number;
     body_shorter_than?: number;
     is_nsfw?: boolean; // Posts only
@@ -80,6 +77,7 @@ export interface PostOrCommentCondition {
     is_top_level?: boolean; // Comments only
     comment_crowd_control_collapsed?: boolean; // Comments only
     comment_count?: string; // Posts only
+    image_count?: string; // Posts only
 
     // Author checks
     author?: Author;
@@ -92,13 +90,17 @@ export interface PostOrCommentCondition {
     crosspost_author?: Author;
     crosspost_subreddit?: Subreddit;
 
-    // Post-specific media checks
+    // Comment-specific checks
     parent_submission?: PostOrCommentCondition; // Comments only
+    parent_comment?: PostOrCommentCondition; // Comments only
 
     // Actions
     action?: "approve" | "remove" | "report" | "spam" | "filter";
     action_reason?: string;
     report_reason?: string;
+    comment?: string;
+    comment_locked?: boolean;
+    comment_stickied?: boolean;
     set_flair?: string | string[] | SetFlairActionDictionary;
     overwrite_flair?: boolean;
     set_sticky?: boolean | 1 | 2 | 3 | 4;
@@ -111,7 +113,7 @@ export interface PostOrCommentCondition {
     set_post_crowd_control_level?: "OFF" | "LENIENT" | "MEDIUM" | "STRICT";
 }
 
-export type AutomodRule = PostOrCommentCondition & CommentAction & {
+export type AutomodRule = PostOrCommentCondition & {
     friendly_name?: string;
     verbose_logs?: boolean;
 
@@ -121,9 +123,8 @@ export type AutomodRule = PostOrCommentCondition & CommentAction & {
     day_of_week?: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | "weekday" | "weekend")[];
     "~day_of_week"?: ("monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday" | "weekday" | "weekend")[];
     moderators_exempt?: boolean;
-    comment?: string;
-    comment_locked?: boolean;
-    comment_stickied?: boolean;
+
+    // Actions
     modmail?: string;
     modmail_subject?: string;
     message?: string;
@@ -142,4 +143,17 @@ export interface Matches {
 export interface AutomodMatch {
     rule: AutomodRule;
     matches: Matches[];
+}
+
+export interface CommentToAdd {
+    ruleName: string;
+    text: string;
+    shouldLock: boolean;
+    shouldSticky: boolean;
+}
+
+export interface RedditData {
+    posts: Record<string, Post>;
+    comments: Record<string, Comment>;
+    users: Record<string, User>;
 }
