@@ -635,6 +635,14 @@ export class AutomodRuleChecker {
             searchFields.media_title = post.secureMedia.oembed.title;
         }
 
+        if (distinctSearchFields.has("user_report_reason") && post.userReportReasons.length > 0) {
+            searchFields.user_report_reason = post.userReportReasons;
+        }
+
+        if (distinctSearchFields.has("mod_report_reason") && post.modReports.length > 0) {
+            searchFields.mod_report_reason = post.modReports.map(report => report.reason);
+        }
+
         const searchMatches = searchConditionsMatchInput(searchFields, rule.search_conditions ?? []);
         if (!searchMatches) {
             this.log(`Post ${post.id} does not match search conditions.`, checkContext);
@@ -762,6 +770,30 @@ export class AutomodRuleChecker {
             id: comment.id,
             body: commentBody,
         };
+
+        const distinctSearchFields = this.getDistinctSearchFields(condition.search_conditions ?? []);
+
+        if (distinctSearchFields.has("user_report_reason")) {
+            if ("userReportReasons" in comment && comment.userReportReasons.length > 0) {
+                searchFields.user_report_reason = comment.userReportReasons;
+            } else if (comment.numReports > 0) {
+                const fullComment = await this.getCommentById(comment.id as T1);
+                if (fullComment.userReportReasons.length > 0) {
+                    searchFields.user_report_reason = fullComment.userReportReasons;
+                }
+            }
+        }
+
+        if (distinctSearchFields.has("mod_report_reason")) {
+            if ("modReports" in comment && comment.modReports.length > 0) {
+                searchFields.mod_report_reason = comment.modReports.map(report => report.reason);
+            } else if (comment.numReports > 0) {
+                const fullComment = await this.getCommentById(comment.id as T1);
+                if (fullComment.modReports.length > 0) {
+                    searchFields.mod_report_reason = fullComment.modReports.map(report => report.reason);
+                }
+            }
+        }
 
         const searchMatches = searchConditionsMatchInput(searchFields, condition.search_conditions ?? []);
         if (!searchMatches) {

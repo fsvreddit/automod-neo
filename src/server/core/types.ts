@@ -8,8 +8,8 @@ export interface SearchOption {
     negate: boolean;
 }
 
-type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "poll_option_text" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "media_author" | "media_author_url" | "media_title";
-type CommentSearchField = "id" | "body";
+type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "poll_option_text" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "media_author" | "media_author_url" | "media_title" | "user_report_reason" | "mod_report_reason";
+type CommentSearchField = "id" | "body" | "user_report_reason" | "mod_report_reason";
 type AuthorSearchField = "id" | "name" | "flair_text" | "flair_css_class" | "flair_template_id" | "display_name" | "bio_text" | "social_links" | "social_link_title";
 type SubredditSearchField = "name";
 

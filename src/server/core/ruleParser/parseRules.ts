@@ -21,6 +21,8 @@ const topLevelSearchableFields = new Set([
     "media_author",
     "media_author_url",
     "media_title",
+    "user_report_reason",
+    "mod_report_reason",
 ]);
 
 const authorSearchableFields = new Set(["id", "name", "flair_text", "flair_css_class", "flair_template_id", "display_name", "bio_text", "social_links", "social_link_title"]);

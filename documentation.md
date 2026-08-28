@@ -131,6 +131,8 @@ These checks can be used to look for words, phrases, patterns in different field
 * `flair_css_class` - the css class of the submission's link flair
 * `flair_template_id` - the template id of the submission's link flair
 * `poll_option_text` - The text of any option in a poll post
+* `user_report_reason` - The text of any non-dismissed user report
+* `mod_report_reason` - The text of any non-dismissed mod report
 
 ### For crossposts submissions
 
@@ -157,6 +159,8 @@ On submissions, it is also possible to do some checks against the "media object"
 
 * `id` - the comment's base-36 ID
 * `body` - the full text of the comment.
+* `user_report_reason` - The text of any non-dismissed user report
+* `mod_report_reason` - The text of any non-dismissed mod report
 
 ### For users (inside author, parent submission author or crosspost_author sub-group)
 

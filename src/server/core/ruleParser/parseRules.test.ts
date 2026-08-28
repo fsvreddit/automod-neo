@@ -1279,6 +1279,105 @@ body: "gallery check"
         ]);
     });
 
+    it("parses user_report_reason and mod_report_reason as searchable fields", () => {
+        const rules = `
+---
+type: comment
+user_report_reason: ['spam', 'abuse']
+mod_report_reason (includes): 'queue review'
+body: "reported"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["user_report_reason"],
+                        text: ["spam", "abuse"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                    {
+                        searchField: ["mod_report_reason"],
+                        text: ["queue review"],
+                        options: {
+                            search_method: "includes",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                    {
+                        searchField: ["body"],
+                        text: ["reported"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("parses parent_submission report-reason checks as searchable fields", () => {
+        const rules = `
+---
+type: comment
+body: "child"
+parent_submission:
+  user_report_reason: 'user reason'
+  mod_report_reason: 'mod reason'
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["child"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                parent_submission: {
+                    search_conditions: [
+                        {
+                            searchField: ["user_report_reason"],
+                            text: ["user reason"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                        {
+                            searchField: ["mod_report_reason"],
+                            text: ["mod reason"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
+    });
+
     it("preserves is_approved for post conditions when provided", () => {
         const rules = `
 ---

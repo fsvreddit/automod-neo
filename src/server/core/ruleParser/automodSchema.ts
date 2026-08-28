@@ -8,7 +8,7 @@ const actionValues = ["approve", "remove", "report", "spam", "filter"] as const;
 const submissionTypeValues = ["comment", "submission", "text submission", "link submission", "crosspost submission", "poll submission", "gallery submission", "any"] as const;
 const suggestedSortValues = ["best", "new", "qa", "top", "controversial", "hot", "old", "random", "blank"] as const;
 const crowdControlValues = ["OFF", "LENIENT", "MEDIUM", "STRICT"] as const;
-const postSearchFieldValues = ["id", "title", "body", "domain", "url", "flair_text", "flair_css_class", "flair_template_id", "crosspost_title", "media_author", "media_author_url", "media_title"] as const;
+const postSearchFieldValues = ["id", "title", "body", "domain", "url", "flair_text", "flair_css_class", "flair_template_id", "crosspost_title", "media_author", "media_author_url", "media_title", "user_report_reason", "mod_report_reason"] as const;
 const authorSearchFieldValues = ["id", "name", "flair_text", "flair_css_class", "display_name", "bio_text", "social_links"] as const;
 const subredditSearchFieldValues = ["name"] as const;
 

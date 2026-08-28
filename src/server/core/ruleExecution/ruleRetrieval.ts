@@ -38,6 +38,11 @@ export async function getRulesForSubreddit (): Promise<AutomodRule[]> {
     return rules;
 }
 
+export async function getReportRulesForSubreddit (): Promise<AutomodRule[]> {
+    const rules = await getRulesForSubreddit();
+    return rules.filter(rule => rule.reports !== undefined || rule.search_conditions?.some(condition => condition.searchField.some(field => field === "user_report_reason" || field === "mod_report_reason")));
+}
+
 export async function clearCachedRules () {
     if (await redis.exists(CACHED_RULES_KEY)) {
         await redis.del(CACHED_RULES_KEY);
