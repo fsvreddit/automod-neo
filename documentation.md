@@ -265,6 +265,7 @@ discussion_type - chat/null - if set to chat, then it will apply to chat posts. 
 * `past_archive_date` - true/false - if set to true, submissions will only trigger the rule if they are older than the archival date of 6 months. See this post for details.
 * `poll_option_count` - The number of options a poll post has in the form `poll_option_count: 3` (to match the exact number), `poll_option_count: '> 2'` (for a comparison)
 * `comment_count` - the number of comments a post has. Most useful on `parent_submission` but can also be used on the base item. E.g. `comment_count: "> 100"`
+* `image_count` - the number of images a post has. Checks galleries, image posts and posts from selected image hosts (e.g. Imgur), and does *not* check image links in post bodies. E.g. `image_count: "= 1"` or `image_count: "> 5"`
 
 ### For comments (base item and parent_comment)
 

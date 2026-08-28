@@ -556,6 +556,14 @@ export class AutomodRuleChecker {
             }
         }
 
+        if (rule.image_count !== undefined) {
+            const meetsThreshold = meetsNumericThreshold(post.gallery.length, rule.image_count);
+            if (!meetsThreshold) {
+                this.log(`Post ${post.id} does not match image_count condition (${rule.image_count}).`, checkContext);
+                return;
+            }
+        }
+
         const matches: Matches[] = [];
 
         const searchFields: Record<string, string | string[]> = {

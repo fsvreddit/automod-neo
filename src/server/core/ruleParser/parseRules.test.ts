@@ -1250,6 +1250,35 @@ body: "poll"
         ]);
     });
 
+    it("preserves image_count on submission rules", () => {
+        const rules = `
+---
+type: submission
+image_count: "> 2"
+body: "gallery check"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "submission",
+                image_count: "> 2",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["gallery check"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
     it("preserves is_approved for post conditions when provided", () => {
         const rules = `
 ---

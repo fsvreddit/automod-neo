@@ -77,6 +77,7 @@ export interface PostOrCommentCondition {
     is_top_level?: boolean; // Comments only
     comment_crowd_control_collapsed?: boolean; // Comments only
     comment_count?: string; // Posts only
+    image_count?: string; // Posts only
 
     // Author checks
     author?: Author;

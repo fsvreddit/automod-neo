@@ -144,6 +144,7 @@ const postConditionSchema = {
         age: { type: "string", nullable: true, pattern: dateComparatorPattern },
         past_archive_date: { type: "boolean", nullable: true },
         comment_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        image_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
         author: {
             ...authorSchema,
             nullable: true,
@@ -265,6 +266,7 @@ export const automodSchema: Record<string, unknown> = {
         age: { type: "string", nullable: true, pattern: dateComparatorPattern },
         past_archive_date: { type: "boolean", nullable: true },
         comment_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
+        image_count: { type: "string", nullable: true, pattern: numericComparatorPattern },
         is_top_level: { type: "boolean", nullable: true },
         comment_crowd_control_collapsed: { type: "boolean", nullable: true },
         action: {

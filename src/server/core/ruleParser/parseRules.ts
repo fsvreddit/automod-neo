@@ -584,6 +584,10 @@ function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleRe
         validateNumericThresholdFormatInNode(node, ruleReference, ["comment_count"]);
     }
 
+    if (node.image_count !== undefined) {
+        validateNumericThresholdFormatInNode(node, ruleReference, ["image_count"]);
+    }
+
     if (node.age !== undefined) {
         validateDateThresholdFormatInNode(node, ruleReference, ["age"]);
     }
