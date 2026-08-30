@@ -1405,6 +1405,35 @@ body: "approved post"
         ]);
     });
 
+    it("preserves is_nsfw for post conditions when provided", () => {
+        const rules = `
+---
+type: submission
+is_nsfw: true
+body: "nsfw post"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "submission",
+                is_nsfw: true,
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["nsfw post"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
     it("preserves is_approved for comment conditions when provided", () => {
         const rules = `
 ---
@@ -1466,6 +1495,50 @@ body: "child comment"
                         {
                             searchField: ["body"],
                             text: ["approved parent"],
+                            options: {
+                                search_method: "includes-word",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
+    });
+
+    it("preserves is_nsfw for parent_submission conditions when provided", () => {
+        const rules = `
+---
+type: comment
+parent_submission:
+  is_nsfw: true
+  body: "nsfw parent"
+body: "child comment"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["child comment"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                parent_submission: {
+                    is_nsfw: true,
+                    search_conditions: [
+                        {
+                            searchField: ["body"],
+                            text: ["nsfw parent"],
                             options: {
                                 search_method: "includes-word",
                                 case_sensitive: false,

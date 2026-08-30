@@ -259,6 +259,7 @@ export const automodSchema: Record<string, unknown> = {
         is_approved: { type: "boolean", nullable: true },
         body_longer_than: { type: "number", nullable: true },
         body_shorter_than: { type: "number", nullable: true },
+        is_nsfw: { type: "boolean", nullable: true },
         is_edited: { type: "boolean", nullable: true },
         is_poll: { type: "boolean", nullable: true },
         is_gallery: { type: "boolean", nullable: true },

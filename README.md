@@ -65,6 +65,10 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
+### v0.6.1
+
+* Fix broken validation of `is_nsfw` for the base submission item
+
 ### v0.6.0
 
 * `comment` and `comment_stickied` now works for parent submissions
