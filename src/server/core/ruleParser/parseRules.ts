@@ -484,6 +484,7 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
                 const attributeName = source?.rawKey ?? `${fieldName}[${searchableIndex}]`;
                 const containerPath = source?.containerPath;
                 const details = error instanceof Error ? error.message : String(error);
+                // eslint-disable-next-line preserve-caught-error
                 throw new Error(`${ruleReference}: Invalid regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern} (${details})`);
             }
         }

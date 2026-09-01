@@ -11,7 +11,6 @@ interface CommentQueueItem {
     commentToAdd: CommentToAdd;
 }
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type CommentQueueJobData = {
     jobGuid: string;
 };
