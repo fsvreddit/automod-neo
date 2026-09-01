@@ -85,6 +85,7 @@ author:
     bio_text (regex): '^bio_.*$'
     social_links#1: 'example.com/a'
     social_links#2: 'example.com/b'
+    social_link_title: 'Onlyfans'
 parent_submission:
     body+title+url (regex): ['regex1', 'regex2']
     crosspost_title#1: one
@@ -203,6 +204,15 @@ parent_submission:
                             text: ["example.com/b"],
                             options: {
                                 search_method: "includes",
+                                case_sensitive: false,
+                                negate: false,
+                            },
+                        },
+                        {
+                            searchField: ["social_link_title"],
+                            text: ["Onlyfans"],
+                            options: {
+                                search_method: "includes-word",
                                 case_sensitive: false,
                                 negate: false,
                             },

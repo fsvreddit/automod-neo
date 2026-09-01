@@ -65,6 +65,10 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
+### v0.6.2
+
+* Fix broken validation of `social_link_title` on author checks
+
 ### v0.6.1
 
 * Fix broken validation of `is_nsfw` for the base submission item
