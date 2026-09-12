@@ -72,25 +72,6 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 * Prevent rules from running on posts or comments deleted immediately after an edit (e.g. where they are being mass edited then deleted)
 * Fixed issue with author flair_template_id checks not passing validation or working
 
-### v0.6.2
-
-* Fix broken validation of `social_link_title` on author checks
-
-### v0.6.1
-
-* Fix broken validation of `is_nsfw` for the base submission item
-
-### v0.6.0
-
-* `comment` and `comment_stickied` now works for parent submissions
-* Add `is_approved` check on posts, comments and parent submissions
-* Fix behaviour of `includes-word` search checks where the search term starts with punctuation
-* Add `parent_comment` checks and actions
-* Add `image_count` check on post checks
-* Add `user_report_reason` and `mod_report_reason` check on posts and comments
-* Improve reliability of comment submission to work around Reddit rate limiting issues
-* Performance improvements
-
 ## About this app
 
 Automod Neo is open source. [You can find the source code on GitHub here](https://github.com/fsvreddit/automod-neo).

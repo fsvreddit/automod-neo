@@ -2,6 +2,25 @@
 
 This page shows a history of previous updates to Automod Neo.
 
+### v0.6.2
+
+* Fix broken validation of `social_link_title` on author checks
+
+### v0.6.1
+
+* Fix broken validation of `is_nsfw` for the base submission item
+
+### v0.6.0
+
+* `comment` and `comment_stickied` now works for parent submissions
+* Add `is_approved` check on posts, comments and parent submissions
+* Fix behaviour of `includes-word` search checks where the search term starts with punctuation
+* Add `parent_comment` checks and actions
+* Add `image_count` check on post checks
+* Add `user_report_reason` and `mod_report_reason` check on posts and comments
+* Improve reliability of comment submission to work around Reddit rate limiting issues
+* Performance improvements
+
 ### v0.5.0
 
 * Add `~day_of_week` directive to the base item
