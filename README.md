@@ -65,6 +65,11 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
+### v0.7.0
+
+* Fixed an issue that caused update notifications to be sent every day until the app is upgraded. Notifications will now be sent only once.
+* Added regular expression safety checking. Now, when you save rules, regexes will be checked for safety and ones that could potentially cause issues to Devvit's infrastructure will be flagged up.
+
 ### v0.6.2
 
 * Fix broken validation of `social_link_title` on author checks

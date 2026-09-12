@@ -490,7 +490,7 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
                 throw new Error(`${ruleReference}: Invalid regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern} (${details})`);
             }
 
-            const safetyResult = isSafe(regex);
+            const safetyResult = isSafe(regex, { maxScore: 400 });
             if (!safetyResult.safe) {
                 const source = searchableSourceMetadata.get(searchableItem);
                 const attributeName = source?.rawKey ?? `${fieldName}[${searchableIndex}]`;

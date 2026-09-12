@@ -7,7 +7,7 @@ describe("parseRules", () => {
         const rules = `
 ---
 title (includes): "Hello World"
-body (regex): "foo\\d+bar"
+body (regex): "foo\\d{1,3}bar"
         `;
 
         const parsed = parseRules(rules);
@@ -29,7 +29,7 @@ body (regex): "foo\\d+bar"
                     {
                         searchField: ["body"],
                         text: [
-                            "foo\\d+bar",
+                            "foo\\d{1,3}bar",
                         ],
                         options: {
                             search_method: "regex",
