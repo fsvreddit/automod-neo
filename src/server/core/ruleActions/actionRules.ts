@@ -458,16 +458,20 @@ export class ActionRules {
 
         const target = await getPostOrCommentById(this.targetId);
         if (isT3(target.id)) {
-            this.posts[target.id] = target as Post;
-        }
-
-        if (isT3(target.id)) {
             const postTarget = target as Post;
             this.additionalPlaceholders = {
                 media_author: postTarget.secureMedia?.oembed?.authorName,
                 media_author_url: postTarget.secureMedia?.oembed?.authorUrl,
                 media_title: postTarget.secureMedia?.oembed?.title,
             };
+            this.posts[target.id] = postTarget;
+        } else {
+            this.comments[target.id] = target as Comment;
+        }
+
+        if (target.authorName === "[deleted]") {
+            console.log(`Skipping action rules for target ${this.targetId} because the author is deleted.`);
+            return;
         }
 
         if (this.matchedRules.some(ruleMatch => this.anyPlaceholdersFound(ruleMatch, ["author_flair_text", "author_flair_css_class"]))) {

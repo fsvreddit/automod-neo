@@ -905,6 +905,20 @@ export class AutomodRuleChecker {
             }
         }
 
+        if (results.length > 0) {
+            let realComment: Comment;
+            if (!("authorName" in comment)) {
+                realComment = await this.getCommentById(comment.id as T1);
+            } else {
+                realComment = comment;
+            }
+
+            if (realComment.authorName === "[deleted]") {
+                this.log(`Comment ${realComment.id} author is deleted.`);
+                return [];
+            }
+        }
+
         return results;
     }
 
@@ -928,6 +942,10 @@ export class AutomodRuleChecker {
             }
 
             const post = await this.getPostById(postId);
+            if (post.authorName === "[deleted]") {
+                this.log(`Post ${post.id} author is deleted.`);
+                continue;
+            }
 
             const isSelfPost = post.url.includes(post.permalink);
 
