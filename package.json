@@ -30,6 +30,7 @@
     "lodash": "^4.18.1",
     "markdown-escape": "^2.0.0",
     "pluralize": "^8.0.0",
+    "redos-detector": "^6.1.4",
     "yaml": "^2.9.0"
   },
   "devDependencies": {

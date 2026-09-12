@@ -4,6 +4,7 @@ import { parseAllDocuments } from "yaml";
 import Ajv, { type ErrorObject, type ValidateFunction } from "ajv";
 import { automodSchema } from "./automodSchema";
 import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecution";
+import { isSafe } from "redos-detector";
 
 const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "domain", "full-exact", "full-text", "regex"];
 
@@ -477,8 +478,9 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
                 continue;
             }
 
+            let regex: RegExp;
             try {
-                new RegExp(pattern, "u");
+                regex = new RegExp(pattern, "u");
             } catch (error) {
                 const source = searchableSourceMetadata.get(searchableItem);
                 const attributeName = source?.rawKey ?? `${fieldName}[${searchableIndex}]`;
@@ -486,6 +488,14 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
                 const details = error instanceof Error ? error.message : String(error);
                 // eslint-disable-next-line preserve-caught-error
                 throw new Error(`${ruleReference}: Invalid regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern} (${details})`);
+            }
+
+            const safetyResult = isSafe(regex);
+            if (!safetyResult.safe) {
+                const source = searchableSourceMetadata.get(searchableItem);
+                const attributeName = source?.rawKey ?? `${fieldName}[${searchableIndex}]`;
+                const containerPath = source?.containerPath;
+                throw new Error(`${ruleReference}: Unsafe regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern} (${safetyResult.error})`);
             }
         }
     }
