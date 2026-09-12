@@ -1,6 +1,6 @@
 import { OnPostCreateRequest, T3, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { ActionRules, AutomodRuleChecker, AutomodRuleCheckerOpts, getRulesForSubreddit, isUserIgnoredForTriggers } from "../core";
+import { ActionRules, AutomodRuleChecker, getRulesForSubreddit, isUserIgnoredForTriggers } from "../core";
 import { fixPostTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import pluralize from "pluralize";
 
@@ -24,19 +24,7 @@ export const handlePostSubmit = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "post submit handled, no rules found" }, 200);
     }
 
-    const opts: AutomodRuleCheckerOpts = { rules };
-
-    if (request.author.flair) {
-        opts.userFlair = {
-            [request.author.name]: {
-                flairText: request.author.flair.text,
-                flairCssClass: request.author.flair.cssClass,
-                flairTemplateId: request.author.flair.templateId,
-            },
-        };
-    }
-
-    const ruleChecker = new AutomodRuleChecker(opts);
+    const ruleChecker = new AutomodRuleChecker({ rules });
 
     const results = await ruleChecker.checkPost(request.post.id as T3);
 

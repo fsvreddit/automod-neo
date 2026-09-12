@@ -1,5 +1,5 @@
-import { Comment, context, Post, reddit, settings, User, UserSocialLink } from "@devvit/web/server";
-import { CommentV2, isT3, T1, T3 } from "@devvit/web/shared";
+import { Comment, Post, reddit, settings, User, UserSocialLink } from "@devvit/web/server";
+import { CommentV2, isT1, isT3, T1, T3 } from "@devvit/web/shared";
 import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, RedditData, SearchableText } from "../types";
 import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW, isUserBanned } from "../helpers";
 import { meetsDateThreshold, meetsNumericThreshold } from "./thresholdChecks";
@@ -18,7 +18,6 @@ export interface AutomodRuleCheckerOpts {
     rules: AutomodRule[];
     post?: Post;
     comment?: Comment;
-    userFlair?: Record<string, UserFlair>;
 }
 
 export class AutomodRuleChecker {
@@ -46,10 +45,6 @@ export class AutomodRuleChecker {
         if (opts.comment) {
             this.comments[opts.comment.id] = opts.comment;
         }
-
-        if (opts.userFlair) {
-            this.userFlair = opts.userFlair;
-        }
     }
 
     private async getUserByUsername (username: string): Promise<User | undefined> {
@@ -70,11 +65,22 @@ export class AutomodRuleChecker {
         return this.users[username];
     }
 
-    private async getUserFlair (user: User): Promise<UserFlair | undefined> {
+    private async getUserFlair (user: User, targetId: T1 | T3): Promise<UserFlair | undefined> {
         if (!(user.username in this.userFlair)) {
-            const flair = await user.getUserFlairBySubreddit(context.subredditName);
-            this.userFlair[user.username] = flair;
+            let target: Post | Comment;
+            if (isT1(targetId)) {
+                target = await this.getCommentById(targetId);
+            } else {
+                target = await this.getPostById(targetId);
+            }
+
+            this.userFlair[user.username] = {
+                flairText: target.authorFlair?.text,
+                flairCssClass: target.authorFlair?.cssClass,
+                flairTemplateId: target.authorFlair?.templateId,
+            };
         }
+
         return this.userFlair[user.username];
     }
 
@@ -237,7 +243,7 @@ export class AutomodRuleChecker {
         }
     }
 
-    private async authorMatchesCondition (username: string, authorCondition: Author, checkContext?: string): Promise<Matches[] | undefined> {
+    private async authorMatchesCondition (username: string, targetId: T1 | T3, authorCondition: Author, checkContext?: string): Promise<Matches[] | undefined> {
         if (authorCondition.is_contributor !== undefined) {
             if (await this.getIsUserApprovedUser(username) !== authorCondition.is_contributor) {
                 this.log(`${username} does not match is_contributor condition (${authorCondition.is_contributor}).`, checkContext);
@@ -408,7 +414,7 @@ export class AutomodRuleChecker {
         }
 
         if (distinctSearchFields.has("flair_text") || distinctSearchFields.has("flair_css_class") || distinctSearchFields.has("flair_template_id")) {
-            const userFlair = await this.getUserFlair(user);
+            const userFlair = await this.getUserFlair(user, targetId);
             if (userFlair?.flairText) {
                 searchFields.flair_text = userFlair.flairText;
             }
@@ -665,7 +671,7 @@ export class AutomodRuleChecker {
             }
 
             const crossPost = await this.getPostById(post.crosspostParentId);
-            const crosspostAuthorMatches = await this.authorMatchesCondition(crossPost.authorName, rule.crosspost_author);
+            const crosspostAuthorMatches = await this.authorMatchesCondition(crossPost.authorName, crossPost.id, rule.crosspost_author);
             if (!crosspostAuthorMatches) {
                 this.log(`Post ${post.id} does not match crosspost_author condition.`, checkContext);
                 return;
@@ -696,7 +702,7 @@ export class AutomodRuleChecker {
         }
 
         if (rule.author) {
-            const authorMatches = await this.authorMatchesCondition(post.authorName, rule.author);
+            const authorMatches = await this.authorMatchesCondition(post.authorName, post.id, rule.author);
             if (!authorMatches) {
                 this.log(`Post ${post.id} does not match author condition.`, checkContext);
                 return;
@@ -803,7 +809,7 @@ export class AutomodRuleChecker {
         matches.push(...searchMatches);
 
         if (condition.author) {
-            const authorMatches = await this.authorMatchesCondition(authorName, condition.author);
+            const authorMatches = await this.authorMatchesCondition(authorName, comment.id as T1, condition.author);
             if (!authorMatches) {
                 this.log(`Comment ${comment.id} does not match author condition.`, checkContext);
                 return;
