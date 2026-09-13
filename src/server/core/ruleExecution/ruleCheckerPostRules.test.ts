@@ -41,12 +41,13 @@ function makePost (body: string | undefined, numberOfComments = 0, numberOfImage
 
 const comment = {
     id: "t1_comment",
+    authorName: "example_author",
     body: "comment body",
     numReports: 0,
     parentId: "t3_parent",
     postId: "t3_parent",
     collapsedBecauseCrowdControl: false,
-} as CommentV2;
+} as unknown as CommentV2;
 
 describe("AutomodRuleChecker post checks", () => {
     it("enforces body_shorter_than for posts", async () => {

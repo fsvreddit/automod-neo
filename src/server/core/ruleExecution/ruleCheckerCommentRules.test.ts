@@ -27,12 +27,13 @@ import { AutomodRuleChecker } from "./ruleChecker.js";
 
 const comment = {
     id: "t1_comment",
+    authorName: "example_author",
     body: "matching body",
     numReports: 0,
     parentId: "t3_parent",
     postId: "t3_parent",
     collapsedBecauseCrowdControl: false,
-} as CommentV2;
+} as unknown as CommentV2;
 
 describe("AutomodRuleChecker.checkComment", () => {
     beforeEach(() => {

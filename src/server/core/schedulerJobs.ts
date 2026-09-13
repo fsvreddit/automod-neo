@@ -20,15 +20,13 @@ export async function configureCronJobs () {
     const randomMinute = Math.floor(Math.random() * 60);
     const randomHour = Math.floor(Math.random() * 24);
 
-    const jobData: UpgradeNotifierData = {
-        settingName: AppSetting.NotifyOnUpdates,
-        appFriendlyName: "Automod Neo",
-    };
-
-    await scheduler.runJob({
+    await scheduler.runJob<UpgradeNotifierData>({
         name: SchedulerJob.CheckForUpdates,
         cron: `${randomMinute} ${randomHour} * * *`,
-        data: jobData,
+        data: {
+            settingName: AppSetting.NotifyOnUpdates,
+            appFriendlyName: "Automod Neo",
+        },
     });
 
     console.log(`Scheduled ${SchedulerJob.CheckForUpdates} job to run at ${randomHour}:${randomMinute} every day.`);
