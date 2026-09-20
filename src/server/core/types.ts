@@ -67,6 +67,7 @@ export interface PostOrCommentCondition {
     is_approved?: boolean;
     body_longer_than?: number;
     body_shorter_than?: number;
+    paragraph_count?: string;
     is_nsfw?: boolean; // Posts only
     is_edited?: boolean;
     is_locked?: boolean;

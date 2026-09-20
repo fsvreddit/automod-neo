@@ -68,6 +68,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 ### v0.8.0
 
 * Add `is_locked` check for posts and comments at any level
+* Add `paragraph_count` check for posts and comments at any level
 
 ## About this app
 

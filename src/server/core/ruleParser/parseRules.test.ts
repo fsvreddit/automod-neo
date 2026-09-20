@@ -1125,6 +1125,67 @@ parent_submission:
         ]);
     });
 
+    it("preserves paragraph_count on submission rules", () => {
+        const rules = `
+---
+type: submission
+paragraph_count: ">= 3"
+body: "paragraph check"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "submission",
+                paragraph_count: ">= 3",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["paragraph check"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves parent_submission paragraph_count on comment rules", () => {
+        const rules = `
+---
+type: comment
+body: "parent paragraph check"
+parent_submission:
+  paragraph_count: "< 8"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["parent paragraph check"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                parent_submission: {
+                    paragraph_count: "< 8",
+                },
+            },
+        ]);
+    });
+
     it("throws when age has an invalid format on submission rules", () => {
         const rules = `
 ---

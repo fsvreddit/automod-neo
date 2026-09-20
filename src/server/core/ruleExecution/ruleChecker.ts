@@ -434,6 +434,15 @@ export class AutomodRuleChecker {
         return matched;
     }
 
+    private getParagraphCount (input: string | undefined): number {
+        if (!input) {
+            return 0;
+        }
+
+        const paragraphs = input.split("\n").filter(paragraph => paragraph.trim() !== "");
+        return paragraphs.length;
+    }
+
     public async checkPostAgainstCondition (post: Post, rule: PostOrCommentCondition, checkContext?: string): Promise<Matches[] | undefined> {
         if (rule.standard !== undefined) {
             if (!postMatchesStandardCondition(post, rule.standard)) {
@@ -506,6 +515,15 @@ export class AutomodRuleChecker {
         if (rule.body_longer_than !== undefined) {
             if (postBodyLength <= rule.body_longer_than) {
                 this.log(`Post ${post.id} does not match body_longer_than condition (${rule.body_longer_than}).`, checkContext);
+                return;
+            }
+        }
+
+        if (rule.paragraph_count !== undefined) {
+            const paragraphCount = this.getParagraphCount(postBody);
+            const meetsThreshold = meetsNumericThreshold(paragraphCount, rule.paragraph_count);
+            if (!meetsThreshold) {
+                this.log(`Post ${post.id} does not match paragraph_count condition (${rule.paragraph_count}).`, checkContext);
                 return;
             }
         }
@@ -735,6 +753,15 @@ export class AutomodRuleChecker {
         if (condition.body_shorter_than !== undefined) {
             if (commentBody.length >= condition.body_shorter_than) {
                 this.log(`Comment ${comment.id} does not match body_shorter_than condition (${condition.body_shorter_than}).`, checkContext);
+                return;
+            }
+        }
+
+        if (condition.paragraph_count !== undefined) {
+            const paragraphCount = this.getParagraphCount(commentBody);
+            const meetsThreshold = meetsNumericThreshold(paragraphCount, condition.paragraph_count);
+            if (!meetsThreshold) {
+                this.log(`Comment ${comment.id} does not match paragraph_count condition (${condition.paragraph_count}).`, checkContext);
                 return;
             }
         }
