@@ -456,6 +456,13 @@ export class AutomodRuleChecker {
             }
         }
 
+        if (rule.is_locked !== undefined) {
+            if (post.locked !== rule.is_locked) {
+                this.log(`Post ${post.id} does not match is_locked condition (${rule.is_locked}).`, checkContext);
+                return;
+            }
+        }
+
         if (rule.is_gallery !== undefined) {
             if ((post.gallery.length > 0) !== rule.is_gallery) {
                 this.log(`Post ${post.id} does not match is_gallery condition (${rule.is_gallery}).`, checkContext);
@@ -828,6 +835,14 @@ export class AutomodRuleChecker {
             const fullCommentObject = await this.getCommentById(comment.id as T1);
             if (fullCommentObject.edited !== condition.is_edited) {
                 this.log(`Comment ${comment.id} does not match is_edited condition (${condition.is_edited}).`, checkContext);
+                return;
+            }
+        }
+
+        if (condition.is_locked !== undefined) {
+            const fullCommentObject = await this.getCommentById(comment.id as T1);
+            if (fullCommentObject.locked !== condition.is_locked) {
+                this.log(`Comment ${comment.id} does not match is_locked condition (${condition.is_locked}).`, checkContext);
                 return;
             }
         }

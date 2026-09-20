@@ -82,7 +82,7 @@
             "notifyOnUpdates": {
                 "type": "boolean",
                 "label": "Notify on Updates",
-                "helpText": "If enabled, Automod Neo will send a Modmail notification to the subreddit when a new version is available.",
+                "helpText": "If enabled, this app will send a Modmail notification to the subreddit when a new version is available.",
                 "defaultValue": true
             }
         }
