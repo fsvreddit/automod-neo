@@ -449,7 +449,7 @@ function preprocessPostConditionLikeNode (node: MutableNode, containerPath: stri
     }
 }
 
-function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: string, ruleReference: string): void {
+function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: string, ruleReference: string, checkForRedos: boolean): void {
     const fieldValue = node[fieldName];
     if (!Array.isArray(fieldValue)) {
         return;
@@ -490,12 +490,14 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
                 throw new Error(`${ruleReference}: Invalid regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern} (${details})`);
             }
 
-            const safetyResult = isSafe(regex, { maxScore: 400 });
-            if (!safetyResult.safe) {
-                const source = searchableSourceMetadata.get(searchableItem);
-                const attributeName = source?.rawKey ?? `${fieldName}[${searchableIndex}]`;
-                const containerPath = source?.containerPath;
-                throw new Error(`${ruleReference}: Unsafe regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern} (${safetyResult.error})`);
+            if (checkForRedos) {
+                const safetyResult = isSafe(regex, { maxScore: 400 });
+                if (!safetyResult.safe) {
+                    const source = searchableSourceMetadata.get(searchableItem);
+                    const attributeName = source?.rawKey ?? `${fieldName}[${searchableIndex}]`;
+                    const containerPath = source?.containerPath;
+                    throw new Error(`${ruleReference}: Unsafe regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern} (${safetyResult.error})`);
+                }
             }
         }
     }
@@ -545,8 +547,8 @@ function validateDateThresholdFormatInNode (node: MutableNode, ruleReference: st
     }
 }
 
-function validateRegexPatternsInAuthorNode (node: MutableNode, ruleReference: string): void {
-    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference);
+function validateRegexPatternsInAuthorNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): void {
+    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
 
     const numericThresholdFields = [
         "comment_karma",
@@ -566,27 +568,27 @@ function validateRegexPatternsInAuthorNode (node: MutableNode, ruleReference: st
     validateDateThresholdFormatInNode(node, ruleReference, dateThresholdFields);
 }
 
-function validateRegexPatternsInSubredditNode (node: MutableNode, ruleReference: string): void {
-    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference);
+function validateRegexPatternsInSubredditNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): void {
+    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
 }
 
-function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleReference: string): void {
-    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference);
+function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): void {
+    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
 
     if (isObjectRecord(node.author)) {
-        validateRegexPatternsInAuthorNode(node.author, ruleReference);
+        validateRegexPatternsInAuthorNode(node.author, ruleReference, checkForRedos);
     }
 
     if (isObjectRecord(node.subreddit)) {
-        validateRegexPatternsInSubredditNode(node.subreddit, ruleReference);
+        validateRegexPatternsInSubredditNode(node.subreddit, ruleReference, checkForRedos);
     }
 
     if (isObjectRecord(node.crosspost_author)) {
-        validateRegexPatternsInAuthorNode(node.crosspost_author, ruleReference);
+        validateRegexPatternsInAuthorNode(node.crosspost_author, ruleReference, checkForRedos);
     }
 
     if (isObjectRecord(node.crosspost_subreddit)) {
-        validateRegexPatternsInSubredditNode(node.crosspost_subreddit, ruleReference);
+        validateRegexPatternsInSubredditNode(node.crosspost_subreddit, ruleReference, checkForRedos);
     }
 
     if (node.poll_option_count !== undefined) {
@@ -606,15 +608,15 @@ function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleRe
     }
 }
 
-export function validateRuleRegexPatterns (rule: MutableNode, ruleReference: string): void {
-    validateRegexPatternsInPostConditionLikeNode(rule, ruleReference);
+export function validateRuleRegexPatterns (rule: MutableNode, ruleReference: string, checkForRedos: boolean): void {
+    validateRegexPatternsInPostConditionLikeNode(rule, ruleReference, checkForRedos);
 
     if (isObjectRecord(rule.parent_submission)) {
-        validateRegexPatternsInPostConditionLikeNode(rule.parent_submission, ruleReference);
+        validateRegexPatternsInPostConditionLikeNode(rule.parent_submission, ruleReference, checkForRedos);
     }
 
     if (isObjectRecord(rule.parent_comment)) {
-        validateRegexPatternsInPostConditionLikeNode(rule.parent_comment, ruleReference);
+        validateRegexPatternsInPostConditionLikeNode(rule.parent_comment, ruleReference, checkForRedos);
     }
 }
 
@@ -647,7 +649,7 @@ export function preprocessRule (rule: MutableNode): void {
     }
 }
 
-export function parseRules (rules: string, validateRegex = false): AutomodRule[] {
+export function parseRules (rules: string, checkForRedos = false): AutomodRule[] {
     if (!rules.trim()) {
         return [];
     }
@@ -658,9 +660,7 @@ export function parseRules (rules: string, validateRegex = false): AutomodRule[]
     for (const [index, rule] of parsedRules.entries()) {
         const ruleReference = formatRuleReference(rule, index);
         preprocessRule(rule);
-        if (validateRegex) {
-            validateRuleRegexPatterns(rule, ruleReference);
-        }
+        validateRuleRegexPatterns(rule, ruleReference, checkForRedos);
     }
 
     const ajv = new Ajv({
