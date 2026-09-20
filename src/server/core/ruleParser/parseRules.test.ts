@@ -289,6 +289,43 @@ url   (includes): 'example.com/path'
         ]);
     });
 
+    it("parses searchable field with a single explicit search method", () => {
+        const rules = `
+---
+body (includes): "hello"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["hello"],
+                        options: {
+                            search_method: "includes",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("throws when more than one search method is specified for a searchable field", () => {
+        const rules = `
+---
+body (includes, regex): "hello"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Multiple search methods are not allowed for attribute 'body \(includes, regex\)'/,
+        );
+    });
+
     it("normalizes searchable fields with named key suffixes", () => {
         const rules = `
 ---

@@ -213,10 +213,16 @@ function defaultSearchMethodForField (fieldName: SearchField): SearchMethod {
     }
 }
 
-function buildSearchOptions (fieldName: SearchField, qualifierText: string | undefined, negate: boolean): SearchOption {
+function buildSearchOptions (fieldName: SearchField, qualifierText: string | undefined, negate: boolean, attributeName?: string): SearchOption {
     const rawParts = (qualifierText ?? "").split(",").map(part => part.trim()).filter(Boolean);
     const caseSensitive = rawParts.includes("case-sensitive") || rawParts.includes("case_sensitive");
     const parts = rawParts.filter(part => part !== "case-sensitive" && part !== "case_sensitive");
+
+    const uniqueSearchMethods = [...new Set(parts.filter(part => searchMethodValues.includes(part as SearchMethod)))];
+    if (uniqueSearchMethods.length > 1) {
+        const attributeLabel = attributeName ?? fieldName;
+        throw new Error(`Multiple search methods are not allowed for attribute '${attributeLabel}': ${uniqueSearchMethods.join(", ")}`);
+    }
 
     const searchMethodCandidate = parts.length > 0 ? parts.join(", ") : undefined;
     const searchMethod = searchMethodCandidate && searchMethodValues.includes(searchMethodCandidate as SearchMethod)
@@ -282,7 +288,7 @@ function preprocessSearchableFields (node: MutableNode, searchableFields: Set<st
             continue;
         }
 
-        const searchableValue = toSearchableText(node[rawKey], parsedKey.fieldNames as SearchableText["searchField"], buildSearchOptions(parsedKey.primaryField as SearchField, parsedKey.qualifierText, parsedKey.negate));
+        const searchableValue = toSearchableText(node[rawKey], parsedKey.fieldNames as SearchableText["searchField"], buildSearchOptions(parsedKey.primaryField as SearchField, parsedKey.qualifierText, parsedKey.negate, rawKey));
         if (!searchableValue) {
             continue;
         }

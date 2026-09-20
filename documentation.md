@@ -191,7 +191,7 @@ These modifiers change how a search check behaves. They can be used to ensure th
 To specify modifiers for a check, put the modifiers in parentheses after the check's name. For example, a body+title check with the includes and regex modifiers would look like:
 
 ```yaml
-body+title (includes, regex): ["whatever", "who cares?"]
+body+title (regex): ["whatever", "who cares?"]
 ```
 
 ### Match search methods
@@ -204,10 +204,10 @@ These modifiers change how the search options for looked for inside the field, s
 * `ends-with` - only checks if the subject ends with the text
 * `full-exact` - checks if the entire subject matches the text exactly
 * `full-text` - similar to full-exact, except punctuation/spacing on either end of the subject is not considered
-
-### Other modifiers
-
 * `regex` - considers the text being searched for to be a regular expression (using standard Javascript regex syntax), instead of literal text to find
+
+### Other modifier
+
 * `case-sensitive` - makes the search case-sensitive, so text with different capitalization than the search value(s) will not be considered a match
 
 If you do not specify a search method modifier for a particular check, it will default to one depending on which field you are checking. Note that if you do any joined search check (multiple fields combined with +), the default is always includes-word. Otherwise, if you are checking a single subject field, the defaults are as follows:
@@ -223,6 +223,8 @@ If you do not specify a search method modifier for a particular check, it will d
 * `social_links`: `includes`
 
 All other fields default to includes-word.
+
+You cannot combine matching modifiers (except for `case-sensitive` - e.g. `body (includes-word, regex)` does not work.)
 
 ### Non-searching checks
 
