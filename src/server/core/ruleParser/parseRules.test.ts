@@ -289,6 +289,43 @@ url   (includes): 'example.com/path'
         ]);
     });
 
+    it("parses searchable field with a single explicit search method", () => {
+        const rules = `
+---
+body (includes): "hello"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["hello"],
+                        options: {
+                            search_method: "includes",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("throws when more than one search method is specified for a searchable field", () => {
+        const rules = `
+---
+body (includes, regex): "hello"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Multiple search methods are not allowed for attribute 'body \(includes, regex\)'/,
+        );
+    });
+
     it("normalizes searchable fields with named key suffixes", () => {
         const rules = `
 ---
@@ -1120,6 +1157,67 @@ parent_submission:
                 parent_submission: {
                     age: "< 30 days",
                     comment_count: "<= 200",
+                },
+            },
+        ]);
+    });
+
+    it("preserves paragraph_count on submission rules", () => {
+        const rules = `
+---
+type: submission
+paragraph_count: ">= 3"
+body: "paragraph check"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "submission",
+                paragraph_count: ">= 3",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["paragraph check"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("preserves parent_submission paragraph_count on comment rules", () => {
+        const rules = `
+---
+type: comment
+body: "parent paragraph check"
+parent_submission:
+  paragraph_count: "< 8"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                type: "comment",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["parent paragraph check"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+                parent_submission: {
+                    paragraph_count: "< 8",
                 },
             },
         ]);

@@ -65,12 +65,10 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
-### v0.7.0
+### v0.8.0
 
-* Fixed an issue that caused update notifications to be sent every day until the app is upgraded. Notifications will now be sent only once.
-* Added regular expression safety checking. Now, when you save rules, regexes will be checked for safety and ones that could potentially cause issues to Devvit's infrastructure will be flagged up.
-* Prevent rules from running on posts or comments deleted immediately after an edit (e.g. where they are being mass edited then deleted)
-* Fixed issue with author flair_template_id checks not passing validation or working
+* Add `is_locked` check for posts and comments at any level
+* Add `paragraph_count` check for posts and comments at any level
 
 ## About this app
 

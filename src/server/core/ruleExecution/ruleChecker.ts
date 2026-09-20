@@ -434,6 +434,15 @@ export class AutomodRuleChecker {
         return matched;
     }
 
+    private getParagraphCount (input: string | undefined): number {
+        if (!input) {
+            return 0;
+        }
+
+        const paragraphs = input.split("\n").filter(paragraph => paragraph.trim() !== "");
+        return paragraphs.length;
+    }
+
     public async checkPostAgainstCondition (post: Post, rule: PostOrCommentCondition, checkContext?: string): Promise<Matches[] | undefined> {
         if (rule.standard !== undefined) {
             if (!postMatchesStandardCondition(post, rule.standard)) {
@@ -452,6 +461,13 @@ export class AutomodRuleChecker {
         if (rule.is_edited !== undefined) {
             if (post.edited !== rule.is_edited) {
                 this.log(`Post ${post.id} does not match is_edited condition (${rule.is_edited}).`, checkContext);
+                return;
+            }
+        }
+
+        if (rule.is_locked !== undefined) {
+            if (post.locked !== rule.is_locked) {
+                this.log(`Post ${post.id} does not match is_locked condition (${rule.is_locked}).`, checkContext);
                 return;
             }
         }
@@ -499,6 +515,15 @@ export class AutomodRuleChecker {
         if (rule.body_longer_than !== undefined) {
             if (postBodyLength <= rule.body_longer_than) {
                 this.log(`Post ${post.id} does not match body_longer_than condition (${rule.body_longer_than}).`, checkContext);
+                return;
+            }
+        }
+
+        if (rule.paragraph_count !== undefined) {
+            const paragraphCount = this.getParagraphCount(postBody);
+            const meetsThreshold = meetsNumericThreshold(paragraphCount, rule.paragraph_count);
+            if (!meetsThreshold) {
+                this.log(`Post ${post.id} does not match paragraph_count condition (${rule.paragraph_count}).`, checkContext);
                 return;
             }
         }
@@ -732,6 +757,15 @@ export class AutomodRuleChecker {
             }
         }
 
+        if (condition.paragraph_count !== undefined) {
+            const paragraphCount = this.getParagraphCount(commentBody);
+            const meetsThreshold = meetsNumericThreshold(paragraphCount, condition.paragraph_count);
+            if (!meetsThreshold) {
+                this.log(`Comment ${comment.id} does not match paragraph_count condition (${condition.paragraph_count}).`, checkContext);
+                return;
+            }
+        }
+
         if (condition.body_longer_than !== undefined) {
             if (commentBody.length <= condition.body_longer_than) {
                 this.log(`Comment ${comment.id} does not match body_longer_than condition (${condition.body_longer_than}).`, checkContext);
@@ -828,6 +862,14 @@ export class AutomodRuleChecker {
             const fullCommentObject = await this.getCommentById(comment.id as T1);
             if (fullCommentObject.edited !== condition.is_edited) {
                 this.log(`Comment ${comment.id} does not match is_edited condition (${condition.is_edited}).`, checkContext);
+                return;
+            }
+        }
+
+        if (condition.is_locked !== undefined) {
+            const fullCommentObject = await this.getCommentById(comment.id as T1);
+            if (fullCommentObject.locked !== condition.is_locked) {
+                this.log(`Comment ${comment.id} does not match is_locked condition (${condition.is_locked}).`, checkContext);
                 return;
             }
         }
