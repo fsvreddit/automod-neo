@@ -647,7 +647,7 @@ export function preprocessRule (rule: MutableNode): void {
     }
 }
 
-export function parseRules (rules: string): AutomodRule[] {
+export function parseRules (rules: string, validateRegex = false): AutomodRule[] {
     if (!rules.trim()) {
         return [];
     }
@@ -658,7 +658,9 @@ export function parseRules (rules: string): AutomodRule[] {
     for (const [index, rule] of parsedRules.entries()) {
         const ruleReference = formatRuleReference(rule, index);
         preprocessRule(rule);
-        validateRuleRegexPatterns(rule, ruleReference);
+        if (validateRegex) {
+            validateRuleRegexPatterns(rule, ruleReference);
+        }
     }
 
     const ajv = new Ajv({

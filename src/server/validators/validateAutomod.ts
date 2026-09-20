@@ -15,7 +15,7 @@ export const validateAutomodSetting = async (c: Context) => {
     }
 
     try {
-        const rules = parseRules(validationRequest.value);
+        const rules = parseRules(validationRequest.value, true);
         console.log(`Parsed ${rules.length} ${pluralize("rule", rules.length)} successfully.`);
     } catch (e) {
         return c.json<SettingsValidationResponse>({
