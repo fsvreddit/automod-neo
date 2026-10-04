@@ -44,7 +44,6 @@ The following existing AutoModerator features are not supported due to Devvit li
 * All CQS checks
 * Author flair template ID checks for parent submissions
 * is_original_content on post checks
-* Set Contest Mode
 * Set Original Content
 * Temporary Events label
 * the `media_description` check and associated placeholder
@@ -64,6 +63,11 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 ## Recent changes
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
+
+### v1.0.0
+
+* Add `set_contest_mode` for posts (base item and parent submission)
+* Reduce sensitivity of regex safety checker
 
 ### v0.8.0
 

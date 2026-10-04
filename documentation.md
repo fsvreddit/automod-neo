@@ -343,6 +343,7 @@ The supported threshold checks are:
 * `set_suggested_sort` - Sets the suggested comment sort. Valid values are `best`, `new`, `qa`, `top`, `controversial`, `hot`, `old`, `random`, and `blank`. `blank` clears the suggested sort and lets users use their own.
 * `set_locked` - true/false - Locks or unlocks the submission or comment.
 * `set_post_crowd_control_level` - Sets the Crowd Control level of a submission. Valid values are OFF, LENIENT, MEDIUM, and STRICT.
+* `set_contest_mode` - Sets contest mode on or off on posts
 
 ### For comments (base item and parent_comment)
 

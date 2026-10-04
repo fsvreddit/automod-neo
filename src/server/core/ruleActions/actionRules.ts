@@ -6,7 +6,7 @@ import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../
 import { AppSetting } from "../appSettings";
 import markdownEscape from "markdown-escape";
 import { hasAutomodActionBeenTaken } from "../automodActions";
-import { isInDisallowedSubreddit, queueComments } from "..";
+import { isInDisallowedSubreddit, queueComments, setContestMode } from "..";
 
 interface AdditionalPlaceholders {
     author_flair_text?: string;
@@ -422,6 +422,11 @@ export class ActionRules {
         if (actions.set_post_crowd_control_level) {
             await post.updateCrowdControlLevel(actions.set_post_crowd_control_level);
             console.log(`Set post crowd control level for post ${post.id} to ${actions.set_post_crowd_control_level} due to rule "${automodMatch.rule.friendly_name ?? "Unnamed rule"}"`);
+        }
+
+        if (actions.set_contest_mode !== undefined) {
+            await setContestMode(post.id, actions.set_contest_mode);
+            console.log(`Set contest mode for post ${post.id} to ${actions.set_contest_mode} due to rule "${automodMatch.rule.friendly_name ?? "Unnamed rule"}"`);
         }
     }
 
