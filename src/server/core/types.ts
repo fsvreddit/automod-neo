@@ -132,6 +132,7 @@ export type AutomodRule = PostOrCommentCondition & {
     message?: string;
     message_subject?: string;
     discord_alert?: string;
+    alert_webhook?: string;
 
     // Behaviour modifiers
     stop_on_match?: boolean;

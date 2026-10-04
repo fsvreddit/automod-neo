@@ -5,6 +5,7 @@ import Ajv, { type ErrorObject, type ValidateFunction } from "ajv";
 import { automodSchema } from "./automodSchema";
 import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecution";
 import { checkSync } from "recheck";
+import { parseWebhookUrl } from "../webhookUtils";
 
 const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "domain", "full-exact", "full-text", "regex"];
 
@@ -640,6 +641,24 @@ export function validateRuleRegexPatterns (rule: MutableNode, ruleReference: str
     }
 }
 
+export function validateWebhookUrl (rule: MutableNode, ruleReference: string): void {
+    if (rule.alert_webhook === undefined) {
+        return;
+    }
+
+    if (typeof rule.alert_webhook !== "string") {
+        throw new Error(`Invalid alert_webhook in rule ${ruleReference}`);
+    }
+
+    if (parseWebhookUrl(rule.alert_webhook) === undefined) {
+        throw new Error(`Invalid alert_webhook URL in rule ${ruleReference}`);
+    }
+
+    if (rule.alert_webhook && !rule.discord_alert) {
+        throw new Error(`alert_webhook is specified but discord_alert is missing in rule ${ruleReference}`);
+    }
+}
+
 export function preprocessRule (rule: MutableNode): void {
     normalizeNodeKeysToLowerCase(rule);
     preprocessPostConditionLikeNode(rule, "");
@@ -681,6 +700,7 @@ export function parseRules (rules: string, checkForRedos = false): AutomodRule[]
         const ruleReference = formatRuleReference(rule, index);
         preprocessRule(rule);
         validateRuleRegexPatterns(rule, ruleReference, checkForRedos);
+        validateWebhookUrl(rule, ruleReference);
     }
 
     const ajv = new Ajv({

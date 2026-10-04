@@ -319,10 +319,13 @@ export class ActionRules {
 
         if (doMessages && matchedRule.rule.discord_alert) {
             const discordAlertBody = this.valueWithPlaceholdersReplaced(matchedRule.rule.discord_alert, target, matchedRule);
-            this.webhookUrl ??= await settings.get<string>(AppSetting.DiscordOrSlackWebhookUrl);
+            if (!matchedRule.rule.alert_webhook) {
+                this.webhookUrl ??= await settings.get<string>(AppSetting.DiscordOrSlackWebhookUrl);
+            }
+
             if (discordAlertBody) {
                 if (this.webhookUrl) {
-                    await sendMessageToWebhook(this.webhookUrl, discordAlertBody);
+                    await sendMessageToWebhook(matchedRule.rule.alert_webhook ?? this.webhookUrl, discordAlertBody);
                     console.log(`Sent Discord alert due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}"`);
                 } else {
                     console.warn("Discord alert specified in rule, but no webhook URL is set in subreddit settings.");

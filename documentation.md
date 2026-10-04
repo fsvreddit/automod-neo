@@ -89,7 +89,7 @@ The following checks/actions are only available in the top level of a rule, and 
 * `modmail_subject` - If a modmail is sent, the subject of that modmail. Defaults to "Notification about a {{kind}} for u/{{author}}" if not set. Supports placeholders.
 * `message` - Text of a message to send to the author of an item that satisfies the rule's conditions. Supports placeholders.
 * `message_subject` - If a message is sent, the subject of that message. Defaults to "A message about your {{kind}} on {{subreddit}}" if not set. Supports placeholders.
-* `discord_alert` - Text of a message to send to a pre-configured Discord or Slack webhook. Supports placeholders.
+* `discord_alert` - Text of a message to send to a pre-configured Discord or Slack webhook. Supports placeholders. Discord webhooks can be overridden on a rule-by-rule basis using `alert_webhook` to specify a Discord or Slack webhook that applies to that rule only.
 
 ## Sub-groups
 
