@@ -85,6 +85,13 @@
                 "helpText": "If enabled, this app will send a Modmail notification to the subreddit when a new version is available.",
                 "defaultValue": true
             }
+        },
+        "global": {
+            "redosCheckerEnabled": {
+                "type": "boolean",
+                "label": "ReDoS Checker Enabled",
+                "defaultValue": true
+            }
         }
     },
     "marketingAssets": {

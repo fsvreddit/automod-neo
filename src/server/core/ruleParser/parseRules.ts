@@ -4,9 +4,11 @@ import { parseAllDocuments } from "yaml";
 import Ajv, { type ErrorObject, type ValidateFunction } from "ajv";
 import { automodSchema } from "./automodSchema";
 import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecution";
-import { isSafe } from "redos-detector";
+import { checkSync } from "recheck";
 
 const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "domain", "full-exact", "full-text", "regex"];
+
+process.env.RECHECK_SYNC_BACKEND ??= "pure";
 
 const topLevelSearchableFields = new Set([
     "id",
@@ -497,12 +499,20 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
             }
 
             if (checkForRedos) {
-                const safetyResult = isSafe(regex, { maxScore: 400 });
-                if (!safetyResult.safe) {
+                const checkResult = checkSync(regex.source, "u", {
+                    maxAttackStringSize: 10000,
+                    accelerationMode: "on",
+                    attackLimit: 10000,
+                    timeout: 1000,
+                });
+
+                console.log(JSON.stringify(checkResult, null, 2));
+
+                if (checkResult.status === "vulnerable") {
                     const source = searchableSourceMetadata.get(searchableItem);
                     const attributeName = source?.rawKey ?? `${fieldName}[${searchableIndex}]`;
                     const containerPath = source?.containerPath;
-                    throw new Error(`${ruleReference}: Unsafe regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern} (${safetyResult.error})`);
+                    throw new Error(`${ruleReference}: Unsafe regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern}`);
                 }
             }
         }
