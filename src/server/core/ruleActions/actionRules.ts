@@ -6,7 +6,7 @@ import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../
 import { AppSetting } from "../appSettings";
 import markdownEscape from "markdown-escape";
 import { hasAutomodActionBeenTaken } from "../automodActions";
-import { queueComments } from "..";
+import { isInDisallowedSubreddit, queueComments, setContestMode } from "..";
 
 interface AdditionalPlaceholders {
     author_flair_text?: string;
@@ -319,10 +319,13 @@ export class ActionRules {
 
         if (doMessages && matchedRule.rule.discord_alert) {
             const discordAlertBody = this.valueWithPlaceholdersReplaced(matchedRule.rule.discord_alert, target, matchedRule);
-            this.webhookUrl ??= await settings.get<string>(AppSetting.DiscordOrSlackWebhookUrl);
+            if (!matchedRule.rule.alert_webhook) {
+                this.webhookUrl ??= await settings.get<string>(AppSetting.DiscordOrSlackWebhookUrl);
+            }
+
             if (discordAlertBody) {
                 if (this.webhookUrl) {
-                    await sendMessageToWebhook(this.webhookUrl, discordAlertBody);
+                    await sendMessageToWebhook(matchedRule.rule.alert_webhook ?? this.webhookUrl, discordAlertBody);
                     console.log(`Sent Discord alert due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}"`);
                 } else {
                     console.warn("Discord alert specified in rule, but no webhook URL is set in subreddit settings.");
@@ -423,6 +426,11 @@ export class ActionRules {
             await post.updateCrowdControlLevel(actions.set_post_crowd_control_level);
             console.log(`Set post crowd control level for post ${post.id} to ${actions.set_post_crowd_control_level} due to rule "${automodMatch.rule.friendly_name ?? "Unnamed rule"}"`);
         }
+
+        if (actions.set_contest_mode !== undefined) {
+            await setContestMode(post.id, actions.set_contest_mode);
+            console.log(`Set contest mode for post ${post.id} to ${actions.set_contest_mode} due to rule "${automodMatch.rule.friendly_name ?? "Unnamed rule"}"`);
+        }
     }
 
     private anyPlaceholdersFound (ruleMatch: AutomodMatch, placeholdersToFind: string[]): boolean {
@@ -450,6 +458,11 @@ export class ActionRules {
     }
 
     public async actionRules () {
+        if (await isInDisallowedSubreddit()) {
+            console.log(`Skipping action rules for target ${this.targetId} because the subreddit is disallowed from using Automod Neo.`);
+            return;
+        }
+
         const skipRulesThatAutomodHasActedOn = await settings.get<boolean>(AppSetting.SkipRulesThatAutomodHasActedOn);
         if (skipRulesThatAutomodHasActedOn && await hasAutomodActionBeenTaken(this.targetId)) {
             console.log(`Skipping action rules for target ${this.targetId} because Automod has already acted on it.`);

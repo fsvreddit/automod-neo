@@ -1,6 +1,7 @@
 export * from "./appSettings.js";
 export * from "./automodActions.js";
 export * from "./commentQueue.js";
+export * from "./globalSettings.js";
 export * from "./helpers.js";
 export * from "./schedulerJobs.js";
 export * from "./webhookUtils.js";

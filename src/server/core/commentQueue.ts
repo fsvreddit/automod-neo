@@ -1,6 +1,6 @@
 import { reddit, redis, scheduler, settings } from "@devvit/web/server";
 import { isT3, T1, T3 } from "@devvit/web/shared";
-import { AppSetting, CommentToAdd, getBotCommentFooter, SchedulerJob } from ".";
+import { AppSetting, CommentToAdd, getBotCommentFooter, isDisallowedReply, SchedulerJob } from ".";
 import { addDays, addMonths, addSeconds } from "date-fns";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 
@@ -20,6 +20,11 @@ function getCommentQueueKey (queuedCommentKey: string): string {
 }
 
 async function queueComment (queueItem: CommentQueueItem) {
+    if (await isDisallowedReply(queueItem.commentToAdd.text)) {
+        console.log(`Skipping queuing comment for target ${queueItem.targetId} because it is disallowed by the reply rules.`);
+        return;
+    }
+
     const key = crypto.randomUUID();
 
     await redis.set(getCommentQueueKey(key), JSON.stringify(queueItem), { expiration: addDays(new Date(), 1) });

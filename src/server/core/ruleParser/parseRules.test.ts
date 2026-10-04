@@ -1702,4 +1702,126 @@ body: "child comment"
             },
         ]);
     });
+
+    it("accepts a valid Discord webhook URL when discord_alert is also present", () => {
+        const rules = `
+---
+alert_webhook: "https://discord.com/api/webhooks/123456/abc_DEF-789"
+discord_alert: "Alert message"
+body: "trigger"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                alert_webhook: "https://discord.com/api/webhooks/123456/abc_DEF-789",
+                discord_alert: "Alert message",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["trigger"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("accepts a valid Slack webhook URL when discord_alert is also present", () => {
+        const rules = `
+---
+alert_webhook: "https://hooks.slack.com/services/T01234567/B01234567/abc_DEF-789"
+discord_alert: "Alert message"
+body: "trigger"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                alert_webhook: "https://hooks.slack.com/services/T01234567/B01234567/abc_DEF-789",
+                discord_alert: "Alert message",
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["trigger"],
+                        options: {
+                            search_method: "includes-word",
+                            case_sensitive: false,
+                            negate: false,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("throws when alert_webhook is not a string", () => {
+        const rules = `
+---
+alert_webhook: 12345
+discord_alert: "Alert message"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Invalid alert_webhook in rule Rule 1/,
+        );
+    });
+
+    it("throws when alert_webhook is not a valid URL", () => {
+        const rules = `
+---
+alert_webhook: "not-a-valid-url"
+discord_alert: "Alert message"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Invalid alert_webhook URL in rule Rule 1/,
+        );
+    });
+
+    it("throws when alert_webhook URL is not a recognised Discord or Slack webhook", () => {
+        const rules = `
+---
+alert_webhook: "https://example.com/webhooks/123456/abc_DEF-789"
+discord_alert: "Alert message"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /Invalid alert_webhook URL in rule Rule 1/,
+        );
+    });
+
+    it("throws when alert_webhook is present without discord_alert", () => {
+        const rules = `
+---
+alert_webhook: "https://discord.com/api/webhooks/123456/abc_DEF-789"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /alert_webhook is specified but discord_alert is missing in rule Rule 1/,
+        );
+    });
+
+    it("uses friendly_name in alert_webhook validation errors", () => {
+        const rules = `
+---
+friendly_name: "My Alert Rule"
+alert_webhook: "https://discord.com/api/webhooks/123456/abc_DEF-789"
+        `;
+
+        assert.throws(
+            () => parseRules(rules),
+            /alert_webhook is specified but discord_alert is missing in rule Rule 'My Alert Rule'/,
+        );
+    });
 });

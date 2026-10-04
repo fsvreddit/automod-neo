@@ -1,10 +1,17 @@
-import { scheduler } from "@devvit/web/server";
+import { scheduler, settings } from "@devvit/web/server";
 import { SettingsValidationRequest, SettingsValidationResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { clearCachedRules, parseRules, saveUnparsedRules, SchedulerJob } from "../core";
+import { AppSetting, clearCachedRules, isInDisallowedSubreddit, isRedosDetectionExemptedSub, parseRules, saveUnparsedRules, SchedulerJob } from "../core";
 import pluralize from "pluralize";
 
 export const validateAutomodSetting = async (c: Context) => {
+    if (await isInDisallowedSubreddit()) {
+        return c.json<SettingsValidationResponse>({
+            success: false,
+            error: "This subreddit is not currently permitted to use Automod Neo.",
+        });
+    }
+
     const validationRequest = await c.req.json<SettingsValidationRequest<string>>();
 
     if (!validationRequest.value) {
@@ -14,8 +21,13 @@ export const validateAutomodSetting = async (c: Context) => {
         });
     }
 
+    const redosCheckerEnabled = await settings.get<boolean>(AppSetting.RedosCheckerEnabled) ?? true;
+    const inExemptedSubForRedosChecking = await isRedosDetectionExemptedSub();
+
+    const shouldCheckRedos = redosCheckerEnabled && !inExemptedSubForRedosChecking;
+
     try {
-        const rules = parseRules(validationRequest.value, true);
+        const rules = parseRules(validationRequest.value, shouldCheckRedos);
         console.log(`Parsed ${rules.length} ${pluralize("rule", rules.length)} successfully.`);
     } catch (e) {
         return c.json<SettingsValidationResponse>({

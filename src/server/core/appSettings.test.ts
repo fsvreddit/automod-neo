@@ -5,6 +5,7 @@ import { AppSetting } from "./appSettings.js";
 
 const configSettingKeys = [
     ...Object.keys(devvitConfig.settings.subreddit),
+    ...Object.keys(devvitConfig.settings.global),
 ].sort();
 
 const appSettingValues: string[] = Object.values(AppSetting).sort();
