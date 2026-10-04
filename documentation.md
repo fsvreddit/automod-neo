@@ -112,6 +112,25 @@ parent_submission:
     set_flair: "Possible Repost"
 ```
 
+```yaml
+type: comment
+body: '!lock'
+author:
+    flair_text: 'Trusted'
+parent_comment:
+    set_locked: true
+    comment: 'Your comment has been locked'
+    comment_locked: true
+```
+
+```yaml
+type: comment
+parent_comment:
+    author: ['AutoModerator', 'automod-neo']
+action: report
+action_reason: 'User is replying to an app account'
+```
+
 ## Search Checks
 
 These checks can be used to look for words, phrases, patterns in different fields.
