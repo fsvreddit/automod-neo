@@ -6,7 +6,7 @@ import { getBotCommentFooter, getDomainFromUrl, sendMessageToWebhook } from "../
 import { AppSetting } from "../appSettings";
 import markdownEscape from "markdown-escape";
 import { hasAutomodActionBeenTaken } from "../automodActions";
-import { queueComments } from "..";
+import { isInDisallowedSubreddit, queueComments } from "..";
 
 interface AdditionalPlaceholders {
     author_flair_text?: string;
@@ -450,6 +450,11 @@ export class ActionRules {
     }
 
     public async actionRules () {
+        if (await isInDisallowedSubreddit()) {
+            console.log(`Skipping action rules for target ${this.targetId} because the subreddit is disallowed from using Automod Neo.`);
+            return;
+        }
+
         const skipRulesThatAutomodHasActedOn = await settings.get<boolean>(AppSetting.SkipRulesThatAutomodHasActedOn);
         if (skipRulesThatAutomodHasActedOn && await hasAutomodActionBeenTaken(this.targetId)) {
             console.log(`Skipping action rules for target ${this.targetId} because Automod has already acted on it.`);

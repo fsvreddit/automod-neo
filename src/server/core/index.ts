@@ -1,3 +1,4 @@
+export * from "./abuseProtections.js";
 export * from "./appSettings.js";
 export * from "./automodActions.js";
 export * from "./commentQueue.js";

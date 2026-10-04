@@ -1,10 +1,17 @@
 import { scheduler, settings } from "@devvit/web/server";
 import { SettingsValidationRequest, SettingsValidationResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { AppSetting, clearCachedRules, parseRules, saveUnparsedRules, SchedulerJob } from "../core";
+import { AppSetting, clearCachedRules, isInDisallowedSubreddit, parseRules, saveUnparsedRules, SchedulerJob } from "../core";
 import pluralize from "pluralize";
 
 export const validateAutomodSetting = async (c: Context) => {
+    if (await isInDisallowedSubreddit()) {
+        return c.json<SettingsValidationResponse>({
+            success: false,
+            error: "This subreddit is not currently permitted to use Automod Neo.",
+        });
+    }
+
     const validationRequest = await c.req.json<SettingsValidationRequest<string>>();
 
     if (!validationRequest.value) {
