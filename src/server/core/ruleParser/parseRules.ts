@@ -708,9 +708,18 @@ export function parseRules (rules: string, checkForRedos = false): AutomodRule[]
     });
     const validate = ajv.compile(automodSchema);
 
+    const knownFriendlyNames = new Set<string>();
+
     // Validate rules against schema one by one
     for (const [index, rule] of parsedRules.entries()) {
         assertValidRuleSchema(rule, formatRuleReference(rule, index), validate);
+        if (rule.friendly_name) {
+            const friendlyName = rule.friendly_name as string;
+            if (knownFriendlyNames.has(friendlyName)) {
+                throw new Error(`Duplicate friendly_name "${friendlyName}" found in rule ${formatRuleReference(rule, index)}`);
+            }
+            knownFriendlyNames.add(friendlyName);
+        }
     }
 
     return parsedRules;
