@@ -507,8 +507,6 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
                     timeout: 1000,
                 });
 
-                console.log(JSON.stringify(checkResult, null, 2));
-
                 if (checkResult.status === "vulnerable") {
                     const source = searchableSourceMetadata.get(searchableItem);
                     const attributeName = source?.rawKey ?? `${fieldName}[${searchableIndex}]`;
