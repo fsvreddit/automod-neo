@@ -10,7 +10,7 @@ All regular expressions are evaluated with the Unicode flag on, allowing for con
 
 Rules run on a short delay of up to a few seconds in most situations.
 
-Because of these two factors, **I recommend only using Automod Neo at this stage for use cases that AutoModerator does not support**, such as the additional user properties, time-of-day checks, Discord alerts, or similar.
+Because of these two factors, if your subreddit has full access to AutoModerator **I recommend only using Automod Neo at this stage for use cases that AutoModerator does not support**, such as the additional user properties, time-of-day checks, Discord alerts, or similar.
 
 ## New features
 
