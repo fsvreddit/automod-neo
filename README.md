@@ -53,7 +53,7 @@ On submissions:
 * discussion_type
 * is_meta_discussion
 
-Search checks that use Regex cannot have other properties - e.g. `title (regex, includes)` will not work but `title (regex)` will.
+Search checks that use Regex cannot have other matching properties - e.g. `title (regex, includes)` will not work but `title (regex)` will. You can of course use `title (regex, case_sensitive)` still.
 
 This app will never support a "ban user" or "mute user" feature due to the scope for abuse.
 
