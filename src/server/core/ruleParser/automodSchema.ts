@@ -246,6 +246,7 @@ export const automodSchema: Record<string, unknown> = {
         message_subject: { type: "string", nullable: true },
         discord_alert: { type: "string", nullable: true },
         alert_webhook: { type: "string", nullable: true },
+        uppercase_footer: { type: "boolean", nullable: true },
         stop_on_match: { type: "boolean", nullable: true },
         standard: {
             type: "string",

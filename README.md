@@ -71,6 +71,8 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 * Reduce sensitivity of regex safety checker
 * Add `alert_webhook` parameter to rules with `discord_alert` directives, to allow rule-specific webhook overrides (supports Slack as well)
 * Fixed bug checking standard conditions on comments
+* Add `{{author_uppercase}}` placeholder
+* Add `uppercase_footer` directive on rules
 
 ### v0.8.0
 

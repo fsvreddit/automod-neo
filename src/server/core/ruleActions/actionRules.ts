@@ -97,6 +97,8 @@ export class ActionRules {
             .replace(/(^|\n)>\s*{{body}}(?=\n|$)/g, (_, prefix: string) => `${prefix}${blockquotedBody}`)
             .replaceAll("u/{{author}}", `u/${target.authorName}`)
             .replaceAll("{{author}}", markdownEscape(target.authorName))
+            .replaceAll("u/{{author_uppercase}}", `u/${target.authorName.toUpperCase()}`)
+            .replaceAll("{{author_uppercase}}", markdownEscape(target.authorName.toUpperCase()))
             .replaceAll("u/{{parent_submission_author}}", `u/${parentSubmissionAuthor}`)
             .replaceAll("{{parent_submission_author}}", markdownEscape(parentSubmissionAuthor))
             .replaceAll("{{body}}", markdownEscape(body))
@@ -160,6 +162,7 @@ export class ActionRules {
                 text: commentBody ?? "",
                 shouldLock: action.comment_locked ?? false,
                 shouldSticky: (action.comment_stickied && isT3(target.id)) ?? false,
+                uppercaseFooter: action.uppercase_footer ?? false,
             });
         }
 

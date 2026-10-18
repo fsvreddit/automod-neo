@@ -9,6 +9,7 @@ const COMMENT_QUEUE_KEY = "commentQueue";
 interface CommentQueueItem {
     targetId: T1 | T3;
     commentToAdd: CommentToAdd;
+    uppercaseFooter: boolean;
 }
 
 export type CommentQueueJobData = {
@@ -49,7 +50,9 @@ async function queueCommentsForTarget (targetId: T1 | T3, commentsToAdd: Comment
                 text: combinedComments,
                 shouldLock: commentsToAdd.some(comment => comment.shouldLock),
                 shouldSticky: commentsToAdd.some(comment => comment.shouldSticky),
+                uppercaseFooter: firstComment.uppercaseFooter,
             },
+            uppercaseFooter: firstComment.uppercaseFooter,
         } satisfies CommentQueueItem;
 
         await queueComment(value);
@@ -58,6 +61,7 @@ async function queueCommentsForTarget (targetId: T1 | T3, commentsToAdd: Comment
             const value = {
                 targetId,
                 commentToAdd: comment,
+                uppercaseFooter: comment.uppercaseFooter,
             } satisfies CommentQueueItem;
 
             await queueComment(value);

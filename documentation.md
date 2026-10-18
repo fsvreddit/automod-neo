@@ -377,6 +377,7 @@ The supported threshold checks are:
 
 * `ignore_blockquotes` - true/false - If set to true, any text inside blockquotes will not be considered by this rule when doing search checks against body, or counting length with body_shorter_than/body_longer_than.
 * `stop_on_match` - true/false. By default, any rule with an action of `remove`, `spam` or `filter` is treated as `stop_on_match: true`, and other rules as `stop_on_match: false` to match OG AutoModerator functionality.
+* `uppercase_footer` - true/false. If set to true, the "I am a bot" footer on comments will be left in upper case. By default the footer will be in lower case.
 
 ### Placeholders
 

@@ -133,6 +133,7 @@ export type AutomodRule = PostOrCommentCondition & {
     message_subject?: string;
     discord_alert?: string;
     alert_webhook?: string;
+    uppercase_footer?: boolean;
 
     // Behaviour modifiers
     stop_on_match?: boolean;
@@ -153,6 +154,7 @@ export interface CommentToAdd {
     text: string;
     shouldLock: boolean;
     shouldSticky: boolean;
+    uppercaseFooter: boolean;
 }
 
 export interface RedditData {
