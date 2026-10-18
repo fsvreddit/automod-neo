@@ -6,8 +6,6 @@ This app replicates nearly all features of AutoModerator and adds some new featu
 
 All regular expressions use Javascript regex syntax. This can be different to Python regex (that used by AutoModerator) but most regular expressions that worked in OG Automod will work here too. Unlike OG AutoMod, full lookahead/lookbehind support is available. Some regexes that use Unicode code points or other Python-specific syntax may need to be reworked.
 
-Search checks that use Regex cannot have other properties - e.g. `title (regex, includes)` will not work but `title (regex)` will.
-
 All regular expressions are evaluated with the Unicode flag on, allowing for constructs such as the [\p metacharacter](https://www.w3schools.com/Jsref/jsref_regexp_meta_p.asp) for more advanced searches without having to identify specific UNICODE code points.
 
 Rules run on a short delay of up to a few seconds in most situations.
@@ -54,6 +52,8 @@ On submissions:
 
 * discussion_type
 * is_meta_discussion
+
+Search checks that use Regex cannot have other properties - e.g. `title (regex, includes)` will not work but `title (regex)` will.
 
 This app will never support a "ban user" or "mute user" feature due to the scope for abuse.
 
