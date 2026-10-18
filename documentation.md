@@ -351,6 +351,7 @@ The supported threshold checks are:
 * `comment` - Text of a comment to post in response to an item that satisfies the rule's conditions. Supports placeholders.
 * `comment_locked` - true/false - if set to true, the comment Automod Neo posts in response to an item will be locked from further comment replies.
 * `comment_stickied` - true/false - if set to true, the comment Automod Neo posts in response to an item will be stickied to the top of the submission (will have no effect on non-submissions, as the comment must be top-level)
+* `uppercase_footer` - true/false. If set to true, the "I am a bot" footer on comments will be left in upper case. By default the footer will be in mixed case.
 
 ### For submissions (base item or parent_submission sub-group)
 
@@ -377,7 +378,6 @@ The supported threshold checks are:
 
 * `ignore_blockquotes` - true/false - If set to true, any text inside blockquotes will not be considered by this rule when doing search checks against body, or counting length with body_shorter_than/body_longer_than.
 * `stop_on_match` - true/false. By default, any rule with an action of `remove`, `spam` or `filter` is treated as `stop_on_match: true`, and other rules as `stop_on_match: false` to match OG AutoModerator functionality.
-* `uppercase_footer` - true/false. If set to true, the "I am a bot" footer on comments will be left in upper case. By default the footer will be in lower case.
 
 ### Placeholders
 

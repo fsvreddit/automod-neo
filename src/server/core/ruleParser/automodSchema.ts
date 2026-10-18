@@ -178,6 +178,7 @@ const postConditionSchema = {
         comment: { type: "string", nullable: true },
         comment_locked: { type: "boolean", nullable: true },
         comment_stickied: { type: "boolean", nullable: true },
+        uppercase_footer: { type: "boolean", nullable: true },
         set_flair: {
             ...setFlairSchema,
         },

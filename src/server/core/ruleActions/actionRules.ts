@@ -157,6 +157,7 @@ export class ActionRules {
 
         if (action.comment) {
             const commentBody = this.valueWithPlaceholdersReplaced(action.comment, target, automodMatch);
+            console.log(action);
             this.addCommentToAdd(target.id, {
                 ruleName: action.friendly_name ?? "Unnamed rule",
                 text: commentBody ?? "",

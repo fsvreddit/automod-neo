@@ -132,7 +132,7 @@ async function submitComment (commentQueueItem: CommentQueueItem) {
         const target = await getPostOrCommentById(commentQueueItem.targetId);
         const newComment = await reddit.submitComment({
             id: commentQueueItem.targetId,
-            text: commentQueueItem.commentToAdd.text + "\n\n" + getBotCommentFooter(target),
+            text: commentQueueItem.commentToAdd.text + "\n\n" + getBotCommentFooter(target, commentQueueItem.commentToAdd.uppercaseFooter),
         });
         parsedComments.push(commentQueueItem.commentToAdd.text);
         await redis.set(commentSubmittedKey, JSON.stringify(parsedComments), { expiration: addMonths(new Date(), 1) });
