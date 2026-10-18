@@ -1,7 +1,7 @@
 import { OnCommentReportRequest, T1, T2, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
 import { ActionRules, AutomodRuleChecker, getReportRulesForSubreddit } from "../core";
-import { fixCommentReportTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
+import { fixCommentReportTriggerEvent, hasEventBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import { reddit } from "@devvit/web/server";
 import pluralize from "pluralize";
 import { addMinutes } from "date-fns";
@@ -32,7 +32,7 @@ export const handleCommentReport = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "comment report handled, no matches found" }, 200);
     }
 
-    if (await hasTriggerBeenHandled(`commentReport:${request.comment.id}`, { expiration: addMinutes(new Date(), 5) })) {
+    if (await hasEventBeenHandled(`commentReport:${request.comment.id}`, { expiration: addMinutes(new Date(), 5) })) {
         return c.json<TriggerResponse>({ message: "comment report handled, trigger already handled" }, 200);
     }
 

@@ -1,7 +1,7 @@
 import { OnCommentCreateRequest, T1, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
 import { ActionRules, AutomodRuleChecker, getRulesForSubreddit, isUserIgnoredForTriggers } from "../core";
-import { fixCommentTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
+import { fixCommentTriggerEvent, hasEventBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import pluralize from "pluralize";
 
 export const handleCommentSubmit = async (c: Context) => {
@@ -32,7 +32,7 @@ export const handleCommentSubmit = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "comment submit handled, no matches found" }, 200);
     }
 
-    if (await hasTriggerBeenHandled(`commentSubmit:${request.comment.id}`)) {
+    if (await hasEventBeenHandled(`commentSubmit:${request.comment.id}`)) {
         return c.json<TriggerResponse>({ message: "comment submit handled, trigger already handled" }, 200);
     }
 

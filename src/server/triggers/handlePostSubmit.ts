@@ -1,7 +1,7 @@
 import { OnPostCreateRequest, T3, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
 import { ActionRules, AutomodRuleChecker, getRulesForSubreddit, isUserIgnoredForTriggers } from "../core";
-import { fixPostTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
+import { fixPostTriggerEvent, hasEventBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import pluralize from "pluralize";
 
 export const handlePostSubmit = async (c: Context) => {
@@ -32,7 +32,7 @@ export const handlePostSubmit = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "post submit handled, no matches found" }, 200);
     }
 
-    if (await hasTriggerBeenHandled(`postSubmit:${request.post.id}`)) {
+    if (await hasEventBeenHandled(`postSubmit:${request.post.id}`)) {
         return c.json<TriggerResponse>({ message: "post submit handled, trigger already handled" }, 200);
     }
 

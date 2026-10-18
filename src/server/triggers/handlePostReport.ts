@@ -1,7 +1,7 @@
 import { OnPostReportRequest, T2, T3, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
 import { ActionRules, AutomodRuleChecker, getReportRulesForSubreddit } from "../core";
-import { fixPostReportTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
+import { fixPostReportTriggerEvent, hasEventBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import { reddit } from "@devvit/web/server";
 import pluralize from "pluralize";
 import { addMinutes } from "date-fns";
@@ -32,7 +32,7 @@ export const handlePostReport = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "post report handled, no matches found" }, 200);
     }
 
-    if (await hasTriggerBeenHandled(`postReport:${request.post.id}`, { expiration: addMinutes(new Date(), 5) })) {
+    if (await hasEventBeenHandled(`postReport:${request.post.id}`, { expiration: addMinutes(new Date(), 5) })) {
         return c.json<TriggerResponse>({ message: "post report handled, trigger already handled" }, 200);
     }
 
