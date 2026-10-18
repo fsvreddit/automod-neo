@@ -504,7 +504,7 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
                     maxAttackStringSize: 10000,
                     accelerationMode: "on",
                     attackLimit: 10000,
-                    timeout: 1000,
+                    timeout: 500,
                 });
 
                 if (checkResult.status === "vulnerable") {
