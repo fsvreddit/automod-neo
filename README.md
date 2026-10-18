@@ -25,6 +25,7 @@ Automod Neo supports several features not supported by OG AutoModerator.
 * `user_report_reason` and `mod_report_reason` search checks (works similarly to title/body/etc. checks)
 * `image_count` checks for image/gallery submissions
 * `comment_count` checks for all submissions
+* `is_nsfw` check on all submissions
 * `is_approved` checks, to allow rules to be ignored if a mod has specifically approved a post or comment
 * `discord_alert` action (also supports Slack)
 * `friendly_name` property on rules, with the corresponding `{{friendly-name}}` placeholder on all output.
