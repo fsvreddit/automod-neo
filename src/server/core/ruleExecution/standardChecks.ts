@@ -46,3 +46,21 @@ export function postMatchesStandardCondition (post: Post, condition: StandardCon
         throw new Error(`Unknown standard condition: ${condition}`);
     }
 }
+
+export function commentMatchesStandardCondition (commentBody: string, condition: StandardCondition): boolean {
+    if (condition === "facebook links") {
+        const regexes = [
+            /facebook\.com/i,
+            /fbcdn\.net/i,
+            /fb\.com/i,
+            /fb\.me/i,
+            /fbcdn-s?photos-.*?\.akamaihd\.net/i,
+        ];
+        return regexes.some(regex => regex.test(commentBody));
+    } else if (condition === "amazon affiliate links") {
+        const regex = /(amazon|amzn)\.(com|co\.uk|ca)\S+?tag=/i;
+        return regex.test(commentBody);
+    } else {
+        return false;
+    }
+}

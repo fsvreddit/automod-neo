@@ -70,6 +70,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 * Add `set_contest_mode` for posts (base item and parent submission)
 * Reduce sensitivity of regex safety checker
 * Add `alert_webhook` parameter to rules with `discord_alert` directives, to allow rule-specific webhook overrides (supports Slack as well)
+* Fixed bug checking standard conditions on comments
 
 ### v0.8.0
 
