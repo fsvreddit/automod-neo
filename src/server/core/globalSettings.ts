@@ -3,7 +3,7 @@ import { addHours } from "date-fns";
 
 interface GlobalSettings {
     disallowedSubreddits: string[];
-    disallowedReplyRegexes: RegExp[];
+    disallowedReplyRegexes: string[];
     redosDetectionExemptedSubs?: string[];
 };
 
@@ -51,8 +51,8 @@ export async function isInDisallowedSubreddit (): Promise<boolean> {
 export async function isDisallowedReply (reply: string): Promise<boolean> {
     const globalSettings = await getGlobalSettings();
     try {
-        globalSettings.disallowedReplyRegexes = globalSettings.disallowedReplyRegexes.map(regex => new RegExp(regex));
-        return globalSettings.disallowedReplyRegexes.some(regex => regex.test(reply));
+        const disallowedReplyRegexes = globalSettings.disallowedReplyRegexes.map(regex => new RegExp(regex));
+        return disallowedReplyRegexes.some(regex => regex.test(reply));
     } catch (error) {
         console.error("Failed to test disallowed reply regexes:", error);
         return false;
