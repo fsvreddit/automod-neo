@@ -178,6 +178,7 @@ const postConditionSchema = {
         comment: { type: "string", nullable: true },
         comment_locked: { type: "boolean", nullable: true },
         comment_stickied: { type: "boolean", nullable: true },
+        uppercase_footer: { type: "boolean", nullable: true },
         set_flair: {
             ...setFlairSchema,
         },
@@ -245,6 +246,8 @@ export const automodSchema: Record<string, unknown> = {
         message: { type: "string", nullable: true },
         message_subject: { type: "string", nullable: true },
         discord_alert: { type: "string", nullable: true },
+        alert_webhook: { type: "string", nullable: true },
+        uppercase_footer: { type: "boolean", nullable: true },
         stop_on_match: { type: "boolean", nullable: true },
         standard: {
             type: "string",

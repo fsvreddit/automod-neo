@@ -1,7 +1,7 @@
 import { OnPostUpdateRequest, T3, TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
 import { ActionRules, AutomodRuleChecker, getRulesForSubreddit, isUserIgnoredForTriggers } from "../core";
-import { fixPostTriggerEvent, hasTriggerBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
+import { fixPostTriggerEvent, hasEventBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import { addMinutes } from "date-fns";
 import pluralize from "pluralize";
 
@@ -33,7 +33,7 @@ export const handlePostUpdate = async (c: Context) => {
         return c.json<TriggerResponse>({ message: "post update handled, no matches found" }, 200);
     }
 
-    if (await hasTriggerBeenHandled(`postUpdate:${request.post.id}`, { expiration: addMinutes(new Date(), 1) })) {
+    if (await hasEventBeenHandled(`postUpdate:${request.post.id}`, { expiration: addMinutes(new Date(), 1) })) {
         return c.json<TriggerResponse>({ message: "post update handled, trigger already handled" }, 200);
     }
 

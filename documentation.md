@@ -89,7 +89,7 @@ The following checks/actions are only available in the top level of a rule, and 
 * `modmail_subject` - If a modmail is sent, the subject of that modmail. Defaults to "Notification about a {{kind}} for u/{{author}}" if not set. Supports placeholders.
 * `message` - Text of a message to send to the author of an item that satisfies the rule's conditions. Supports placeholders.
 * `message_subject` - If a message is sent, the subject of that message. Defaults to "A message about your {{kind}} on {{subreddit}}" if not set. Supports placeholders.
-* `discord_alert` - Text of a message to send to a pre-configured Discord or Slack webhook. Supports placeholders.
+* `discord_alert` - Text of a message to send to a pre-configured Discord or Slack webhook. Supports placeholders. Discord webhooks can be overridden on a rule-by-rule basis using `alert_webhook` to specify a Discord or Slack webhook that applies to that rule only.
 
 ## Sub-groups
 
@@ -110,6 +110,25 @@ author:
     flair_css_class: "trusted"
 parent_submission:
     set_flair: "Possible Repost"
+```
+
+```yaml
+type: comment
+body: '!lock'
+author:
+    flair_text: 'Trusted'
+parent_comment:
+    set_locked: true
+    comment: 'Your comment has been locked'
+    comment_locked: true
+```
+
+```yaml
+type: comment
+parent_comment:
+    author: ['AutoModerator', 'automod-neo']
+action: report
+action_reason: 'User is replying to an app account'
 ```
 
 ## Search Checks
@@ -332,6 +351,7 @@ The supported threshold checks are:
 * `comment` - Text of a comment to post in response to an item that satisfies the rule's conditions. Supports placeholders.
 * `comment_locked` - true/false - if set to true, the comment Automod Neo posts in response to an item will be locked from further comment replies.
 * `comment_stickied` - true/false - if set to true, the comment Automod Neo posts in response to an item will be stickied to the top of the submission (will have no effect on non-submissions, as the comment must be top-level)
+* `uppercase_footer` - true/false. If set to true, the "I am a bot" footer on comments will be left in upper case. By default the footer will be in mixed case.
 
 ### For submissions (base item or parent_submission sub-group)
 
@@ -340,9 +360,10 @@ The supported threshold checks are:
 * `set_sticky` - true/false or a number - Sets or unsets the matched submission as a sticky in the subreddit. If you use a number (for example set_sticky: 1), the post will replace any existing sticky in that slot. Using true will work the same as clicking the "sticky this post" link on the post - it will go into the bottom sticky slot (replacing a post that's already there, if necessary).
 * `set_nsfw` - true/false - Enables (true) or disables (false) the NSFW flag on the submission.
 * `set_spoiler` - true/false - Enables (true) or disables (false) the spoiler flag on the submission.
-* `set_suggested_sort` - Sets the suggested comment sort. Valid values are `best`, `new`, `qa`, `top`, `controversial`, `hot`, `old`, `random`, and `blank`.
+* `set_suggested_sort` - Sets the suggested comment sort. Valid values are `best`, `new`, `qa`, `top`, `controversial`, `hot`, `old`, `random`, and `blank`. `blank` clears the suggested sort and lets users use their own.
 * `set_locked` - true/false - Locks or unlocks the submission or comment.
 * `set_post_crowd_control_level` - Sets the Crowd Control level of a submission. Valid values are OFF, LENIENT, MEDIUM, and STRICT.
+* `set_contest_mode` - Sets contest mode on or off on posts
 
 ### For comments (base item and parent_comment)
 

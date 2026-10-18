@@ -6,4 +6,7 @@ export enum AppSetting {
     DiscordOrSlackWebhookUrl = "discordWebhookUrl",
     TimeZone = "timeZone",
     NotifyOnUpdates = "notifyOnUpdates",
+
+    // Global settings
+    RedosCheckerEnabled = "redosCheckerEnabled",
 }

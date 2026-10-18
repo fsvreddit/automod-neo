@@ -10,7 +10,7 @@ All regular expressions are evaluated with the Unicode flag on, allowing for con
 
 Rules run on a short delay of up to a few seconds in most situations.
 
-Because of these two factors, **I recommend only using Automod Neo at this stage for use cases that AutoModerator does not support**, such as the additional user properties, time-of-day checks, Discord alerts, or similar.
+Because of these two factors, if your subreddit has full access to AutoModerator **I recommend only using Automod Neo at this stage for use cases that AutoModerator does not support**, such as the additional user properties, time-of-day checks, Discord alerts, or similar.
 
 ## New features
 
@@ -25,6 +25,7 @@ Automod Neo supports several features not supported by OG AutoModerator.
 * `user_report_reason` and `mod_report_reason` search checks (works similarly to title/body/etc. checks)
 * `image_count` checks for image/gallery submissions
 * `comment_count` checks for all submissions
+* `is_nsfw` check on all submissions
 * `is_approved` checks, to allow rules to be ignored if a mod has specifically approved a post or comment
 * `discord_alert` action (also supports Slack)
 * `friendly_name` property on rules, with the corresponding `{{friendly-name}}` placeholder on all output.
@@ -42,9 +43,7 @@ Both of these limitations require Reddit to make a change on either the Dev Plat
 The following existing AutoModerator features are not supported due to Devvit limitations, however if it becomes possible to include them in the future, they will be implemented:
 
 * All CQS checks
-* Author flair template ID checks for parent submissions
 * is_original_content on post checks
-* Set Contest Mode
 * Set Original Content
 * Temporary Events label
 * the `media_description` check and associated placeholder
@@ -53,6 +52,8 @@ On submissions:
 
 * discussion_type
 * is_meta_discussion
+
+Search checks that use Regex cannot have other matching properties - e.g. `title (regex, includes)` will not work but `title (regex)` will. You can of course use `title (regex, case_sensitive)` still.
 
 This app will never support a "ban user" or "mute user" feature due to the scope for abuse.
 
@@ -64,6 +65,15 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 ## Recent changes
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
+
+### v1.0.0
+
+* Add `set_contest_mode` for posts (base item and parent submission)
+* Reduce sensitivity of regex safety checker
+* Add `alert_webhook` parameter to rules with `discord_alert` directives, to allow rule-specific webhook overrides (supports Slack as well)
+* Fixed bug checking standard conditions on comments
+* Add `{{author_uppercase}}` placeholder
+* Add `uppercase_footer` directive on rules
 
 ### v0.8.0
 

@@ -3,8 +3,12 @@ import { addWeeks } from "date-fns";
 import { AutomodRule } from "./types";
 import { getWebhookPayload, parseWebhookUrl } from "./webhookUtils";
 
-export function getBotCommentFooter (target: Post | Comment): string {
-    return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/${context.subredditName}&message=Regarding%20${encodeURIComponent(target.permalink)}) if you have any questions or concerns.*`;
+export function getBotCommentFooter (target: Post | Comment, uppercase = false): string {
+    if (!uppercase) {
+        return `*I am a bot, and this action was performed automatically. Please [contact the moderators of this subreddit](https://www.reddit.com/message/compose/?to=/r/${context.subredditName}&message=Regarding%20${encodeURIComponent(target.permalink)}) if you have any questions or concerns.*`;
+    } else {
+        return `*I AM A BOT, AND THIS ACTION WAS PERFORMED AUTOMATICALLY. PLEASE [CONTACT THE MODERATORS OF THIS SUBREDDIT](https://www.reddit.com/message/compose/?to=/r/${context.subredditName}&message=REGARDING%20${encodeURIComponent(target.permalink)}) IF YOU HAVE ANY QUESTIONS OR CONCERNS.*`;
+    }
 }
 
 function getApprovedUserCacheKey (username: string): string {

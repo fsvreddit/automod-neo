@@ -1,6 +1,6 @@
 import { reddit, redis, scheduler, settings } from "@devvit/web/server";
 import { isT3, T1, T3 } from "@devvit/web/shared";
-import { AppSetting, CommentToAdd, getBotCommentFooter, SchedulerJob } from ".";
+import { AppSetting, CommentToAdd, getBotCommentFooter, isDisallowedReply, SchedulerJob } from ".";
 import { addDays, addMonths, addSeconds } from "date-fns";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
 
@@ -9,6 +9,7 @@ const COMMENT_QUEUE_KEY = "commentQueue";
 interface CommentQueueItem {
     targetId: T1 | T3;
     commentToAdd: CommentToAdd;
+    uppercaseFooter: boolean;
 }
 
 export type CommentQueueJobData = {
@@ -20,6 +21,11 @@ function getCommentQueueKey (queuedCommentKey: string): string {
 }
 
 async function queueComment (queueItem: CommentQueueItem) {
+    if (await isDisallowedReply(queueItem.commentToAdd.text)) {
+        console.log(`Skipping queuing comment for target ${queueItem.targetId} because it is disallowed by the reply rules.`);
+        return;
+    }
+
     const key = crypto.randomUUID();
 
     await redis.set(getCommentQueueKey(key), JSON.stringify(queueItem), { expiration: addDays(new Date(), 1) });
@@ -44,7 +50,9 @@ async function queueCommentsForTarget (targetId: T1 | T3, commentsToAdd: Comment
                 text: combinedComments,
                 shouldLock: commentsToAdd.some(comment => comment.shouldLock),
                 shouldSticky: commentsToAdd.some(comment => comment.shouldSticky),
+                uppercaseFooter: firstComment.uppercaseFooter,
             },
+            uppercaseFooter: firstComment.uppercaseFooter,
         } satisfies CommentQueueItem;
 
         await queueComment(value);
@@ -53,6 +61,7 @@ async function queueCommentsForTarget (targetId: T1 | T3, commentsToAdd: Comment
             const value = {
                 targetId,
                 commentToAdd: comment,
+                uppercaseFooter: comment.uppercaseFooter,
             } satisfies CommentQueueItem;
 
             await queueComment(value);
@@ -123,7 +132,7 @@ async function submitComment (commentQueueItem: CommentQueueItem) {
         const target = await getPostOrCommentById(commentQueueItem.targetId);
         const newComment = await reddit.submitComment({
             id: commentQueueItem.targetId,
-            text: commentQueueItem.commentToAdd.text + "\n\n" + getBotCommentFooter(target),
+            text: commentQueueItem.commentToAdd.text + "\n\n" + getBotCommentFooter(target, commentQueueItem.commentToAdd.uppercaseFooter),
         });
         parsedComments.push(commentQueueItem.commentToAdd.text);
         await redis.set(commentSubmittedKey, JSON.stringify(parsedComments), { expiration: addMonths(new Date(), 1) });

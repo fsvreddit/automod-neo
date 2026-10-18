@@ -4,7 +4,7 @@ import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, Red
 import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW, isUserBanned } from "../helpers";
 import { meetsDateThreshold, meetsNumericThreshold } from "./thresholdChecks";
 import { subMonths } from "date-fns";
-import { anySearchConditionMatchesInput, postMatchesStandardCondition, searchConditionsMatchInput } from ".";
+import { anySearchConditionMatchesInput, commentMatchesStandardCondition, postMatchesStandardCondition, searchConditionsMatchInput } from ".";
 import { AppSetting } from "../appSettings";
 import { TZDate } from "@date-fns/tz/date";
 
@@ -742,6 +742,13 @@ export class AutomodRuleChecker {
         const matches: Matches[] = [];
 
         const commentBody = condition.ignore_blockquotes ? this.getTextWithoutBlockquotes(comment.body) : comment.body;
+
+        if (condition.standard !== undefined) {
+            if (!commentMatchesStandardCondition(commentBody, condition.standard)) {
+                this.log(`Comment ${comment.id} does not match standard condition (${condition.standard}).`, checkContext);
+                return;
+            }
+        }
 
         if (condition.reports !== undefined) {
             if (comment.numReports < condition.reports) {
