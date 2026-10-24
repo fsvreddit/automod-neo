@@ -16,6 +16,11 @@ export const handleAppUpgrade = async (c: Context) => {
         runAt: addSeconds(new Date(), 10),
     });
 
+    await scheduler.runJob({
+        name: SchedulerJob.RunParseWithReDoS,
+        runAt: addSeconds(new Date(), 20),
+    });
+
     console.log(`Automod Neo updated to version ${context.appVersion}.`);
 
     return c.json<TriggerResponse>({ message: "app upgrade handled" }, 200);

@@ -43,6 +43,9 @@
             },
             "processCommentQueue": {
                 "endpoint": "/internal/tasks/process-comment-queue"
+            },
+            "runParseWithReDoS": {
+                "endpoint": "/internal/tasks/run-parse-with-redos"
             }
         }
     },

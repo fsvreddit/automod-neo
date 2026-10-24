@@ -68,6 +68,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 
 * Fixed issue with rules with `alert_webhook` parameters not sending Discord/Slack alerts
 * Restore the ability to have rules that combine regex checks with other modifiers e.g. `body (regex, includes)` or `body+title: (regex, full-text)`
+* Improve performance of rule validation especially when little has changed
 
 ### v1.0.0
 
