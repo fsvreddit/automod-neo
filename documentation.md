@@ -346,7 +346,7 @@ The supported threshold checks are:
 ### For comments, submissions, parent_submissions and parent_comments
 
 * `action` - A moderation action to perform on the item. Valid values are `approve`, `remove`, `spam`, `filter`, or `report`.
-* `action_reason` - Displays in the moderation log as a reason for why a post was approved or removed. If the action is report, displays as the report reason instead. Supports placeholders.
+* `action_reason` - **Currently not working pending a solution from Admin**. ~~Displays in the moderation log as a reason for why a post was approved or removed. If the action is report, displays as the report reason instead. Supports placeholders.~~
 * `comment` - Text of a comment to post in response to an item that satisfies the rule's conditions. Supports placeholders.
 * `comment_locked` - true/false - if set to true, the comment Automod Neo posts in response to an item will be locked from further comment replies.
 * `comment_stickied` - true/false - if set to true, the comment Automod Neo posts in response to an item will be stickied to the top of the submission (will have no effect on non-submissions, as the comment must be top-level)
