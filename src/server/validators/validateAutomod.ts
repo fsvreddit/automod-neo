@@ -27,7 +27,7 @@ export const validateAutomodSetting = async (c: Context) => {
     const shouldCheckRedos = redosCheckerEnabled && !inExemptedSubForRedosChecking;
 
     try {
-        const rules = parseRules(validationRequest.value, shouldCheckRedos);
+        const rules = await parseRules(validationRequest.value, shouldCheckRedos);
         console.log(`Parsed ${rules.length} ${pluralize("rule", rules.length)} successfully.`);
     } catch (e) {
         return c.json<SettingsValidationResponse>({
