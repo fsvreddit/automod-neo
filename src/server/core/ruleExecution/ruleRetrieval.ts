@@ -32,7 +32,7 @@ export async function getRulesForSubreddit (): Promise<AutomodRule[]> {
         return [];
     }
 
-    const rules = sortRulesForExecution(parseRules(rulesYaml));
+    const rules = sortRulesForExecution(await parseRules(rulesYaml));
     await redis.set(CACHED_RULES_KEY, JSON.stringify(rules));
     console.log(`Cached ${rules.length} ${rules.length === 1 ? "rule" : "rules"} for subreddit ${context.subredditName}.`);
     return rules;

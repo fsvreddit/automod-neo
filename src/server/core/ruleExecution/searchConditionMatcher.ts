@@ -12,6 +12,45 @@ export function searchTextMatches (input: string, textToMatch: string, options: 
         }
     }
 
+    if (options.regex) {
+        const flags = options.case_sensitive ? "u" : "iu";
+
+        if (options.search_method === "includes-word") {
+            const regexObj = new RegExp("(?:^|[^A-Za-z0-9_])(?:" + textToMatch + ")(?:$|[^A-Za-z0-9_])", flags);
+            return regexObj.test(input) ? [textToMatch] : undefined;
+        }
+
+        if (options.search_method === "starts-with") {
+            const regexObj = new RegExp("^(?:" + textToMatch + ")", flags);
+            const match = input.match(regexObj);
+            return match ? [match[0].trim()] : undefined;
+        }
+
+        if (options.search_method === "ends-with") {
+            const regexObj = new RegExp("(?:" + textToMatch + ")$", flags);
+            const match = input.match(regexObj);
+            return match ? [match[0].trim()] : undefined;
+        }
+
+        if (options.search_method === "full-exact") {
+            const regexObj = new RegExp("^(?:" + textToMatch + ")$", flags);
+            const match = input.match(regexObj);
+            return match ? [match[0].trim()] : undefined;
+        }
+
+        if (options.search_method === "full-text") {
+            const strippedInput = input.trim().replace(/^[\p{P}\p{Z}]+|[\p{P}\p{Z}]+$/gu, "");
+            const regexObj = new RegExp("^(?:" + textToMatch + ")$", flags);
+            const match = strippedInput.match(regexObj);
+            return match ? [match[0].trim()] : undefined;
+        }
+
+        // includes and domain: match anywhere in the input
+        const regexObj = new RegExp(textToMatch, flags);
+        const matches = input.match(regexObj);
+        return matches ? matches.map(match => match.trim()) : undefined;
+    }
+
     if (options.search_method === "full-exact") {
         if (options.case_sensitive) {
             if (input === textToMatch) {
@@ -103,6 +142,7 @@ export function searchTextMatches (input: string, textToMatch: string, options: 
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (options.search_method === "domain") {
         // Checks to see if the input is either the exact value, or a subdomain of the value. Ignores case-sensitive.
         const inputLower = input.toLowerCase();
@@ -112,16 +152,6 @@ export function searchTextMatches (input: string, textToMatch: string, options: 
         } else {
             return;
         }
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (options.search_method === "regex") {
-        const regex = new RegExp(textToMatch, options.case_sensitive ? "u" : "iu");
-        const matches = input.match(regex);
-        if (matches) {
-            return matches.map(match => match.trim());
-        }
-        return;
     }
 
     throw new Error(`Unknown search method: ${options.search_method}`);
