@@ -69,20 +69,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 * Fixed issue with rules with `alert_webhook` parameters not sending Discord/Slack alerts
 * Restore the ability to have rules that combine regex checks with other modifiers e.g. `body (regex, includes)` or `body+title: (regex, full-text)`
 * Improve performance of rule validation especially when little has changed
-
-### v1.0.0
-
-* Add `set_contest_mode` for posts (base item and parent submission)
-* Reduce sensitivity of regex safety checker
-* Add `alert_webhook` parameter to rules with `discord_alert` directives, to allow rule-specific webhook overrides (supports Slack as well)
-* Fixed bug checking standard conditions on comments
-* Add `{{author_uppercase}}` placeholder
-* Add `uppercase_footer` directive on rules
-
-### v0.8.0
-
-* Add `is_locked` check for posts and comments at any level
-* Add `paragraph_count` check for posts and comments at any level
+* Fixed behaviour of `{{body}}`, `{{domain}}` and `{{url}}` placeholders for crossposts - these now substitute the values from the original submission in line with Automod's behaviour
 
 ## About this app
 
