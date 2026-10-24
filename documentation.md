@@ -288,7 +288,6 @@ comment: "Image posts are only allowed on Saturdays"
 * `is_nsfw` - true/false - triggers only if the post's NSFW flag matches
 * `is_poll` - true/false - if set to true, submissions will only trigger the rule if they are of the poll submission type.
 * `is_gallery` - true/false - if set to true, submissions will only trigger the rule if they are of the gallery submission type.
-discussion_type - chat/null - if set to chat, then it will apply to chat posts. if set to null it will apply to comment posts. if this is not specified it will apply to both
 * `past_archive_date` - true/false - if set to true, submissions will only trigger the rule if they are older than the archival date of 6 months. See this post for details.
 * `poll_option_count` - The number of options a poll post has in the form `poll_option_count: 3` (to match the exact number), `poll_option_count: '> 2'` (for a comparison)
 * `comment_count` - the number of comments a post has. Most useful on `parent_submission` but can also be used on the base item. E.g. `comment_count: "> 100"`
