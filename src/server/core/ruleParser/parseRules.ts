@@ -7,7 +7,7 @@ import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecutio
 import { checkSync } from "recheck";
 import { parseWebhookUrl } from "../webhookUtils";
 
-const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "domain", "full-exact", "full-text", "regex"];
+const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "domain", "full-exact", "full-text"];
 
 process.env.RECHECK_SYNC_BACKEND ??= "pure";
 
@@ -219,7 +219,10 @@ function defaultSearchMethodForField (fieldName: SearchField): SearchMethod {
 function buildSearchOptions (fieldName: SearchField, qualifierText: string | undefined, negate: boolean, attributeName?: string): SearchOption {
     const rawParts = (qualifierText ?? "").split(",").map(part => part.trim()).filter(Boolean);
     const caseSensitive = rawParts.includes("case-sensitive") || rawParts.includes("case_sensitive");
-    const parts = rawParts.filter(part => part !== "case-sensitive" && part !== "case_sensitive");
+    const hasRegex = rawParts.includes("regex");
+    const parts = rawParts
+        .filter(part => part !== "case-sensitive" && part !== "case_sensitive" && part !== "regex")
+        .map(part => part.replace(/_/g, "-"));
 
     const uniqueSearchMethods = [...new Set(parts.filter(part => searchMethodValues.includes(part as SearchMethod)))];
     if (uniqueSearchMethods.length > 1) {
@@ -228,14 +231,17 @@ function buildSearchOptions (fieldName: SearchField, qualifierText: string | und
     }
 
     const searchMethodCandidate = parts.length > 0 ? parts.join(", ") : undefined;
-    const searchMethod = searchMethodCandidate && searchMethodValues.includes(searchMethodCandidate as SearchMethod)
+    const explicitMethod = searchMethodCandidate && searchMethodValues.includes(searchMethodCandidate as SearchMethod)
         ? searchMethodCandidate as SearchMethod
-        : defaultSearchMethodForField(fieldName);
+        : undefined;
+
+    const searchMethod = explicitMethod ?? (hasRegex ? "includes" : defaultSearchMethodForField(fieldName));
 
     return {
         search_method: searchMethod,
         negate,
         case_sensitive: caseSensitive,
+        ...(hasRegex && { regex: true }),
     };
 }
 
@@ -472,7 +478,7 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
         }
 
         const optionsValue = searchableItem.options;
-        if (!isObjectRecord(optionsValue) || optionsValue.search_method !== "regex") {
+        if (!isObjectRecord(optionsValue) || optionsValue.regex !== true) {
             continue;
         }
 

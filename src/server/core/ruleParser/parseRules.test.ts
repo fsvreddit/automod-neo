@@ -32,9 +32,10 @@ body (regex): "foo\\d{1,3}bar"
                             "foo\\d{1,3}bar",
                         ],
                         options: {
-                            search_method: "regex",
+                            search_method: "includes",
                             case_sensitive: false,
                             negate: false,
+                            regex: true,
                         },
                     },
                 ],
@@ -167,9 +168,10 @@ parent_submission:
                             searchField: ["name"],
                             text: ["^foo.*"],
                             options: {
-                                search_method: "regex",
+                                search_method: "includes",
                                 case_sensitive: false,
                                 negate: false,
+                                regex: true,
                             },
                         },
                         {
@@ -185,9 +187,10 @@ parent_submission:
                             searchField: ["bio_text"],
                             text: ["^bio_.*$"],
                             options: {
-                                search_method: "regex",
+                                search_method: "includes",
                                 case_sensitive: false,
                                 negate: false,
+                                regex: true,
                             },
                         },
                         {
@@ -225,9 +228,10 @@ parent_submission:
                             searchField: ["body", "title", "url"],
                             text: ["regex1", "regex2"],
                             options: {
-                                search_method: "regex",
+                                search_method: "includes",
                                 case_sensitive: false,
                                 negate: false,
+                                regex: true,
                             },
                         },
                         {
@@ -270,9 +274,10 @@ url   (includes): 'example.com/path'
                         searchField: ["title", "body"],
                         text: ["^foo"],
                         options: {
-                            search_method: "regex",
+                            search_method: "includes",
                             case_sensitive: false,
                             negate: false,
+                            regex: true,
                         },
                     },
                     {
@@ -314,15 +319,67 @@ body (includes): "hello"
         ]);
     });
 
-    it("throws when more than one search method is specified for a searchable field", () => {
+    it("parses body (includes, regex) as includes search method with regex flag", () => {
         const rules = `
 ---
 body (includes, regex): "hello"
         `;
 
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["hello"],
+                        options: {
+                            search_method: "includes",
+                            case_sensitive: false,
+                            negate: false,
+                            regex: true,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("parses body (full-exact, regex) as includes search method with regex flag", () => {
+        const rules = `
+---
+body (full-exact, regex): "hello"
+        `;
+
+        const parsed = parseRules(rules);
+
+        assert.deepEqual(parsed, [
+            {
+                search_conditions: [
+                    {
+                        searchField: ["body"],
+                        text: ["hello"],
+                        options: {
+                            search_method: "full-exact",
+                            case_sensitive: false,
+                            negate: false,
+                            regex: true,
+                        },
+                    },
+                ],
+            },
+        ]);
+    });
+
+    it("throws when more than one non-regex search method is specified for a searchable field", () => {
+        const rules = `
+---
+body (includes, starts-with): "hello"
+        `;
+
         assert.throws(
             () => parseRules(rules),
-            /Multiple search methods are not allowed for attribute 'body \(includes, regex\)'/,
+            /Multiple search methods are not allowed for attribute 'body \(includes, starts-with\)'/,
         );
     });
 
@@ -608,9 +665,10 @@ PARENT_SUBMISSION:
                             searchField: ["title"],
                             text: ["^Hello"],
                             options: {
-                                search_method: "regex",
+                                search_method: "includes",
                                 case_sensitive: false,
                                 negate: false,
+                                regex: true,
                             },
                         },
                     ],
@@ -649,9 +707,10 @@ media_title: ['first title', 'second title']
                         searchField: ["media_author"],
                         text: ["^author_[0-9]+$"],
                         options: {
-                            search_method: "regex",
+                            search_method: "includes",
                             case_sensitive: false,
                             negate: false,
+                            regex: true,
                         },
                     },
                     {
@@ -761,18 +820,20 @@ parent_submission:
                                 searchField: ["name"],
                                 text: ["^user_[0-9]+$"],
                                 options: {
-                                    search_method: "regex",
+                                    search_method: "includes",
                                     case_sensitive: false,
                                     negate: false,
+                                    regex: true,
                                 },
                             },
                             {
                                 searchField: ["bio_text"],
                                 text: ["^bio_[a-z]+$"],
                                 options: {
-                                    search_method: "regex",
+                                    search_method: "includes",
                                     case_sensitive: false,
                                     negate: false,
+                                    regex: true,
                                 },
                             },
                         ],

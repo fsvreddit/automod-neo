@@ -53,8 +53,6 @@ On submissions:
 * discussion_type
 * is_meta_discussion
 
-Search checks that use Regex cannot have other matching properties - e.g. `title (regex, includes)` will not work but `title (regex)` will. You can of course use `title (regex, case_sensitive)` still.
-
 This app will never support a "ban user" or "mute user" feature due to the scope for abuse.
 
 ## Future developments
@@ -69,6 +67,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 ### v1.1.0
 
 * Fixed issue with rules with `alert_webhook` parameters not sending Discord/Slack alerts
+* Restore the ability to have rules that combine regex checks with other modifiers e.g. `body (regex, includes)` or `body+title: (regex, full-text)`
 
 ### v1.0.0
 

@@ -225,38 +225,190 @@ describe("searchTextMatches", () => {
     });
 
     describe("regex", () => {
-        it("matches when regex pattern matches", () => {
-            assert.deepEqual(
-                searchTextMatches("Hello World", "^hello\\s+world$", makeOptions("regex")),
-                ["Hello World"],
-            );
+        describe("includes (default)", () => {
+            it("matches when regex pattern matches", () => {
+                assert.deepEqual(
+                    searchTextMatches("Hello World", "^hello\\s+world$", makeOptions("includes", { regex: true })),
+                    ["Hello World"],
+                );
+            });
+
+            it("does not match when regex pattern does not match", () => {
+                assert.equal(
+                    searchTextMatches("Hello World", "^world", makeOptions("includes", { regex: true })),
+                    undefined,
+                );
+            });
+
+            it("respects case_sensitive=true", () => {
+                assert.deepEqual(
+                    searchTextMatches("Hello World", "^hello\\s+world$", {
+                        ...makeOptions("includes", { regex: true }),
+                        case_sensitive: true,
+                    }),
+                    undefined,
+                );
+            });
+
+            it("supports negation", () => {
+                assert.deepEqual(
+                    searchTextMatches("Hello World", "^hello\\s+world$", {
+                        ...makeOptions("includes", { regex: true }),
+                        negate: true,
+                    }),
+                    undefined,
+                );
+            });
         });
 
-        it("does not match when regex pattern does not match", () => {
-            assert.equal(
-                searchTextMatches("Hello World", "^world", makeOptions("regex")),
-                undefined,
-            );
+        describe("includes-word", () => {
+            it("matches when the pattern is a whole word", () => {
+                assert.deepEqual(
+                    searchTextMatches("Hello World", "hello", makeOptions("includes-word", { regex: true })),
+                    ["hello"],
+                );
+            });
+
+            it("does not match when the pattern is a substring of a word", () => {
+                assert.equal(
+                    searchTextMatches("helloworld", "hello", makeOptions("includes-word", { regex: true })),
+                    undefined,
+                );
+            });
+
+            it("handles alternation correctly with word boundaries", () => {
+                assert.deepEqual(
+                    searchTextMatches("has foo and bar", "foo|bar", makeOptions("includes-word", { regex: true })),
+                    ["foo|bar"],
+                );
+            });
+
+            it("does not match alternation when no alternative is a standalone word", () => {
+                assert.equal(
+                    searchTextMatches("foobar", "foo|bar", makeOptions("includes-word", { regex: true })),
+                    undefined,
+                );
+            });
         });
 
-        it("respects case_sensitive=true", () => {
-            assert.deepEqual(
-                searchTextMatches("Hello World", "^hello\\s+world$", {
-                    ...makeOptions("regex"),
-                    case_sensitive: true,
-                }),
-                undefined,
-            );
+        describe("starts-with", () => {
+            it("matches when the input starts with the pattern", () => {
+                assert.deepEqual(
+                    searchTextMatches("Hello World", "hello", makeOptions("starts-with", { regex: true })),
+                    ["Hello"],
+                );
+            });
+
+            it("does not match when the input does not start with the pattern", () => {
+                assert.equal(
+                    searchTextMatches("Hello World", "world", makeOptions("starts-with", { regex: true })),
+                    undefined,
+                );
+            });
+
+            it("handles alternation correctly — only matches at the start", () => {
+                assert.deepEqual(
+                    searchTextMatches("World Hello", "hello|world", makeOptions("starts-with", { regex: true })),
+                    ["World"],
+                );
+                assert.equal(
+                    searchTextMatches("ends with hello", "hello|world", makeOptions("starts-with", { regex: true })),
+                    undefined,
+                );
+            });
         });
 
-        it("supports negation", () => {
-            assert.deepEqual(
-                searchTextMatches("Hello World", "^hello\\s+world$", {
-                    ...makeOptions("regex"),
-                    negate: true,
-                }),
-                undefined,
-            );
+        describe("ends-with", () => {
+            it("matches when the input ends with the pattern", () => {
+                assert.deepEqual(
+                    searchTextMatches("Hello World", "world", makeOptions("ends-with", { regex: true })),
+                    ["World"],
+                );
+            });
+
+            it("does not match when the input does not end with the pattern", () => {
+                assert.equal(
+                    searchTextMatches("Hello World", "hello", makeOptions("ends-with", { regex: true })),
+                    undefined,
+                );
+            });
+
+            it("handles alternation correctly — only matches at the end", () => {
+                assert.deepEqual(
+                    searchTextMatches("Hello World", "hello|world", makeOptions("ends-with", { regex: true })),
+                    ["World"],
+                );
+                assert.equal(
+                    searchTextMatches("hello starts here", "hello|world", makeOptions("ends-with", { regex: true })),
+                    undefined,
+                );
+            });
+        });
+
+        describe("full-exact", () => {
+            it("matches when the pattern matches the full input", () => {
+                assert.deepEqual(
+                    searchTextMatches("Hello World", "hello\\s+world", makeOptions("full-exact", { regex: true })),
+                    ["Hello World"],
+                );
+            });
+
+            it("does not match when the input has extra content", () => {
+                assert.equal(
+                    searchTextMatches("Hello World and more", "hello\\s+world", makeOptions("full-exact", { regex: true })),
+                    undefined,
+                );
+            });
+
+            it("handles alternation correctly — must match the full string", () => {
+                assert.deepEqual(
+                    searchTextMatches("Hello", "hello|world", makeOptions("full-exact", { regex: true })),
+                    ["Hello"],
+                );
+                assert.equal(
+                    searchTextMatches("Say Hello", "hello|world", makeOptions("full-exact", { regex: true })),
+                    undefined,
+                );
+            });
+        });
+
+        describe("full-text", () => {
+            it("matches when the pattern matches the full input", () => {
+                assert.deepEqual(
+                    searchTextMatches("Hello World", "hello\\s+world", makeOptions("full-text", { regex: true })),
+                    ["Hello World"],
+                );
+            });
+
+            it("strips leading and trailing punctuation from the input before matching", () => {
+                assert.deepEqual(
+                    searchTextMatches("  Hello World!  ", "hello\\s+world", makeOptions("full-text", { regex: true })),
+                    ["Hello World"],
+                );
+            });
+
+            it("does not match when the input has extra non-punctuation content", () => {
+                assert.equal(
+                    searchTextMatches("Hello World and more", "hello\\s+world", makeOptions("full-text", { regex: true })),
+                    undefined,
+                );
+            });
+        });
+
+        describe("domain", () => {
+            it("matches when the regex matches the domain string", () => {
+                assert.deepEqual(
+                    searchTextMatches("reddit.com", "reddit\\.(?:com|net)", makeOptions("domain", { regex: true })),
+                    ["reddit.com"],
+                );
+            });
+
+            it("does not match when the regex does not match", () => {
+                assert.equal(
+                    searchTextMatches("digg.com", "reddit\\.(?:com|net)", makeOptions("domain", { regex: true })),
+                    undefined,
+                );
+            });
         });
     });
 
