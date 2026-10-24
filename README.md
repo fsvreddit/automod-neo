@@ -66,6 +66,10 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
+### v1.1.0
+
+* Fixed issue with rules with `alert_webhook` parameters not sending Discord/Slack alerts
+
 ### v1.0.0
 
 * Add `set_contest_mode` for posts (base item and parent submission)
