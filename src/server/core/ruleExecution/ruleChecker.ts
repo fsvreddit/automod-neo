@@ -1120,7 +1120,6 @@ export class AutomodRuleChecker {
 
     private async sendVerboseLogs () {
         if (this.verboseLogOutput.size === 0) {
-            console.log("No verbose logs to send.");
             return;
         }
 
