@@ -249,6 +249,11 @@ export const automodSchema: Record<string, unknown> = {
         discord_alert: { type: "string", nullable: true },
         alert_webhook: { type: "string", nullable: true },
         uppercase_footer: { type: "boolean", nullable: true },
+        log_to_webhook: {
+            type: "string",
+            enum: ["matches", "verbose"],
+            nullable: true,
+        },
         stop_on_match: { type: "boolean", nullable: true },
         standard: {
             type: "string",

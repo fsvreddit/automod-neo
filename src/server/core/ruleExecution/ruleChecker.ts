@@ -1,12 +1,13 @@
 import { Comment, Post, reddit, settings, User, UserSocialLink } from "@devvit/web/server";
 import { CommentV2, isT1, isT3, T1, T3 } from "@devvit/web/shared";
 import { Author, AutomodMatch, AutomodRule, Matches, PostOrCommentCondition, RedditData, SearchableText } from "../types";
-import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW, isUserBanned } from "../helpers";
+import { getDomainFromUrl, isApprovedUser, isModerator, isRemovalRule, isSubredditNSFW, isUserBanned, sendMessageToWebhook } from "../helpers";
 import { meetsDateThreshold, meetsNumericThreshold } from "./thresholdChecks";
 import { subMonths } from "date-fns";
 import { anySearchConditionMatchesInput, commentMatchesStandardCondition, postMatchesStandardCondition, searchConditionsMatchInput } from ".";
 import { AppSetting } from "../appSettings";
 import { TZDate } from "@date-fns/tz/date";
+import markdownEscape from "markdown-escape";
 
 interface UserFlair {
     flairText?: string;
@@ -34,6 +35,7 @@ export class AutomodRuleChecker {
     private userSubredditKarma: Record<string, { fromComments: number; fromPosts: number }> = {};
 
     private verboseLogs = false;
+    private logToWebhookRuleName: string | undefined = undefined;
 
     constructor (opts: AutomodRuleCheckerOpts) {
         this.rules = opts.rules;
@@ -170,12 +172,25 @@ export class AutomodRuleChecker {
         };
     }
 
+    private verboseLogOutput = new Map<string, string[]>();
+
     private log (message: string, checkContext?: string): void {
+        let logMessage: string;
+        if (checkContext) {
+            logMessage = `Verbose Logs [${checkContext}]: ${message}`;
+        } else {
+            logMessage = `Verbose Logs: ${message}`;
+        }
+
         if (this.verboseLogs) {
-            if (checkContext) {
-                console.log(`Verbose Logs [${checkContext}]: ${message}`);
+            console.log(logMessage);
+        }
+
+        if (this.logToWebhookRuleName) {
+            if (!this.verboseLogOutput.has(this.logToWebhookRuleName)) {
+                this.verboseLogOutput.set(this.logToWebhookRuleName, [logMessage]);
             } else {
-                console.log(`Verbose Logs: ${message}`);
+                this.verboseLogOutput.get(this.logToWebhookRuleName)?.push(logMessage);
             }
         }
     }
@@ -428,7 +443,7 @@ export class AutomodRuleChecker {
 
         const matched = searchConditionsMatchInput(searchFields, authorCondition.search_conditions ?? []);
         if (!matched) {
-            this.log(`${username} does not match author search conditions.`, checkContext);
+            this.log(`${username} does not match author search conditions: ${authorCondition.search_conditions?.map(condition => condition.searchField).join(", ")}.`, checkContext);
         }
 
         return matched;
@@ -446,35 +461,35 @@ export class AutomodRuleChecker {
     public async checkPostAgainstCondition (post: Post, rule: PostOrCommentCondition, checkContext?: string): Promise<Matches[] | undefined> {
         if (rule.standard !== undefined) {
             if (!postMatchesStandardCondition(post, rule.standard)) {
-                this.log(`Post ${post.id} does not match standard condition (${rule.standard}).`, checkContext);
+                this.log(`${post.id} does not match standard condition (${rule.standard}).`, checkContext);
                 return;
             }
         }
 
         if (rule.is_nsfw !== undefined) {
             if (post.nsfw !== rule.is_nsfw) {
-                this.log(`Post ${post.id} does not match is_nsfw condition (${rule.is_nsfw}).`, checkContext);
+                this.log(`${post.id} does not match is_nsfw condition (${rule.is_nsfw}).`, checkContext);
                 return;
             }
         }
 
         if (rule.is_edited !== undefined) {
             if (post.edited !== rule.is_edited) {
-                this.log(`Post ${post.id} does not match is_edited condition (${rule.is_edited}).`, checkContext);
+                this.log(`${post.id} does not match is_edited condition (${rule.is_edited}).`, checkContext);
                 return;
             }
         }
 
         if (rule.is_locked !== undefined) {
             if (post.locked !== rule.is_locked) {
-                this.log(`Post ${post.id} does not match is_locked condition (${rule.is_locked}).`, checkContext);
+                this.log(`${post.id} does not match is_locked condition (${rule.is_locked}).`, checkContext);
                 return;
             }
         }
 
         if (rule.is_gallery !== undefined) {
             if ((post.gallery.length > 0) !== rule.is_gallery) {
-                this.log(`Post ${post.id} does not match is_gallery condition (${rule.is_gallery}).`, checkContext);
+                this.log(`${post.id} does not match is_gallery condition (${rule.is_gallery}).`, checkContext);
                 return;
             }
         }
@@ -482,14 +497,14 @@ export class AutomodRuleChecker {
         if (rule.past_archive_date !== undefined) {
             const isPastArchiveDate = post.createdAt < subMonths(new Date(), 6);
             if (isPastArchiveDate !== rule.past_archive_date) {
-                this.log(`Post ${post.id} does not match past_archive_date condition (${rule.past_archive_date}).`, checkContext);
+                this.log(`${post.id} does not match past_archive_date condition (${rule.past_archive_date}).`, checkContext);
                 return;
             }
         }
 
         if (rule.is_approved !== undefined) {
             if (post.approved !== rule.is_approved) {
-                this.log(`Post ${post.id} does not match is_approved condition (${rule.is_approved}).`, checkContext);
+                this.log(`${post.id} does not match is_approved condition (${rule.is_approved}).`, checkContext);
                 return;
             }
         }
@@ -507,14 +522,14 @@ export class AutomodRuleChecker {
 
         if (rule.body_shorter_than !== undefined) {
             if (postBodyLength >= rule.body_shorter_than) {
-                this.log(`Post ${post.id} does not match body_shorter_than condition (${rule.body_shorter_than}).`, checkContext);
+                this.log(`${post.id} does not match body_shorter_than condition (${rule.body_shorter_than}).`, checkContext);
                 return;
             }
         }
 
         if (rule.body_longer_than !== undefined) {
             if (postBodyLength <= rule.body_longer_than) {
-                this.log(`Post ${post.id} does not match body_longer_than condition (${rule.body_longer_than}).`, checkContext);
+                this.log(`${post.id} does not match body_longer_than condition (${rule.body_longer_than}).`, checkContext);
                 return;
             }
         }
@@ -523,7 +538,7 @@ export class AutomodRuleChecker {
             const paragraphCount = this.getParagraphCount(postBody);
             const meetsThreshold = meetsNumericThreshold(paragraphCount, rule.paragraph_count);
             if (!meetsThreshold) {
-                this.log(`Post ${post.id} does not match paragraph_count condition (${rule.paragraph_count}).`, checkContext);
+                this.log(`${post.id} does not match paragraph_count condition (${rule.paragraph_count}).`, checkContext);
                 return;
             }
         }
@@ -531,7 +546,7 @@ export class AutomodRuleChecker {
         if (rule.subreddit?.search_conditions && rule.subreddit.search_conditions.length > 0) {
             const subredditMatches = anySearchConditionMatchesInput(post.subredditName, rule.subreddit.search_conditions);
             if (!subredditMatches) {
-                this.log(`Post ${post.id} does not match subreddit search conditions.`, checkContext);
+                this.log(`${post.id} does not match subreddit search conditions (${rule.subreddit.search_conditions.map(condition => condition.searchField).join(", ")}).`, checkContext);
                 return;
             }
         }
@@ -539,34 +554,34 @@ export class AutomodRuleChecker {
         if (rule.subreddit?.is_nsfw !== undefined) {
             const isSubredditNSFWResult = await isSubredditNSFW(post.subredditName);
             if (isSubredditNSFWResult !== rule.subreddit.is_nsfw) {
-                this.log(`Post ${post.id} does not match subreddit is_nsfw condition (${rule.subreddit.is_nsfw}).`, checkContext);
+                this.log(`${post.id} does not match subreddit is_nsfw condition (${rule.subreddit.is_nsfw}).`, checkContext);
                 return;
             }
         }
 
         if (rule.is_poll !== undefined) {
             if ((post.pollData !== undefined) !== rule.is_poll) {
-                this.log(`Post ${post.id} does not match is_poll condition (${rule.is_poll}).`, checkContext);
+                this.log(`${post.id} does not match is_poll condition (${rule.is_poll}).`, checkContext);
                 return;
             }
         }
 
         if (rule.reports !== undefined) {
             if (post.numberOfReports < rule.reports) {
-                this.log(`Post ${post.id} does not match reports condition (${rule.reports}).`, checkContext);
+                this.log(`${post.id} does not match reports condition (${rule.reports}).`, checkContext);
                 return;
             }
         }
 
         if (rule.poll_option_count !== undefined) {
             if (!post.pollData) {
-                this.log(`Post ${post.id} does not have poll data, but poll_option_count condition is specified.`, checkContext);
+                this.log(`${post.id} does not have poll data, but poll_option_count condition is specified.`, checkContext);
                 return;
             }
             const pollOptionCount = post.pollData.options.length;
             const meetsThreshold = meetsNumericThreshold(pollOptionCount, rule.poll_option_count);
             if (!meetsThreshold) {
-                this.log(`Post ${post.id} does not match poll_option_count condition (${rule.poll_option_count}).`, checkContext);
+                this.log(`${post.id} does not match poll_option_count condition (${rule.poll_option_count}).`, checkContext);
                 return;
             }
         }
@@ -574,7 +589,7 @@ export class AutomodRuleChecker {
         if (rule.age !== undefined) {
             const meetsThreshold = meetsDateThreshold(post.createdAt, rule.age);
             if (!meetsThreshold) {
-                this.log(`Post ${post.id} does not match age condition (${rule.age}).`, checkContext);
+                this.log(`${post.id} does not match age condition (${rule.age}).`, checkContext);
                 return;
             }
         }
@@ -582,7 +597,7 @@ export class AutomodRuleChecker {
         if (rule.comment_count !== undefined) {
             const meetsThreshold = meetsNumericThreshold(post.numberOfComments, rule.comment_count);
             if (!meetsThreshold) {
-                this.log(`Post ${post.id} does not match comment_count condition (${rule.comment_count}).`, checkContext);
+                this.log(`${post.id} does not match comment_count condition (${rule.comment_count}).`, checkContext);
                 return;
             }
         }
@@ -590,7 +605,7 @@ export class AutomodRuleChecker {
         if (rule.image_count !== undefined) {
             const meetsThreshold = meetsNumericThreshold(post.gallery.length, rule.image_count);
             if (!meetsThreshold) {
-                this.log(`Post ${post.id} does not match image_count condition (${rule.image_count}).`, checkContext);
+                this.log(`${post.id} does not match image_count condition (${rule.image_count}).`, checkContext);
                 return;
             }
         }
@@ -676,7 +691,7 @@ export class AutomodRuleChecker {
 
         const searchMatches = searchConditionsMatchInput(searchFields, rule.search_conditions ?? []);
         if (!searchMatches) {
-            this.log(`Post ${post.id} does not match search conditions.`, checkContext);
+            this.log(`${post.id} does not match search conditions (${rule.search_conditions?.map(condition => condition.searchField).join(", ")}).`, checkContext);
             return;
         }
         matches.push(...searchMatches);
@@ -684,21 +699,21 @@ export class AutomodRuleChecker {
         // Crosspost checks
         if (rule.crosspost_id !== undefined) {
             if (!rule.crosspost_id.some(id => post.crosspostParentId === `t3_${id}`)) {
-                this.log(`Post ${post.id} does not match crosspost_id condition (${rule.crosspost_id}).`, checkContext);
+                this.log(`${post.id} does not match crosspost_id condition (${rule.crosspost_id}).`, checkContext);
                 return;
             }
         }
 
         if (rule.crosspost_author !== undefined) {
             if (!post.crosspostParentId) {
-                this.log(`Post ${post.id} does not have a crosspost parent, but crosspost_author condition is specified.`, checkContext);
+                this.log(`${post.id} does not have a crosspost parent, but crosspost_author condition is specified.`, checkContext);
                 return;
             }
 
             const crossPost = await this.getPostById(post.crosspostParentId);
             const crosspostAuthorMatches = await this.authorMatchesCondition(crossPost.authorName, crossPost.id, rule.crosspost_author);
             if (!crosspostAuthorMatches) {
-                this.log(`Post ${post.id} does not match crosspost_author condition.`, checkContext);
+                this.log(`${post.id} does not match crosspost_author condition.`, checkContext);
                 return;
             }
         }
@@ -712,7 +727,7 @@ export class AutomodRuleChecker {
             if (rule.crosspost_subreddit.search_conditions !== undefined) {
                 const crosspostSubredditMatches = anySearchConditionMatchesInput(crossPost.subredditName, rule.crosspost_subreddit.search_conditions);
                 if (!crosspostSubredditMatches) {
-                    this.log(`Post ${post.id} does not match crosspost_subreddit search conditions.`, checkContext);
+                    this.log(`${post.id} does not match crosspost_subreddit search conditions (${rule.crosspost_subreddit.search_conditions.map(condition => condition.searchField).join(", ")}).`, checkContext);
                     return;
                 }
             }
@@ -720,7 +735,7 @@ export class AutomodRuleChecker {
             if (rule.crosspost_subreddit.is_nsfw !== undefined) {
                 const isCrosspostSubredditNSFW = await isSubredditNSFW(crossPost.subredditName);
                 if (isCrosspostSubredditNSFW !== rule.crosspost_subreddit.is_nsfw) {
-                    this.log(`Post ${post.id} does not match crosspost_subreddit is_nsfw condition (${rule.crosspost_subreddit.is_nsfw}).`, checkContext);
+                    this.log(`${post.id} does not match crosspost_subreddit is_nsfw condition (${rule.crosspost_subreddit.is_nsfw}).`, checkContext);
                     return;
                 }
             }
@@ -729,7 +744,7 @@ export class AutomodRuleChecker {
         if (rule.author) {
             const authorMatches = await this.authorMatchesCondition(post.authorName, post.id, rule.author);
             if (!authorMatches) {
-                this.log(`Post ${post.id} does not match author condition.`, checkContext);
+                this.log(`${post.id} does not match author condition.`, checkContext);
                 return;
             }
             matches.push(...authorMatches);
@@ -745,21 +760,21 @@ export class AutomodRuleChecker {
 
         if (condition.standard !== undefined) {
             if (!commentMatchesStandardCondition(commentBody, condition.standard)) {
-                this.log(`Comment ${comment.id} does not match standard condition (${condition.standard}).`, checkContext);
+                this.log(`${comment.id} does not match standard condition (${condition.standard}).`, checkContext);
                 return;
             }
         }
 
         if (condition.reports !== undefined) {
             if (comment.numReports < condition.reports) {
-                this.log(`Comment ${comment.id} does not match reports condition (${condition.reports}).`, checkContext);
+                this.log(`${comment.id} does not match reports condition (${condition.reports}).`, checkContext);
                 return;
             }
         }
 
         if (condition.body_shorter_than !== undefined) {
             if (commentBody.length >= condition.body_shorter_than) {
-                this.log(`Comment ${comment.id} does not match body_shorter_than condition (${condition.body_shorter_than}).`, checkContext);
+                this.log(`${comment.id} does not match body_shorter_than condition (${condition.body_shorter_than}).`, checkContext);
                 return;
             }
         }
@@ -768,14 +783,14 @@ export class AutomodRuleChecker {
             const paragraphCount = this.getParagraphCount(commentBody);
             const meetsThreshold = meetsNumericThreshold(paragraphCount, condition.paragraph_count);
             if (!meetsThreshold) {
-                this.log(`Comment ${comment.id} does not match paragraph_count condition (${condition.paragraph_count}).`, checkContext);
+                this.log(`${comment.id} does not match paragraph_count condition (${condition.paragraph_count}).`, checkContext);
                 return;
             }
         }
 
         if (condition.body_longer_than !== undefined) {
             if (commentBody.length <= condition.body_longer_than) {
-                this.log(`Comment ${comment.id} does not match body_longer_than condition (${condition.body_longer_than}).`, checkContext);
+                this.log(`${comment.id} does not match body_longer_than condition (${condition.body_longer_than}).`, checkContext);
                 return;
             }
         }
@@ -783,7 +798,7 @@ export class AutomodRuleChecker {
         if (condition.is_top_level !== undefined) {
             const isTopLevel = isT3(comment.parentId);
             if (isTopLevel !== condition.is_top_level) {
-                this.log(`Comment ${comment.id} does not match is_top_level condition (${condition.is_top_level}).`, checkContext);
+                this.log(`${comment.id} does not match is_top_level condition (${condition.is_top_level}).`, checkContext);
                 return;
             }
         }
@@ -792,14 +807,14 @@ export class AutomodRuleChecker {
             const parentSubmission = await this.getPostById(comment.postId as T3);
             const isPastArchiveDate = parentSubmission.createdAt < subMonths(new Date(), 6);
             if (isPastArchiveDate !== condition.past_archive_date) {
-                this.log(`Comment ${comment.id} does not match past_archive_date condition (${condition.past_archive_date}).`, checkContext);
+                this.log(`${comment.id} does not match past_archive_date condition (${condition.past_archive_date}).`, checkContext);
                 return;
             }
         }
 
         if (condition.comment_crowd_control_collapsed !== undefined) {
             if (comment.collapsedBecauseCrowdControl !== condition.comment_crowd_control_collapsed) {
-                this.log(`Comment ${comment.id} does not match comment_crowd_control_collapsed condition (${condition.comment_crowd_control_collapsed}).`, checkContext);
+                this.log(`${comment.id} does not match comment_crowd_control_collapsed condition (${condition.comment_crowd_control_collapsed}).`, checkContext);
                 return;
             }
         }
@@ -807,7 +822,7 @@ export class AutomodRuleChecker {
         if (condition.age !== undefined) {
             const meetsThreshold = meetsDateThreshold(comment.createdAt, condition.age);
             if (!meetsThreshold) {
-                this.log(`Post ${comment.id} does not match age condition (${condition.age}).`, checkContext);
+                this.log(`${comment.id} does not match age condition (${condition.age}).`, checkContext);
                 return;
             }
         }
@@ -844,7 +859,7 @@ export class AutomodRuleChecker {
 
         const searchMatches = searchConditionsMatchInput(searchFields, condition.search_conditions ?? []);
         if (!searchMatches) {
-            this.log(`Comment ${comment.id} does not match search conditions.`, checkContext);
+            this.log(`${comment.id} does not match search conditions (${condition.search_conditions?.map(condition => condition.searchField).join(", ")}).`, checkContext);
             return;
         }
         matches.push(...searchMatches);
@@ -852,14 +867,14 @@ export class AutomodRuleChecker {
         if (condition.author) {
             const authorMatches = await this.authorMatchesCondition(authorName, comment.id as T1, condition.author);
             if (!authorMatches) {
-                this.log(`Comment ${comment.id} does not match author condition.`, checkContext);
+                this.log(`${comment.id} does not match author condition.`, checkContext);
                 return;
             }
 
             if (condition.author.is_submitter !== undefined) {
                 const parentSubmission = await this.getPostById(comment.postId as T3);
                 if (condition.author.is_submitter !== (parentSubmission.authorName === authorName)) {
-                    this.log(`Comment ${comment.id} does not match is_submitter condition (${condition.author.is_submitter}).`, checkContext);
+                    this.log(`${comment.id} does not match is_submitter condition (${condition.author.is_submitter}).`, checkContext);
                     return;
                 }
             }
@@ -868,7 +883,7 @@ export class AutomodRuleChecker {
         if (condition.is_edited !== undefined) {
             const fullCommentObject = await this.getCommentById(comment.id as T1);
             if (fullCommentObject.edited !== condition.is_edited) {
-                this.log(`Comment ${comment.id} does not match is_edited condition (${condition.is_edited}).`, checkContext);
+                this.log(`${comment.id} does not match is_edited condition (${condition.is_edited}).`, checkContext);
                 return;
             }
         }
@@ -876,7 +891,7 @@ export class AutomodRuleChecker {
         if (condition.is_locked !== undefined) {
             const fullCommentObject = await this.getCommentById(comment.id as T1);
             if (fullCommentObject.locked !== condition.is_locked) {
-                this.log(`Comment ${comment.id} does not match is_locked condition (${condition.is_locked}).`, checkContext);
+                this.log(`${comment.id} does not match is_locked condition (${condition.is_locked}).`, checkContext);
                 return;
             }
         }
@@ -884,7 +899,7 @@ export class AutomodRuleChecker {
         if (condition.is_approved !== undefined) {
             const fullCommentObject = await this.getCommentById(comment.id as T1);
             if (fullCommentObject.approved !== condition.is_approved) {
-                this.log(`Comment ${comment.id} does not match is_approved condition (${condition.is_approved}).`, checkContext);
+                this.log(`${comment.id} does not match is_approved condition (${condition.is_approved}).`, checkContext);
                 return;
             }
         }
@@ -910,6 +925,7 @@ export class AutomodRuleChecker {
             }
 
             this.verboseLogs = rule.verbose_logs ?? false;
+            this.setupVerboseLogging(rule);
 
             if (!await this.isMatchingDayOfWeek(rule)) {
                 this.log(`Skipping rule ${rule.friendly_name ?? "Unnamed rule"} because it does not match the current day of the week.`);
@@ -918,7 +934,6 @@ export class AutomodRuleChecker {
 
             const matches = await this.checkCommentAgainstCondition(comment, rule, authorName);
             if (!matches) {
-                this.log(`Comment ${comment.id} does not match conditions.`);
                 continue;
             }
 
@@ -926,36 +941,38 @@ export class AutomodRuleChecker {
             if (rule.parent_submission !== undefined) {
                 const parentSubmission = await this.getPostById(comment.postId as T3);
                 if (!await this.checkPostAgainstCondition(parentSubmission, rule.parent_submission, "parentSubmission")) {
-                    this.log(`Comment ${comment.id} does not match parent_submission condition.`);
+                    this.log(`${comment.id} does not match parent_submission condition.`);
                     continue;
                 }
             }
 
             if (rule.parent_comment !== undefined) {
                 if (isT3(comment.parentId)) {
-                    this.log(`Comment ${comment.id} does not match parent_comment condition because it is a top-level comment.`);
+                    this.log(`${comment.id} does not match parent_comment condition because it is a top-level comment.`);
                     continue;
                 }
 
                 const parentComment = await this.getCommentById(comment.parentId as T1);
                 if (!await this.checkCommentAgainstCondition(parentComment, rule.parent_comment, parentComment.authorName, "parentComment")) {
-                    this.log(`Comment ${comment.id} does not match parent_comment condition.`);
+                    this.log(`${comment.id} does not match parent_comment condition.`);
                     continue;
                 }
             }
 
             if (rule.moderators_exempt !== false) {
                 if (await this.getIsUserModerator(authorName)) {
-                    console.log(`Skipping comment ${comment.id} because author is a moderator and rule does not exempt moderators.`);
+                    console.log(`Skipping ${comment.id} because author is a moderator and rule does not exempt moderators.`);
                     continue;
                 }
             }
 
-            console.log(`Rule matched for comment ${comment.id}: ${rule.friendly_name ?? "Unnamed rule"}`);
+            console.log(`Rule matched for ${comment.id}: ${rule.friendly_name ?? "Unnamed rule"}`);
 
             results.push({ rule, matches });
+            this.recordMatchForVerboseLogging(await this.getCommentById(comment.id as T1), { rule, matches });
+
             if (this.shouldStop(rule)) {
-                console.log(`Stopping further rule checks for comment ${comment.id} because rule has stop_on_match set to true or action is remove/spam/filter.`);
+                console.log(`Stopping further rule checks for ${comment.id} because rule has stop_on_match set to true or action is remove/spam/filter.`);
                 break;
             }
         }
@@ -974,6 +991,8 @@ export class AutomodRuleChecker {
             }
         }
 
+        await this.sendVerboseLogs();
+
         return results;
     }
 
@@ -990,6 +1009,7 @@ export class AutomodRuleChecker {
             }
 
             this.verboseLogs = rule.verbose_logs ?? false;
+            this.setupVerboseLogging(rule);
 
             if (!await this.isMatchingDayOfWeek(rule)) {
                 this.log(`Skipping rule ${rule.friendly_name ?? "Unnamed rule"} because it does not match the current day of the week.`);
@@ -1005,52 +1025,127 @@ export class AutomodRuleChecker {
             const isSelfPost = post.url.includes(post.permalink);
 
             if (rule.type === "text submission" && !isSelfPost) {
-                this.log(`Post ${post.id} does not match text submission condition because it is not a self post.`);
+                this.log(`${post.id} does not match text submission condition because it is not a self post.`);
                 continue;
             }
 
             if (rule.type === "link submission" && isSelfPost) {
-                this.log(`Post ${post.id} does not match link submission condition because it is a self post.`);
+                this.log(`${post.id} does not match link submission condition because it is a self post.`);
                 continue;
             }
 
             if (rule.type === "crosspost submission" && !post.crosspostParentId) {
-                this.log(`Post ${post.id} does not match crosspost submission condition because it is not a crosspost.`);
+                this.log(`${post.id} does not match crosspost submission condition because it is not a crosspost.`);
                 continue;
             }
 
             if (rule.type === "gallery submission" && post.gallery.length === 0) {
-                this.log(`Post ${post.id} does not match gallery submission condition because it is not a gallery.`);
+                this.log(`${post.id} does not match gallery submission condition because it is not a gallery.`);
                 continue;
             }
 
             if (rule.type === "poll submission" && !post.pollData) {
-                this.log(`Post ${post.id} does not match poll submission condition because it is not a poll.`);
+                this.log(`${post.id} does not match poll submission condition because it is not a poll.`);
                 continue;
             }
 
             const matches = await this.checkPostAgainstCondition(post, rule);
             if (!matches) {
-                this.log(`Post ${post.id} does not match conditions.`);
                 continue;
             }
 
             if (rule.moderators_exempt !== false) {
                 if (await this.getIsUserModerator(post.authorName)) {
-                    console.log(`Skipping post ${post.id} because author is a moderator and rule does not exempt moderators.`);
+                    console.log(`Skipping ${post.id} because author is a moderator and rule does not exempt moderators.`);
                     continue;
                 }
             }
 
-            console.log(`Rule matched for post ${post.id}: ${rule.friendly_name ?? "Unnamed rule"}`);
+            console.log(`Rule matched for ${post.id}: ${rule.friendly_name ?? "Unnamed rule"}`);
 
             results.push({ rule, matches });
+            this.recordMatchForVerboseLogging(post, { rule, matches });
+
             if (this.shouldStop(rule)) {
-                console.log(`Stopping further rule checks for post ${post.id} because rule has stop_on_match set to true or action is remove/spam/filter.`);
+                console.log(`Stopping further rule checks for ${post.id} because rule has stop_on_match set to true or action is remove/spam/filter.`);
                 break;
             }
         }
 
+        await this.sendVerboseLogs();
+
         return results;
+    }
+
+    private setupVerboseLogging (rule: AutomodRule) {
+        this.verboseLogs = rule.verbose_logs ?? false;
+        this.logToWebhookRuleName = rule.log_to_webhook === "verbose" && rule.friendly_name ? rule.friendly_name : undefined;
+    }
+
+    private recordMatchForVerboseLogging (target: Post | Comment, match: AutomodMatch) {
+        if (!match.rule.friendly_name || !match.rule.log_to_webhook) {
+            return;
+        }
+
+        const output: string[] = [];
+
+        if (isT3(target.id) && "title" in target) {
+            output.push(`A post titled "[${markdownEscape(target.title)}](https://reddit.com${target.permalink})" matched rule ${match.rule.friendly_name}`);
+        } else {
+            output.push(`A [comment](https://reddit.com${target.permalink}) matched rule ${match.rule.friendly_name}`);
+        }
+
+        for (const matchDetail of match.matches) {
+            output.push(`- ${matchDetail.category}: ${matchDetail.matches.join(", ")}`);
+        }
+
+        this.verboseLogOutput.set(match.rule.friendly_name, output);
+    }
+
+    async replaceThingIds (input: string): Promise<string> {
+        const thingIdRegex = /t[13]_[a-z0-9]+/gm;
+        const matches = input.matchAll(thingIdRegex);
+        let output = input;
+        for (const match of matches) {
+            const thingId = match[0];
+            if (isT3(thingId)) {
+                output = output.replace(thingId, `[post](https://redd.it/${thingId.substring(3)})`);
+            } else if (isT1(thingId)) {
+                const comment = await this.getCommentById(thingId);
+                output = output.replace(thingId, `[comment](https://reddit.com/r/${comment.subredditName}/comments/${comment.postId.substring(3)}/-/${thingId.substring(3)})`);
+            }
+        }
+        return output;
+    }
+
+    private async sendVerboseLogs () {
+        if (this.verboseLogOutput.size === 0) {
+            console.log("No verbose logs to send.");
+            return;
+        }
+
+        const appSettings = await settings.getAll();
+
+        let webhookUrl = appSettings[AppSetting.LoggingWebhookUrl] as string | undefined;
+        if (webhookUrl === undefined || webhookUrl === "") {
+            webhookUrl = appSettings[AppSetting.DiscordOrSlackWebhookUrl] as string | undefined;
+        }
+
+        if (!webhookUrl) {
+            console.log("No webhook URL configured for verbose logs.");
+            return;
+        }
+
+        let output = "";
+        for (const [, logOutput] of this.verboseLogOutput.entries()) {
+            if (logOutput.length === 0) {
+                continue;
+            }
+            output += (await Promise.all(logOutput.map(line => this.replaceThingIds(line)))).join("\n") + "\n\n";
+        }
+
+        if (output) {
+            await sendMessageToWebhook(webhookUrl, output);
+        }
     }
 }

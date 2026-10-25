@@ -135,6 +135,7 @@ export type AutomodRule = PostOrCommentCondition & {
     discord_alert?: string;
     alert_webhook?: string;
     uppercase_footer?: boolean;
+    log_to_webhook?: "matches" | "verbose";
 
     // Behaviour modifiers
     stop_on_match?: boolean;

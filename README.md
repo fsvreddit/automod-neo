@@ -70,6 +70,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 * Restore the ability to have rules that combine regex checks with other modifiers e.g. `body (regex, includes)` or `body+title: (regex, full-text)`
 * Improve performance of rule validation especially when little has changed
 * Fixed behaviour of `{{body}}`, `{{domain}}` and `{{url}}` placeholders for crossposts - these now substitute the values from the original submission in line with Automod's behaviour
+* Add `log_to_webhook` directive to allow rules to be debugged via logs to a Discord server at an individual rule level
 
 ## About this app
 

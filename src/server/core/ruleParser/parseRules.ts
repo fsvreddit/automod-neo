@@ -748,6 +748,10 @@ export async function parseRules (rules: string, checkForRedos = false): Promise
             }
             knownFriendlyNames.add(friendlyName);
         }
+
+        if (rule.log_to_webhook && !rule.friendly_name) {
+            throw new Error(`log_to_webhook is specified but friendly_name is missing in rule ${formatRuleReference(rule, index)}`);
+        }
     }
 
     return parsedRules;
