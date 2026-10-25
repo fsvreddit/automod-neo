@@ -43,6 +43,9 @@
             },
             "processCommentQueue": {
                 "endpoint": "/internal/tasks/process-comment-queue"
+            },
+            "runParseWithReDoS": {
+                "endpoint": "/internal/tasks/run-parse-with-redos"
             }
         }
     },
@@ -70,6 +73,12 @@
                 "type": "string",
                 "label": "Discord or Slack Webhook URL",
                 "helpText": "Optional. Used when rules have a 'discord_alert' action",
+                "validationEndpoint": "/internal/validators/validate-discord-or-slack-webhook"
+            },
+            "loggingWebhookUrl": {
+                "type": "string",
+                "label": "Logging Webhook URL",
+                "helpText": "Optional. Used for logging purposes if a rule has `log_to_webhook` specified.",
                 "validationEndpoint": "/internal/validators/validate-discord-or-slack-webhook"
             },
             "timeZone": {

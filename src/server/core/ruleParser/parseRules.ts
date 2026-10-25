@@ -1,13 +1,15 @@
+import { redis } from "@devvit/web/server";
 import _ from "lodash";
 import { AutomodRule, SearchField, SearchMethod, SearchOption, SearchableText } from "../types";
 import { parseAllDocuments } from "yaml";
 import Ajv, { type ErrorObject, type ValidateFunction } from "ajv";
 import { automodSchema } from "./automodSchema";
 import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecution";
-import { checkSync } from "recheck";
+import { checkSync, Diagnostics, Parameters as CheckParameters } from "recheck";
 import { parseWebhookUrl } from "../webhookUtils";
+import { addDays, addMonths } from "date-fns";
 
-const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "domain", "full-exact", "full-text", "regex"];
+const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "domain", "full-exact", "full-text"];
 
 process.env.RECHECK_SYNC_BACKEND ??= "pure";
 
@@ -219,7 +221,10 @@ function defaultSearchMethodForField (fieldName: SearchField): SearchMethod {
 function buildSearchOptions (fieldName: SearchField, qualifierText: string | undefined, negate: boolean, attributeName?: string): SearchOption {
     const rawParts = (qualifierText ?? "").split(",").map(part => part.trim()).filter(Boolean);
     const caseSensitive = rawParts.includes("case-sensitive") || rawParts.includes("case_sensitive");
-    const parts = rawParts.filter(part => part !== "case-sensitive" && part !== "case_sensitive");
+    const hasRegex = rawParts.includes("regex");
+    const parts = rawParts
+        .filter(part => part !== "case-sensitive" && part !== "case_sensitive" && part !== "regex")
+        .map(part => part.replace(/_/g, "-"));
 
     const uniqueSearchMethods = [...new Set(parts.filter(part => searchMethodValues.includes(part as SearchMethod)))];
     if (uniqueSearchMethods.length > 1) {
@@ -228,14 +233,17 @@ function buildSearchOptions (fieldName: SearchField, qualifierText: string | und
     }
 
     const searchMethodCandidate = parts.length > 0 ? parts.join(", ") : undefined;
-    const searchMethod = searchMethodCandidate && searchMethodValues.includes(searchMethodCandidate as SearchMethod)
+    const explicitMethod = searchMethodCandidate && searchMethodValues.includes(searchMethodCandidate as SearchMethod)
         ? searchMethodCandidate as SearchMethod
-        : defaultSearchMethodForField(fieldName);
+        : undefined;
+
+    const searchMethod = explicitMethod ?? (hasRegex ? "includes" : defaultSearchMethodForField(fieldName));
 
     return {
         search_method: searchMethod,
         negate,
         case_sensitive: caseSensitive,
+        ...(hasRegex && { regex: true }),
     };
 }
 
@@ -458,7 +466,34 @@ function preprocessPostConditionLikeNode (node: MutableNode, containerPath: stri
     }
 }
 
-function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: string, ruleReference: string, checkForRedos: boolean): void {
+const checkResultsOptions: CheckParameters = {
+    maxAttackStringSize: 10000,
+    accelerationMode: "on",
+    attackLimit: 10000,
+    timeout: 500,
+};
+
+function getRedosSafetyCacheDate (): Date {
+    return addDays(addMonths(new Date(), 6), Math.floor(Math.random() * 365));
+}
+
+async function getRedosSafetyResult (regex: RegExp): Promise<Diagnostics> {
+    const checkResultCacheKey = `redosCheckResult:${regex.source}:${JSON.stringify(checkResultsOptions)}`;
+    const cachedResults = await redis.get(checkResultCacheKey);
+    if (cachedResults) {
+        return JSON.parse(cachedResults) as Diagnostics;
+    }
+
+    const checkResult = checkSync(regex.source, "u", checkResultsOptions);
+
+    if (checkResult.status === "safe") {
+        await redis.set(checkResultCacheKey, JSON.stringify(checkResult), { expiration: getRedosSafetyCacheDate() });
+    }
+
+    return checkResult;
+}
+
+async function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: string, ruleReference: string, checkForRedos: boolean): Promise<void> {
     const fieldValue = node[fieldName];
     if (!Array.isArray(fieldValue)) {
         return;
@@ -472,7 +507,7 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
         }
 
         const optionsValue = searchableItem.options;
-        if (!isObjectRecord(optionsValue) || optionsValue.search_method !== "regex") {
+        if (!isObjectRecord(optionsValue) || optionsValue.regex !== true) {
             continue;
         }
 
@@ -500,12 +535,7 @@ function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: s
             }
 
             if (checkForRedos) {
-                const checkResult = checkSync(regex.source, "u", {
-                    maxAttackStringSize: 10000,
-                    accelerationMode: "on",
-                    attackLimit: 10000,
-                    timeout: 500,
-                });
+                const checkResult = await getRedosSafetyResult(regex);
 
                 if (checkResult.status === "vulnerable") {
                     const source = searchableSourceMetadata.get(searchableItem);
@@ -562,8 +592,8 @@ function validateDateThresholdFormatInNode (node: MutableNode, ruleReference: st
     }
 }
 
-function validateRegexPatternsInAuthorNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): void {
-    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
+async function validateRegexPatternsInAuthorNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): Promise<void> {
+    await validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
 
     const numericThresholdFields = [
         "comment_karma",
@@ -583,27 +613,27 @@ function validateRegexPatternsInAuthorNode (node: MutableNode, ruleReference: st
     validateDateThresholdFormatInNode(node, ruleReference, dateThresholdFields);
 }
 
-function validateRegexPatternsInSubredditNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): void {
-    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
+async function validateRegexPatternsInSubredditNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): Promise<void> {
+    await validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
 }
 
-function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): void {
-    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
+async function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): Promise<void> {
+    await validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
 
     if (isObjectRecord(node.author)) {
-        validateRegexPatternsInAuthorNode(node.author, ruleReference, checkForRedos);
+        await validateRegexPatternsInAuthorNode(node.author, ruleReference, checkForRedos);
     }
 
     if (isObjectRecord(node.subreddit)) {
-        validateRegexPatternsInSubredditNode(node.subreddit, ruleReference, checkForRedos);
+        await validateRegexPatternsInSubredditNode(node.subreddit, ruleReference, checkForRedos);
     }
 
     if (isObjectRecord(node.crosspost_author)) {
-        validateRegexPatternsInAuthorNode(node.crosspost_author, ruleReference, checkForRedos);
+        await validateRegexPatternsInAuthorNode(node.crosspost_author, ruleReference, checkForRedos);
     }
 
     if (isObjectRecord(node.crosspost_subreddit)) {
-        validateRegexPatternsInSubredditNode(node.crosspost_subreddit, ruleReference, checkForRedos);
+        await validateRegexPatternsInSubredditNode(node.crosspost_subreddit, ruleReference, checkForRedos);
     }
 
     if (node.poll_option_count !== undefined) {
@@ -627,15 +657,15 @@ function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleRe
     }
 }
 
-export function validateRuleRegexPatterns (rule: MutableNode, ruleReference: string, checkForRedos: boolean): void {
-    validateRegexPatternsInPostConditionLikeNode(rule, ruleReference, checkForRedos);
+export async function validateRuleRegexPatterns (rule: MutableNode, ruleReference: string, checkForRedos: boolean): Promise<void> {
+    await validateRegexPatternsInPostConditionLikeNode(rule, ruleReference, checkForRedos);
 
     if (isObjectRecord(rule.parent_submission)) {
-        validateRegexPatternsInPostConditionLikeNode(rule.parent_submission, ruleReference, checkForRedos);
+        await validateRegexPatternsInPostConditionLikeNode(rule.parent_submission, ruleReference, checkForRedos);
     }
 
     if (isObjectRecord(rule.parent_comment)) {
-        validateRegexPatternsInPostConditionLikeNode(rule.parent_comment, ruleReference, checkForRedos);
+        await validateRegexPatternsInPostConditionLikeNode(rule.parent_comment, ruleReference, checkForRedos);
     }
 }
 
@@ -686,7 +716,7 @@ export function preprocessRule (rule: MutableNode): void {
     }
 }
 
-export function parseRules (rules: string, checkForRedos = false): AutomodRule[] {
+export async function parseRules (rules: string, checkForRedos = false): Promise<AutomodRule[]> {
     if (!rules.trim()) {
         return [];
     }
@@ -697,7 +727,7 @@ export function parseRules (rules: string, checkForRedos = false): AutomodRule[]
     for (const [index, rule] of parsedRules.entries()) {
         const ruleReference = formatRuleReference(rule, index);
         preprocessRule(rule);
-        validateRuleRegexPatterns(rule, ruleReference, checkForRedos);
+        await validateRuleRegexPatterns(rule, ruleReference, checkForRedos);
         validateWebhookUrl(rule, ruleReference);
     }
 
@@ -717,6 +747,10 @@ export function parseRules (rules: string, checkForRedos = false): AutomodRule[]
                 throw new Error(`Duplicate friendly_name "${friendlyName}" found in rule ${formatRuleReference(rule, index)}`);
             }
             knownFriendlyNames.add(friendlyName);
+        }
+
+        if (rule.log_to_webhook && !rule.friendly_name) {
+            throw new Error(`log_to_webhook is specified but friendly_name is missing in rule ${formatRuleReference(rule, index)}`);
         }
     }
 

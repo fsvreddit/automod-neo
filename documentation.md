@@ -223,10 +223,10 @@ These modifiers change how the search options for looked for inside the field, s
 * `ends-with` - only checks if the subject ends with the text
 * `full-exact` - checks if the entire subject matches the text exactly
 * `full-text` - similar to full-exact, except punctuation/spacing on either end of the subject is not considered
+
+### Modifiers
+
 * `regex` - considers the text being searched for to be a regular expression (using standard Javascript regex syntax), instead of literal text to find
-
-### Other modifier
-
 * `case-sensitive` - makes the search case-sensitive, so text with different capitalization than the search value(s) will not be considered a match
 
 If you do not specify a search method modifier for a particular check, it will default to one depending on which field you are checking. Note that if you do any joined search check (multiple fields combined with +), the default is always includes-word. Otherwise, if you are checking a single subject field, the defaults are as follows:
@@ -346,7 +346,7 @@ The supported threshold checks are:
 ### For comments, submissions, parent_submissions and parent_comments
 
 * `action` - A moderation action to perform on the item. Valid values are `approve`, `remove`, `spam`, `filter`, or `report`.
-* `action_reason` - Displays in the moderation log as a reason for why a post was approved or removed. If the action is report, displays as the report reason instead. Supports placeholders.
+* `action_reason` - **Currently not working pending a solution from Admin**. ~~Displays in the moderation log as a reason for why a post was approved or removed. If the action is report, displays as the report reason instead. Supports placeholders.~~
 * `comment` - Text of a comment to post in response to an item that satisfies the rule's conditions. Supports placeholders.
 * `comment_locked` - true/false - if set to true, the comment Automod Neo posts in response to an item will be locked from further comment replies.
 * `comment_stickied` - true/false - if set to true, the comment Automod Neo posts in response to an item will be stickied to the top of the submission (will have no effect on non-submissions, as the comment must be top-level)
@@ -377,6 +377,7 @@ The supported threshold checks are:
 
 * `ignore_blockquotes` - true/false - If set to true, any text inside blockquotes will not be considered by this rule when doing search checks against body, or counting length with body_shorter_than/body_longer_than.
 * `stop_on_match` - true/false. By default, any rule with an action of `remove`, `spam` or `filter` is treated as `stop_on_match: true`, and other rules as `stop_on_match: false` to match OG AutoModerator functionality.
+* `log_to_webhook` - `matches` or `verbose`. `matches` logs successful rule matches to a Discord or Slack webhook, while `verbose` logs every time a rule is run, outputting the reason a post or comment does not match the rule.
 
 ### Placeholders
 

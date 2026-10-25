@@ -53,8 +53,6 @@ On submissions:
 * discussion_type
 * is_meta_discussion
 
-Search checks that use Regex cannot have other matching properties - e.g. `title (regex, includes)` will not work but `title (regex)` will. You can of course use `title (regex, case_sensitive)` still.
-
 This app will never support a "ban user" or "mute user" feature due to the scope for abuse.
 
 ## Future developments
@@ -66,19 +64,13 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
-### v1.0.0
+### v1.1.0
 
-* Add `set_contest_mode` for posts (base item and parent submission)
-* Reduce sensitivity of regex safety checker
-* Add `alert_webhook` parameter to rules with `discord_alert` directives, to allow rule-specific webhook overrides (supports Slack as well)
-* Fixed bug checking standard conditions on comments
-* Add `{{author_uppercase}}` placeholder
-* Add `uppercase_footer` directive on rules
-
-### v0.8.0
-
-* Add `is_locked` check for posts and comments at any level
-* Add `paragraph_count` check for posts and comments at any level
+* Fixed issue with rules with `alert_webhook` parameters not sending Discord/Slack alerts
+* Restore the ability to have rules that combine regex checks with other modifiers e.g. `body (regex, includes)` or `body+title: (regex, full-text)`
+* Improve performance of rule validation especially when little has changed
+* Fixed behaviour of `{{body}}`, `{{domain}}` and `{{url}}` placeholders for crossposts - these now substitute the values from the original submission in line with Automod's behaviour
+* Add `log_to_webhook` directive to allow rules to be debugged via logs to a Discord server at an individual rule level
 
 ## About this app
 

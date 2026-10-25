@@ -2,7 +2,7 @@ import { JSONSchemaType } from "ajv";
 import { SearchMethod, SearchOption } from "../types";
 import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecution";
 
-const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "domain", "full-exact", "full-text", "regex"];
+const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "domain", "full-exact", "full-text"];
 const standardConditionValues = ["image hosting sites", "direct image links", "video hosting sites", "streaming sites", "crowdfunding sites", "meme generator sites", "facebook links", "amazon affiliate links"] as const;
 const actionValues = ["approve", "remove", "report", "spam", "filter"] as const;
 const submissionTypeValues = ["comment", "submission", "text submission", "link submission", "crosspost submission", "poll submission", "gallery submission", "any"] as const;
@@ -18,6 +18,7 @@ const searchOptionSchema: JSONSchemaType<SearchOption> = {
         search_method: { type: "string", enum: searchMethodValues },
         case_sensitive: { type: "boolean" },
         negate: { type: "boolean" },
+        regex: { type: "boolean", nullable: true },
     },
     required: ["search_method", "case_sensitive", "negate"],
     additionalProperties: false,
@@ -248,6 +249,11 @@ export const automodSchema: Record<string, unknown> = {
         discord_alert: { type: "string", nullable: true },
         alert_webhook: { type: "string", nullable: true },
         uppercase_footer: { type: "boolean", nullable: true },
+        log_to_webhook: {
+            type: "string",
+            enum: ["matches", "verbose"],
+            nullable: true,
+        },
         stop_on_match: { type: "boolean", nullable: true },
         standard: {
             type: "string",

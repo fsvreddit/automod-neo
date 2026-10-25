@@ -83,7 +83,12 @@ export class ActionRules {
             return input;
         }
 
-        const body = target.body ?? "";
+        let crosspostParentPost: Post | undefined;
+        if ("crosspostParentId" in target && target.crosspostParentId) {
+            crosspostParentPost = this.posts[target.crosspostParentId];
+        }
+
+        const body = (crosspostParentPost ? crosspostParentPost.body : target.body) ?? "";
         const blockquotedBody = body
             ? body
                     .split("\n")
@@ -107,8 +112,8 @@ export class ActionRules {
             .replaceAll("r/{{subreddit}}", `r/${target.subredditName}`)
             .replaceAll("{{subreddit}}", markdownEscape(target.subredditName))
             .replaceAll("{{kind}}", this.targetToKindText(target))
-            .replaceAll("{{domain}}", getDomainFromUrl(target.url) ?? "")
-            .replaceAll("{{url}}", target.url)
+            .replaceAll("{{domain}}", getDomainFromUrl(crosspostParentPost?.url ?? target.url) ?? "")
+            .replaceAll("{{url}}", crosspostParentPost?.url ?? target.url)
             .replaceAll("{{media_author}}", this.additionalPlaceholders.media_author ?? "")
             .replaceAll("{{media_author_url}}", this.additionalPlaceholders.media_author_url ?? "")
             .replaceAll("{{media_title}}", this.additionalPlaceholders.media_title ?? "")
@@ -226,6 +231,10 @@ export class ActionRules {
     private async actionRule (target: Post | Comment, matchedRule: AutomodMatch, doMessages = true): Promise<void> {
         console.log(`Applying actions on ${isT3(target.id) ? "post" : "comment"} ${target.id}`);
 
+        if ("crosspostParentId" in target && target.crosspostParentId) {
+            await this.getPostById(target.crosspostParentId);
+        }
+
         await this.doPostOrCommentAction(target, matchedRule);
 
         if (matchedRule.rule.author?.set_flair) {
@@ -328,8 +337,9 @@ export class ActionRules {
             }
 
             if (discordAlertBody) {
-                if (this.webhookUrl) {
-                    await sendMessageToWebhook(matchedRule.rule.alert_webhook ?? this.webhookUrl, discordAlertBody);
+                const webhookUrl = matchedRule.rule.alert_webhook ?? this.webhookUrl;
+                if (webhookUrl) {
+                    await sendMessageToWebhook(webhookUrl, discordAlertBody);
                     console.log(`Sent Discord alert due to rule "${matchedRule.rule.friendly_name ?? "Unnamed rule"}"`);
                 } else {
                     console.warn("Discord alert specified in rule, but no webhook URL is set in subreddit settings.");

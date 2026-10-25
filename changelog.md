@@ -2,6 +2,20 @@
 
 This page shows a history of previous updates to Automod Neo.
 
+### v1.0.0
+
+* Add `set_contest_mode` for posts (base item and parent submission)
+* Reduce sensitivity of regex safety checker
+* Add `alert_webhook` parameter to rules with `discord_alert` directives, to allow rule-specific webhook overrides (supports Slack as well)
+* Fixed bug checking standard conditions on comments
+* Add `{{author_uppercase}}` placeholder
+* Add `uppercase_footer` directive on rules
+
+### v0.8.0
+
+* Add `is_locked` check for posts and comments at any level
+* Add `paragraph_count` check for posts and comments at any level
+
 ### v0.7.0
 
 * Fixed an issue that caused update notifications to be sent every day until the app is upgraded. Notifications will now be sent only once.

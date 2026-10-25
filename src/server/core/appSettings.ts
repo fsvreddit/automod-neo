@@ -4,6 +4,7 @@ export enum AppSetting {
     CombineComments = "combineComments",
     SkipRulesThatAutomodHasActedOn = "skipRulesThatAutomodHasActedOn",
     DiscordOrSlackWebhookUrl = "discordWebhookUrl",
+    LoggingWebhookUrl = "loggingWebhookUrl",
     TimeZone = "timeZone",
     NotifyOnUpdates = "notifyOnUpdates",
 

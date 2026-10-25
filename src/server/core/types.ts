@@ -1,11 +1,12 @@
 import { Comment, Post, User } from "@devvit/web/server";
 
-export type SearchMethod = "includes-word" | "includes" | "starts-with" | "ends-with" | "domain" | "full-exact" | "full-text" | "regex";
+export type SearchMethod = "includes-word" | "includes" | "starts-with" | "ends-with" | "domain" | "full-exact" | "full-text";
 
 export interface SearchOption {
     search_method: SearchMethod;
     case_sensitive: boolean;
     negate: boolean;
+    regex?: boolean;
 }
 
 type PostSearchField = "id" | "title" | "body" | "domain" | "url" | "poll_option_text" | "flair_text" | "flair_css_class" | "flair_template_id" | "crosspost_title" | "media_author" | "media_author_url" | "media_title" | "user_report_reason" | "mod_report_reason";
@@ -134,6 +135,7 @@ export type AutomodRule = PostOrCommentCondition & {
     discord_alert?: string;
     alert_webhook?: string;
     uppercase_footer?: boolean;
+    log_to_webhook?: "matches" | "verbose";
 
     // Behaviour modifiers
     stop_on_match?: boolean;
