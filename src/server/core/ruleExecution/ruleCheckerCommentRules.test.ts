@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, it, vi } from "vitest";
 
 vi.mock("@devvit/web/server", () => ({
     context: { subredditName: "test" },
-    reddit: {},
+    reddit: {
+        getCommentById: vi.fn(),
+    },
     settings: {
         // eslint-disable-next-line @typescript-eslint/require-await
         get: vi.fn(async () => "UTC"),
