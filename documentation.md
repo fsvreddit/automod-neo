@@ -1,6 +1,6 @@
 # Automod Neo Documentation
 
-This page is a full specificaiton about how Automod Neo's capabilities and behaviour. Automod Neo is based on AutoModerator's capabilities and specification but enhances it, adding new features and checks.
+This page is a full specification about how Automod Neo's capabilities and behaviour. Automod Neo is based on AutoModerator's capabilities and specification but enhances it, adding new features and checks.
 
 ## General knowledge and behaviour
 
