@@ -64,6 +64,10 @@ This app will never support a "ban user" or "mute user" feature due to the scope
 
 For older changes, please see the [full changelog](https://github.com/fsvreddit/automod-neo/blob/main/changelog.md)
 
+### v1.2.0
+
+* Remove regex performance validation due to the issues it causes moderators setting up rules
+
 ### v1.1.0
 
 * Fixed issue with rules with `alert_webhook` parameters not sending Discord/Slack alerts

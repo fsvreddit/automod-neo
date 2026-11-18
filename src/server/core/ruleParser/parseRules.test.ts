@@ -3,14 +3,14 @@ import { describe, it } from "vitest";
 import { parseRules } from "./parseRules";
 
 describe("parseRules", () => {
-    it("parses a simple rule correctly", async () => {
+    it("parses a simple rule correctly", () => {
         const rules = `
 ---
 title (includes): "Hello World"
 body (regex): "foo\\d{1,3}bar"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -43,13 +43,13 @@ body (regex): "foo\\d{1,3}bar"
         ]);
     });
 
-    it("parses rules with negation correctly", async () => {
+    it("parses rules with negation correctly", () => {
         const rules = `
 ---
 ~title: text
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -70,7 +70,7 @@ body (regex): "foo\\d{1,3}bar"
         ]);
     });
 
-    it("normalizes searchable fields with joins, qualifiers, and numbered keys", async () => {
+    it("normalizes searchable fields with joins, qualifiers, and numbered keys", () => {
         const rules = `
 ---
 id: abcde
@@ -93,7 +93,7 @@ parent_submission:
     crosspost_title#2: two
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -258,14 +258,14 @@ parent_submission:
         ]);
     });
 
-    it("parses qualifier keys with optional and repeated whitespace before parentheses", async () => {
+    it("parses qualifier keys with optional and repeated whitespace before parentheses", () => {
         const rules = `
 ---
 title+body(regex): '^foo'
 url   (includes): 'example.com/path'
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -294,13 +294,13 @@ url   (includes): 'example.com/path'
         ]);
     });
 
-    it("parses searchable field with a single explicit search method", async () => {
+    it("parses searchable field with a single explicit search method", () => {
         const rules = `
 ---
 body (includes): "hello"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -319,13 +319,13 @@ body (includes): "hello"
         ]);
     });
 
-    it("parses body (includes, regex) as includes search method with regex flag", async () => {
+    it("parses body (includes, regex) as includes search method with regex flag", () => {
         const rules = `
 ---
 body (includes, regex): "hello"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -345,13 +345,13 @@ body (includes, regex): "hello"
         ]);
     });
 
-    it("parses body (full-exact, regex) as includes search method with regex flag", async () => {
+    it("parses body (full-exact, regex) as includes search method with regex flag", () => {
         const rules = `
 ---
 body (full-exact, regex): "hello"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -371,19 +371,19 @@ body (full-exact, regex): "hello"
         ]);
     });
 
-    it("throws when more than one non-regex search method is specified for a searchable field", async () => {
+    it("throws when more than one non-regex search method is specified for a searchable field", () => {
         const rules = `
 ---
 body (includes, starts-with): "hello"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Multiple search methods are not allowed for attribute 'body \(includes, starts-with\)'/,
         );
     });
 
-    it("normalizes searchable fields with named key suffixes", async () => {
+    it("normalizes searchable fields with named key suffixes", () => {
         const rules = `
 ---
 body#redact: alpha
@@ -392,7 +392,7 @@ author:
   social_links#twitter (includes): x.com/example
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -433,14 +433,14 @@ author:
         ]);
     });
 
-    it("coerces id and searchable text string arrays", async () => {
+    it("coerces id and searchable text string arrays", () => {
         const rules = `
 ---
 id: ['abcde', 'defgh']
 body: ['first', 'second']
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -468,7 +468,7 @@ body: ['first', 'second']
         ]);
     });
 
-    it("normalizes author shorthand values to name search conditions at any level", async () => {
+    it("normalizes author shorthand values to name search conditions at any level", () => {
         const rules = `
 ---
 author: ['user1', 'user2']
@@ -478,7 +478,7 @@ parent_submission:
   crosspost_author: ['user5', 'user6']
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -540,7 +540,7 @@ parent_submission:
         ]);
     });
 
-    it("normalizes negated author shorthand values to negated name search conditions at any level", async () => {
+    it("normalizes negated author shorthand values to negated name search conditions at any level", () => {
         const rules = `
 ---
 ~author: ['AutoModerator', 'RuleBot']
@@ -550,7 +550,7 @@ parent_submission:
   ~crosspost_author: ['ParentCrosspostBotA', 'ParentCrosspostBotB']
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -612,7 +612,7 @@ parent_submission:
         ]);
     });
 
-    it("normalizes mixed-case attributes to lowercase at all levels", async () => {
+    it("normalizes mixed-case attributes to lowercase at all levels", () => {
         const rules = `
 ---
 Comment: 'Add a comment'
@@ -627,7 +627,7 @@ PARENT_SUBMISSION:
     NAME: 'ParentUser'
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -690,7 +690,7 @@ PARENT_SUBMISSION:
         ]);
     });
 
-    it("normalizes media searchable fields", async () => {
+    it("normalizes media searchable fields", () => {
         const rules = `
 ---
 media_author (regex): '^author_[0-9]+$'
@@ -698,7 +698,7 @@ media_author_url (includes): 'example.com/channel'
 media_title: ['first title', 'second title']
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -736,7 +736,7 @@ media_title: ['first title', 'second title']
         ]);
     });
 
-    it("accepts parent_submission action fields", async () => {
+    it("accepts parent_submission action fields", () => {
         const rules = `
 ---
 type: comment
@@ -755,7 +755,7 @@ parent_submission:
   action_reason: "AutoMod 027 - Bot Removal: {{body}} by {{author}}"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -788,19 +788,19 @@ parent_submission:
         ]);
     });
 
-    it("throws when a regex searchable text contains an invalid regular expression", async () => {
+    it("throws when a regex searchable text contains an invalid regular expression", () => {
         const rules = `
 ---
 body (regex): '['
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Rule 1: Invalid regex pattern for attribute 'body \(regex\)'/,
         );
     });
 
-    it("validates regex patterns in nested searchable nodes", async () => {
+    it("validates regex patterns in nested searchable nodes", () => {
         const rules = `
 ---
 parent_submission:
@@ -809,7 +809,7 @@ parent_submission:
         bio_text (regex): '^bio_[a-z]+$'
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -843,20 +843,20 @@ parent_submission:
         ]);
     });
 
-    it("throws when a new author searchable field contains an invalid regex", async () => {
+    it("throws when a new author searchable field contains an invalid regex", () => {
         const rules = `
 ---
 author:
   bio_text (regex): '('
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Rule 1: Invalid regex pattern for attribute 'bio_text \(regex\)' in author/,
         );
     });
 
-    it("accepts set_flair arrays with at most two elements", async () => {
+    it("accepts set_flair arrays with at most two elements", () => {
         const rules = `
 ---
 set_flair: ['one', 'two']
@@ -864,7 +864,7 @@ author:
   set_flair: ['left', 'right']
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -876,7 +876,7 @@ author:
         ]);
     });
 
-    it("normalizes set_flair dictionary alias keys", async () => {
+    it("normalizes set_flair dictionary alias keys", () => {
         const rules = `
 ---
 set_flair:
@@ -888,7 +888,7 @@ author:
     css class: helper
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -906,44 +906,44 @@ author:
         ]);
     });
 
-    it("throws when set_flair has more than two elements", async () => {
+    it("throws when set_flair has more than two elements", () => {
         const rules = `
 ---
 set_flair: ['one', 'two', 'three']
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Rule 1: Attribute 'set_flair' must have at most 2 items\./,
         );
     });
 
-    it("throws when nested set_flair has more than two elements", async () => {
+    it("throws when nested set_flair has more than two elements", () => {
         const rules = `
 ---
 author:
   set_flair: ['one', 'two', 'three']
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Rule 1: Attribute 'author\.set_flair' must have at most 2 items\./,
         );
     });
 
-    it("reports unsupported searchable attributes using the raw input key", async () => {
+    it("reports unsupported searchable attributes using the raw input key", () => {
         const rules = `
 ---
 suject+body: "typo"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Rule 1: Unsupported attribute 'suject\+body'\./,
         );
     });
 
-    it("uses friendly_name in unsupported attribute errors", async () => {
+    it("uses friendly_name in unsupported attribute errors", () => {
         const rules = `
 ---
 friendly_name: "Typo Rule"
@@ -951,26 +951,26 @@ author:
   nmae: "typo"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Rule 'Typo Rule': Unsupported attribute 'nmae' in author\./,
         );
     });
 
-    it("uses friendly_name in regex validation errors", async () => {
+    it("uses friendly_name in regex validation errors", () => {
         const rules = `
 ---
 friendly_name: "Regex Rule"
 body (regex): '['
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Rule 'Regex Rule': Invalid regex pattern for attribute 'body \(regex\)'/,
         );
     });
 
-    it("normalizes id as searchable field for author and parent_submission", async () => {
+    it("normalizes id as searchable field for author and parent_submission", () => {
         const rules = `
 ---
 author:
@@ -980,7 +980,7 @@ parent_submission:
   id#2: fghij
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1023,14 +1023,14 @@ parent_submission:
         ]);
     });
 
-    it("preserves discord_alert when provided", async () => {
+    it("preserves discord_alert when provided", () => {
         const rules = `
 ---
 discord_alert: "Ping moderators in Discord"
 body: "urgent"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1050,14 +1050,14 @@ body: "urgent"
         ]);
     });
 
-    it("preserves friendly_name when provided", async () => {
+    it("preserves friendly_name when provided", () => {
         const rules = `
 ---
 friendly_name: "Urgent Body Rule"
 body: "urgent"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1077,14 +1077,14 @@ body: "urgent"
         ]);
     });
 
-    it("preserves verbose_logs when provided", async () => {
+    it("preserves verbose_logs when provided", () => {
         const rules = `
 ---
 verbose_logs: true
 body: "log this"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1104,14 +1104,14 @@ body: "log this"
         ]);
     });
 
-    it("passes through ~day_of_week when provided as a single value", async () => {
+    it("passes through ~day_of_week when provided as a single value", () => {
         const rules = `
 ---
 ~day_of_week: WeekDay
 body: "quiet hours"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1131,14 +1131,14 @@ body: "quiet hours"
         ]);
     });
 
-    it("passes through ~day_of_week when provided as an array", async () => {
+    it("passes through ~day_of_week when provided as an array", () => {
         const rules = `
 ---
 ~day_of_week: [Saturday, SuNday]
 body: "weekend only"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1158,7 +1158,7 @@ body: "weekend only"
         ]);
     });
 
-    it("preserves age and comment_count on submission rules", async () => {
+    it("preserves age and comment_count on submission rules", () => {
         const rules = `
 ---
 type: submission
@@ -1167,7 +1167,7 @@ comment_count: "> 10"
 body: "engagement check"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1189,7 +1189,7 @@ body: "engagement check"
         ]);
     });
 
-    it("preserves parent_submission age and comment_count on comment rules", async () => {
+    it("preserves parent_submission age and comment_count on comment rules", () => {
         const rules = `
 ---
 type: comment
@@ -1199,7 +1199,7 @@ parent_submission:
   comment_count: "<= 200"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1223,7 +1223,7 @@ parent_submission:
         ]);
     });
 
-    it("preserves paragraph_count on submission rules", async () => {
+    it("preserves paragraph_count on submission rules", () => {
         const rules = `
 ---
 type: submission
@@ -1231,7 +1231,7 @@ paragraph_count: ">= 3"
 body: "paragraph check"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1252,7 +1252,7 @@ body: "paragraph check"
         ]);
     });
 
-    it("preserves parent_submission paragraph_count on comment rules", async () => {
+    it("preserves parent_submission paragraph_count on comment rules", () => {
         const rules = `
 ---
 type: comment
@@ -1261,7 +1261,7 @@ parent_submission:
   paragraph_count: "< 8"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1284,33 +1284,33 @@ parent_submission:
         ]);
     });
 
-    it("throws when age has an invalid format on submission rules", async () => {
+    it("throws when age has an invalid format on submission rules", () => {
         const rules = `
 ---
 type: submission
 age: "sometime soon"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Rule 1: Invalid date threshold format for attribute 'age'/,
         );
     });
 
-    it("throws when comment_count has an invalid format on submission rules", async () => {
+    it("throws when comment_count has an invalid format on submission rules", () => {
         const rules = `
 ---
 type: submission
 comment_count: "ten"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Rule 1: Invalid numeric threshold format for attribute 'comment_count'/,
         );
     });
 
-    it("throws when parent_submission.age has an invalid format on comment rules", async () => {
+    it("throws when parent_submission.age has an invalid format on comment rules", () => {
         const rules = `
 ---
 type: comment
@@ -1318,13 +1318,13 @@ parent_submission:
   age: "yesterdayish"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Rule 1: Invalid date threshold format for attribute 'age'/,
         );
     });
 
-    it("throws when parent_submission.comment_count has an invalid format on comment rules", async () => {
+    it("throws when parent_submission.comment_count has an invalid format on comment rules", () => {
         const rules = `
 ---
 type: comment
@@ -1332,20 +1332,20 @@ parent_submission:
   comment_count: "many"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Rule 1: Invalid numeric threshold format for attribute 'comment_count'/,
         );
     });
 
-    it("preserves poll_option_count when provided as a number", async () => {
+    it("preserves poll_option_count when provided as a number", () => {
         const rules = `
 ---
 poll_option_count: 3
 body: "poll"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1365,14 +1365,14 @@ body: "poll"
         ]);
     });
 
-    it("preserves poll_option_count when provided as a greater-than expression", async () => {
+    it("preserves poll_option_count when provided as a greater-than expression", () => {
         const rules = `
 ---
 poll_option_count: "> 3"
 body: "poll"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1392,14 +1392,14 @@ body: "poll"
         ]);
     });
 
-    it("preserves poll_option_count when provided as a less-than expression", async () => {
+    it("preserves poll_option_count when provided as a less-than expression", () => {
         const rules = `
 ---
 poll_option_count: "< 4"
 body: "poll"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1419,7 +1419,7 @@ body: "poll"
         ]);
     });
 
-    it("preserves image_count on submission rules", async () => {
+    it("preserves image_count on submission rules", () => {
         const rules = `
 ---
 type: submission
@@ -1427,7 +1427,7 @@ image_count: "> 2"
 body: "gallery check"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1448,7 +1448,7 @@ body: "gallery check"
         ]);
     });
 
-    it("parses user_report_reason and mod_report_reason as searchable fields", async () => {
+    it("parses user_report_reason and mod_report_reason as searchable fields", () => {
         const rules = `
 ---
 type: comment
@@ -1457,7 +1457,7 @@ mod_report_reason (includes): 'queue review'
 body: "reported"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1495,7 +1495,7 @@ body: "reported"
         ]);
     });
 
-    it("parses parent_submission report-reason checks as searchable fields", async () => {
+    it("parses parent_submission report-reason checks as searchable fields", () => {
         const rules = `
 ---
 type: comment
@@ -1505,7 +1505,7 @@ parent_submission:
   mod_report_reason: 'mod reason'
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1547,14 +1547,14 @@ parent_submission:
         ]);
     });
 
-    it("preserves is_approved for post conditions when provided", async () => {
+    it("preserves is_approved for post conditions when provided", () => {
         const rules = `
 ---
 is_approved: true
 body: "approved post"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1574,7 +1574,7 @@ body: "approved post"
         ]);
     });
 
-    it("preserves is_nsfw for post conditions when provided", async () => {
+    it("preserves is_nsfw for post conditions when provided", () => {
         const rules = `
 ---
 type: submission
@@ -1582,7 +1582,7 @@ is_nsfw: true
 body: "nsfw post"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1603,7 +1603,7 @@ body: "nsfw post"
         ]);
     });
 
-    it("preserves is_approved for comment conditions when provided", async () => {
+    it("preserves is_approved for comment conditions when provided", () => {
         const rules = `
 ---
 type: comment
@@ -1611,7 +1611,7 @@ is_approved: false
 body: "unapproved comment"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1632,7 +1632,7 @@ body: "unapproved comment"
         ]);
     });
 
-    it("preserves is_approved for parent_submission conditions when provided", async () => {
+    it("preserves is_approved for parent_submission conditions when provided", () => {
         const rules = `
 ---
 type: comment
@@ -1642,7 +1642,7 @@ parent_submission:
 body: "child comment"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1676,7 +1676,7 @@ body: "child comment"
         ]);
     });
 
-    it("preserves is_nsfw for parent_submission conditions when provided", async () => {
+    it("preserves is_nsfw for parent_submission conditions when provided", () => {
         const rules = `
 ---
 type: comment
@@ -1686,7 +1686,7 @@ parent_submission:
 body: "child comment"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1720,7 +1720,7 @@ body: "child comment"
         ]);
     });
 
-    it("preserves parent_comment conditions when provided", async () => {
+    it("preserves parent_comment conditions when provided", () => {
         const rules = `
 ---
 type: comment
@@ -1730,7 +1730,7 @@ parent_comment:
 body: "child comment"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1764,7 +1764,7 @@ body: "child comment"
         ]);
     });
 
-    it("accepts a valid Discord webhook URL when discord_alert is also present", async () => {
+    it("accepts a valid Discord webhook URL when discord_alert is also present", () => {
         const rules = `
 ---
 alert_webhook: "https://discord.com/api/webhooks/123456/abc_DEF-789"
@@ -1772,7 +1772,7 @@ discord_alert: "Alert message"
 body: "trigger"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1793,7 +1793,7 @@ body: "trigger"
         ]);
     });
 
-    it("accepts a valid Slack webhook URL when discord_alert is also present", async () => {
+    it("accepts a valid Slack webhook URL when discord_alert is also present", () => {
         const rules = `
 ---
 alert_webhook: "https://hooks.slack.com/services/T01234567/B01234567/abc_DEF-789"
@@ -1801,7 +1801,7 @@ discord_alert: "Alert message"
 body: "trigger"
         `;
 
-        const parsed = await parseRules(rules);
+        const parsed = parseRules(rules);
 
         assert.deepEqual(parsed, [
             {
@@ -1822,66 +1822,66 @@ body: "trigger"
         ]);
     });
 
-    it("throws when alert_webhook is not a string", async () => {
+    it("throws when alert_webhook is not a string", () => {
         const rules = `
 ---
 alert_webhook: 12345
 discord_alert: "Alert message"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Invalid alert_webhook in rule Rule 1/,
         );
     });
 
-    it("throws when alert_webhook is not a valid URL", async () => {
+    it("throws when alert_webhook is not a valid URL", () => {
         const rules = `
 ---
 alert_webhook: "not-a-valid-url"
 discord_alert: "Alert message"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Invalid alert_webhook URL in rule Rule 1/,
         );
     });
 
-    it("throws when alert_webhook URL is not a recognised Discord or Slack webhook", async () => {
+    it("throws when alert_webhook URL is not a recognised Discord or Slack webhook", () => {
         const rules = `
 ---
 alert_webhook: "https://example.com/webhooks/123456/abc_DEF-789"
 discord_alert: "Alert message"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /Invalid alert_webhook URL in rule Rule 1/,
         );
     });
 
-    it("throws when alert_webhook is present without discord_alert", async () => {
+    it("throws when alert_webhook is present without discord_alert", () => {
         const rules = `
 ---
 alert_webhook: "https://discord.com/api/webhooks/123456/abc_DEF-789"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /alert_webhook is specified but discord_alert is missing in rule Rule 1/,
         );
     });
 
-    it("uses friendly_name in alert_webhook validation errors", async () => {
+    it("uses friendly_name in alert_webhook validation errors", () => {
         const rules = `
 ---
 friendly_name: "My Alert Rule"
 alert_webhook: "https://discord.com/api/webhooks/123456/abc_DEF-789"
         `;
 
-        await assert.rejects(
-            parseRules(rules),
+        assert.throws(
+            () => parseRules(rules),
             /alert_webhook is specified but discord_alert is missing in rule Rule 'My Alert Rule'/,
         );
     });
