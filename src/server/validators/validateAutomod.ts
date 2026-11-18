@@ -1,7 +1,7 @@
-import { scheduler, settings } from "@devvit/web/server";
+import { scheduler } from "@devvit/web/server";
 import { SettingsValidationRequest, SettingsValidationResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { AppSetting, clearCachedRules, isInDisallowedSubreddit, isRedosDetectionExemptedSub, parseRules, saveUnparsedRules, SchedulerJob } from "../core";
+import { clearCachedRules, isInDisallowedSubreddit, parseRules, saveUnparsedRules, SchedulerJob } from "../core";
 import pluralize from "pluralize";
 
 export const validateAutomodSetting = async (c: Context) => {
@@ -21,13 +21,8 @@ export const validateAutomodSetting = async (c: Context) => {
         });
     }
 
-    const redosCheckerEnabled = await settings.get<boolean>(AppSetting.RedosCheckerEnabled) ?? true;
-    const inExemptedSubForRedosChecking = await isRedosDetectionExemptedSub();
-
-    const shouldCheckRedos = redosCheckerEnabled && !inExemptedSubForRedosChecking;
-
     try {
-        const rules = await parseRules(validationRequest.value, shouldCheckRedos);
+        const rules = parseRules(validationRequest.value);
         console.log(`Parsed ${rules.length} ${pluralize("rule", rules.length)} successfully.`);
     } catch (e) {
         return c.json<SettingsValidationResponse>({
