@@ -7,6 +7,7 @@ export enum SchedulerJob {
     CheckForUpdates = "checkForUpdates",
     CacheRules = "cacheRules",
     ProcessCommentQueue = "processCommentQueue",
+    SaveRulesToWiki = "saveRulesToWiki",
 }
 
 export async function configureCronJobs () {

@@ -3,10 +3,7 @@ import { describe, it } from "vitest";
 import devvitConfig from "../../../devvit.json";
 import { AppSetting } from "./appSettings.js";
 
-const configSettingKeys = [
-    ...Object.keys(devvitConfig.settings.subreddit),
-    ...Object.keys(devvitConfig.settings.global),
-].sort();
+const configSettingKeys = Object.keys(devvitConfig.settings.subreddit).sort();
 
 const appSettingValues: string[] = Object.values(AppSetting).sort();
 

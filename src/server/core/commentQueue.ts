@@ -3,6 +3,7 @@ import { isT3, T1, T3 } from "@devvit/web/shared";
 import { AppSetting, CommentToAdd, getBotCommentFooter, isDisallowedReply, SchedulerJob } from ".";
 import { addDays, addMonths, addSeconds } from "date-fns";
 import { getPostOrCommentById } from "@fsvreddit/fsv-devvit-web-helpers";
+import { CommentQueueJobData } from "../tasks";
 
 const COMMENT_QUEUE_KEY = "commentQueue";
 
@@ -11,10 +12,6 @@ interface CommentQueueItem {
     commentToAdd: CommentToAdd;
     uppercaseFooter: boolean;
 }
-
-export type CommentQueueJobData = {
-    jobGuid: string;
-};
 
 function getCommentQueueKey (queuedCommentKey: string): string {
     return `queuedComment:${queuedCommentKey}`;
@@ -86,9 +83,9 @@ async function queueNextCommentQueueJob (source?: string, delaySeconds = 0) {
         return;
     }
 
-    await scheduler.runJob({
+    await scheduler.runJob<CommentQueueJobData>({
         name: SchedulerJob.ProcessCommentQueue,
-        data: { jobGuid: crypto.randomUUID() } satisfies CommentQueueJobData,
+        data: { jobGuid: crypto.randomUUID() },
         runAt: addSeconds(new Date(), delaySeconds),
     });
 }

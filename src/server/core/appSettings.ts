@@ -7,7 +7,4 @@ export enum AppSetting {
     LoggingWebhookUrl = "loggingWebhookUrl",
     TimeZone = "timeZone",
     NotifyOnUpdates = "notifyOnUpdates",
-
-    // Global settings
-    RedosCheckerEnabled = "redosCheckerEnabled",
 }

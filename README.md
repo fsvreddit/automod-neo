@@ -67,6 +67,7 @@ For older changes, please see the [full changelog](https://github.com/fsvreddit/
 ### v1.2.0
 
 * Remove regex performance validation due to the issues it causes moderators setting up rules
+* Rules are now backed up after save to the wiki page `automod-neo-backup`, allowing restore
 
 ### v1.1.0
 
