@@ -3,6 +3,7 @@ import { TriggerResponse } from "@devvit/web/shared";
 import { Context } from "hono";
 import { clearCachedRules, configureCronJobs, SchedulerJob } from "../core";
 import { addSeconds } from "date-fns";
+import { CacheRulesJobData } from "../tasks";
 
 export const handleAppUpgrade = async (c: Context) => {
     console.log(`App upgraded to version ${context.appVersion}`);
@@ -11,14 +12,12 @@ export const handleAppUpgrade = async (c: Context) => {
 
     await configureCronJobs();
 
-    await scheduler.runJob({
+    await scheduler.runJob<CacheRulesJobData>({
         name: SchedulerJob.CacheRules,
         runAt: addSeconds(new Date(), 10),
-    });
-
-    await scheduler.runJob({
-        name: SchedulerJob.RunParseWithReDoS,
-        runAt: addSeconds(new Date(), 20),
+        data: {
+            jobGuid: crypto.randomUUID(),
+        },
     });
 
     console.log(`Automod Neo updated to version ${context.appVersion}.`);

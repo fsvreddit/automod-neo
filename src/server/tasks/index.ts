@@ -1,3 +1,3 @@
 export * from "./cacheRules.js";
 export * from "./processCommentQueue.js";
-export * from "./runParseWithReDoS.js";
+export * from "./saveRulesToWiki.js";

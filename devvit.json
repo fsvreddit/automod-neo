@@ -35,18 +35,10 @@
     },
     "scheduler": {
         "tasks": {
-            "checkForUpdates": {
-                "endpoint": "/internal/tasks/check-for-updates"
-            },
-            "cacheRules": {
-                "endpoint": "/internal/tasks/cache-rules"
-            },
-            "processCommentQueue": {
-                "endpoint": "/internal/tasks/process-comment-queue"
-            },
-            "runParseWithReDoS": {
-                "endpoint": "/internal/tasks/run-parse-with-redos"
-            }
+            "checkForUpdates": "/internal/tasks/check-for-updates",
+            "cacheRules": "/internal/tasks/cache-rules",
+            "processCommentQueue": "/internal/tasks/process-comment-queue",
+            "saveRulesToWiki": "/internal/tasks/save-rules-to-wiki"
         }
     },
     "settings": {
@@ -92,13 +84,6 @@
                 "type": "boolean",
                 "label": "Notify on Updates",
                 "helpText": "If enabled, this app will send a Modmail notification to the subreddit when a new version is available.",
-                "defaultValue": true
-            }
-        },
-        "global": {
-            "redosCheckerEnabled": {
-                "type": "boolean",
-                "label": "ReDoS Checker Enabled",
                 "defaultValue": true
             }
         }

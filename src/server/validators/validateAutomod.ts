@@ -1,8 +1,9 @@
-import { scheduler, settings } from "@devvit/web/server";
+import { reddit, scheduler } from "@devvit/web/server";
 import { SettingsValidationRequest, SettingsValidationResponse } from "@devvit/web/shared";
 import { Context } from "hono";
-import { AppSetting, clearCachedRules, isInDisallowedSubreddit, isRedosDetectionExemptedSub, parseRules, saveUnparsedRules, SchedulerJob } from "../core";
+import { clearCachedRules, isInDisallowedSubreddit, parseRules, saveUnparsedRules, SchedulerJob } from "../core";
 import pluralize from "pluralize";
+import { CacheRulesJobData, SaveRulesToWikiJobData } from "../tasks";
 
 export const validateAutomodSetting = async (c: Context) => {
     if (await isInDisallowedSubreddit()) {
@@ -12,22 +13,17 @@ export const validateAutomodSetting = async (c: Context) => {
         });
     }
 
-    const validationRequest = await c.req.json<SettingsValidationRequest<string>>();
+    const { value } = await c.req.json<SettingsValidationRequest<string>>();
 
-    if (!validationRequest.value) {
+    if (!value) {
         await clearCachedRules();
         return c.json<SettingsValidationResponse>({
             success: true,
         });
     }
 
-    const redosCheckerEnabled = await settings.get<boolean>(AppSetting.RedosCheckerEnabled) ?? true;
-    const inExemptedSubForRedosChecking = await isRedosDetectionExemptedSub();
-
-    const shouldCheckRedos = redosCheckerEnabled && !inExemptedSubForRedosChecking;
-
     try {
-        const rules = await parseRules(validationRequest.value, shouldCheckRedos);
+        const rules = parseRules(value);
         console.log(`Parsed ${rules.length} ${pluralize("rule", rules.length)} successfully.`);
     } catch (e) {
         return c.json<SettingsValidationResponse>({
@@ -37,11 +33,25 @@ export const validateAutomodSetting = async (c: Context) => {
     }
 
     await clearCachedRules();
-    await saveUnparsedRules(validationRequest.value);
+    await saveUnparsedRules(value);
 
-    await scheduler.runJob({
+    await scheduler.runJob<CacheRulesJobData>({
         name: SchedulerJob.CacheRules,
         runAt: new Date(),
+        data: {
+            jobGuid: crypto.randomUUID(),
+        },
+    });
+
+    const currentUser = await reddit.getCurrentUser();
+    await scheduler.runJob<SaveRulesToWikiJobData>({
+        name: SchedulerJob.SaveRulesToWiki,
+        runAt: new Date(),
+        data: {
+            jobGuid: crypto.randomUUID(),
+            username: currentUser?.username,
+            rules: value,
+        },
     });
 
     return c.json<SettingsValidationResponse>({ success: true }, 200);

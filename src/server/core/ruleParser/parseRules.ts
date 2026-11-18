@@ -1,17 +1,12 @@
-import { redis } from "@devvit/web/server";
 import _ from "lodash";
 import { AutomodRule, SearchField, SearchMethod, SearchOption, SearchableText } from "../types";
 import { parseAllDocuments } from "yaml";
 import Ajv, { type ErrorObject, type ValidateFunction } from "ajv";
 import { automodSchema } from "./automodSchema";
 import { dateComparatorPattern, numericComparatorPattern } from "../ruleExecution";
-import { checkSync, Diagnostics, Parameters as CheckParameters } from "recheck";
 import { parseWebhookUrl } from "../webhookUtils";
-import { addDays, addMonths } from "date-fns";
 
 const searchMethodValues: SearchMethod[] = ["includes-word", "includes", "starts-with", "ends-with", "domain", "full-exact", "full-text"];
-
-process.env.RECHECK_SYNC_BACKEND ??= "pure";
 
 const topLevelSearchableFields = new Set([
     "id",
@@ -466,34 +461,7 @@ function preprocessPostConditionLikeNode (node: MutableNode, containerPath: stri
     }
 }
 
-const checkResultsOptions: CheckParameters = {
-    maxAttackStringSize: 10000,
-    accelerationMode: "on",
-    attackLimit: 10000,
-    timeout: 500,
-};
-
-function getRedosSafetyCacheDate (): Date {
-    return addDays(addMonths(new Date(), 6), Math.floor(Math.random() * 365));
-}
-
-async function getRedosSafetyResult (regex: RegExp): Promise<Diagnostics> {
-    const checkResultCacheKey = `redosCheckResult:${regex.source}:${JSON.stringify(checkResultsOptions)}`;
-    const cachedResults = await redis.get(checkResultCacheKey);
-    if (cachedResults) {
-        return JSON.parse(cachedResults) as Diagnostics;
-    }
-
-    const checkResult = checkSync(regex.source, "u", checkResultsOptions);
-
-    if (checkResult.status === "safe") {
-        await redis.set(checkResultCacheKey, JSON.stringify(checkResult), { expiration: getRedosSafetyCacheDate() });
-    }
-
-    return checkResult;
-}
-
-async function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: string, ruleReference: string, checkForRedos: boolean): Promise<void> {
+function validateRegexPatternsInSearchableField (node: MutableNode, fieldName: string, ruleReference: string): void {
     const fieldValue = node[fieldName];
     if (!Array.isArray(fieldValue)) {
         return;
@@ -522,9 +490,8 @@ async function validateRegexPatternsInSearchableField (node: MutableNode, fieldN
                 continue;
             }
 
-            let regex: RegExp;
             try {
-                regex = new RegExp(pattern, "u");
+                new RegExp(pattern, "u");
             } catch (error) {
                 const source = searchableSourceMetadata.get(searchableItem);
                 const attributeName = source?.rawKey ?? `${fieldName}[${searchableIndex}]`;
@@ -532,17 +499,6 @@ async function validateRegexPatternsInSearchableField (node: MutableNode, fieldN
                 const details = error instanceof Error ? error.message : String(error);
                 // eslint-disable-next-line preserve-caught-error
                 throw new Error(`${ruleReference}: Invalid regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern} (${details})`);
-            }
-
-            if (checkForRedos) {
-                const checkResult = await getRedosSafetyResult(regex);
-
-                if (checkResult.status === "vulnerable") {
-                    const source = searchableSourceMetadata.get(searchableItem);
-                    const attributeName = source?.rawKey ?? `${fieldName}[${searchableIndex}]`;
-                    const containerPath = source?.containerPath;
-                    throw new Error(`${ruleReference}: Unsafe regex pattern for attribute '${attributeName}'${containerPath ? ` in ${containerPath}` : ""}: ${pattern}`);
-                }
             }
         }
     }
@@ -592,8 +548,8 @@ function validateDateThresholdFormatInNode (node: MutableNode, ruleReference: st
     }
 }
 
-async function validateRegexPatternsInAuthorNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): Promise<void> {
-    await validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
+function validateRegexPatternsInAuthorNode (node: MutableNode, ruleReference: string): void {
+    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference);
 
     const numericThresholdFields = [
         "comment_karma",
@@ -613,27 +569,27 @@ async function validateRegexPatternsInAuthorNode (node: MutableNode, ruleReferen
     validateDateThresholdFormatInNode(node, ruleReference, dateThresholdFields);
 }
 
-async function validateRegexPatternsInSubredditNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): Promise<void> {
-    await validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
+function validateRegexPatternsInSubredditNode (node: MutableNode, ruleReference: string): void {
+    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference);
 }
 
-async function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleReference: string, checkForRedos: boolean): Promise<void> {
-    await validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference, checkForRedos);
+function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, ruleReference: string): void {
+    validateRegexPatternsInSearchableField(node, "search_conditions", ruleReference);
 
     if (isObjectRecord(node.author)) {
-        await validateRegexPatternsInAuthorNode(node.author, ruleReference, checkForRedos);
+        validateRegexPatternsInAuthorNode(node.author, ruleReference);
     }
 
     if (isObjectRecord(node.subreddit)) {
-        await validateRegexPatternsInSubredditNode(node.subreddit, ruleReference, checkForRedos);
+        validateRegexPatternsInSubredditNode(node.subreddit, ruleReference);
     }
 
     if (isObjectRecord(node.crosspost_author)) {
-        await validateRegexPatternsInAuthorNode(node.crosspost_author, ruleReference, checkForRedos);
+        validateRegexPatternsInAuthorNode(node.crosspost_author, ruleReference);
     }
 
     if (isObjectRecord(node.crosspost_subreddit)) {
-        await validateRegexPatternsInSubredditNode(node.crosspost_subreddit, ruleReference, checkForRedos);
+        validateRegexPatternsInSubredditNode(node.crosspost_subreddit, ruleReference);
     }
 
     if (node.poll_option_count !== undefined) {
@@ -657,15 +613,15 @@ async function validateRegexPatternsInPostConditionLikeNode (node: MutableNode, 
     }
 }
 
-export async function validateRuleRegexPatterns (rule: MutableNode, ruleReference: string, checkForRedos: boolean): Promise<void> {
-    await validateRegexPatternsInPostConditionLikeNode(rule, ruleReference, checkForRedos);
+export function validateRuleRegexPatterns (rule: MutableNode, ruleReference: string): void {
+    validateRegexPatternsInPostConditionLikeNode(rule, ruleReference);
 
     if (isObjectRecord(rule.parent_submission)) {
-        await validateRegexPatternsInPostConditionLikeNode(rule.parent_submission, ruleReference, checkForRedos);
+        validateRegexPatternsInPostConditionLikeNode(rule.parent_submission, ruleReference);
     }
 
     if (isObjectRecord(rule.parent_comment)) {
-        await validateRegexPatternsInPostConditionLikeNode(rule.parent_comment, ruleReference, checkForRedos);
+        validateRegexPatternsInPostConditionLikeNode(rule.parent_comment, ruleReference);
     }
 }
 
@@ -716,7 +672,7 @@ export function preprocessRule (rule: MutableNode): void {
     }
 }
 
-export async function parseRules (rules: string, checkForRedos = false): Promise<AutomodRule[]> {
+export function parseRules (rules: string): AutomodRule[] {
     if (!rules.trim()) {
         return [];
     }
@@ -727,7 +683,7 @@ export async function parseRules (rules: string, checkForRedos = false): Promise
     for (const [index, rule] of parsedRules.entries()) {
         const ruleReference = formatRuleReference(rule, index);
         preprocessRule(rule);
-        await validateRuleRegexPatterns(rule, ruleReference, checkForRedos);
+        validateRuleRegexPatterns(rule, ruleReference);
         validateWebhookUrl(rule, ruleReference);
     }
 

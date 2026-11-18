@@ -1,8 +1,12 @@
 import { TaskRequest, TaskResponse } from "@devvit/web/server";
 import type { Context } from "hono";
-import { CommentQueueJobData, processCommentQueue } from "../core";
+import { processCommentQueue } from "../core";
 import { hasEventBeenHandled } from "@fsvreddit/fsv-devvit-web-helpers";
 import { addHours } from "date-fns";
+
+export type CommentQueueJobData = {
+    jobGuid: string;
+};
 
 export const handleProcessCommentQueue = async (c: Context) => {
     const request = await c.req.json<TaskRequest<CommentQueueJobData>>();

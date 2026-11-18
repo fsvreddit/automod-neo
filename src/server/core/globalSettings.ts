@@ -4,8 +4,11 @@ import { addHours } from "date-fns";
 interface GlobalSettings {
     disallowedSubreddits: string[];
     disallowedReplyRegexes: string[];
+    /*
+     * @deprecated This field is no longer used and will be removed in future versions.
+     */
     redosDetectionExemptedSubs?: string[];
-};
+}
 
 async function getGlobalSettings (): Promise<GlobalSettings> {
     const cacheKey = "globalSettings";
@@ -57,10 +60,4 @@ export async function isDisallowedReply (reply: string): Promise<boolean> {
         console.error("Failed to test disallowed reply regexes:", error);
         return false;
     }
-}
-
-export async function isRedosDetectionExemptedSub (): Promise<boolean> {
-    const globalSettings = await getGlobalSettings();
-    const exemptedSubs = new Set(globalSettings.redosDetectionExemptedSubs ?? []);
-    return exemptedSubs.has(context.subredditName);
 }
